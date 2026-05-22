@@ -14,7 +14,7 @@ export default function SettingsPage() {
           <CardBody className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Workspace Name</label>
-              <input defaultValue="Goldstein General Management" className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
+              <input defaultValue="Adam Blanshay Productions" className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Fiscal Year Start</label>
@@ -42,11 +42,11 @@ export default function SettingsPage() {
           <CardBody className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Name</label>
-              <input defaultValue="Maria Goldstein" className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
+              <input defaultValue="Leon Kay" className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Email</label>
-              <input defaultValue="maria@goldsteinGM.com" className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
+              <input defaultValue="leon@adamblanshay.com" className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
             </div>
             <div>
               <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Role</label>

@@ -79,10 +79,10 @@ export function Sidebar() {
       <div className="px-5 py-4 border-t border-stone-800">
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 rounded-full bg-stone-700 flex items-center justify-center text-xs text-stone-300 font-medium">
-            MG
+            LK
           </div>
           <div>
-            <p className="text-xs text-stone-300 font-medium">Maria Goldstein</p>
+            <p className="text-xs text-stone-300 font-medium">Leon Kay</p>
             <p className="text-xs text-stone-500">General Manager</p>
           </div>
         </div>
