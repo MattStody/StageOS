@@ -1,0 +1,97 @@
+export type ProductionStatus = 'pre_production' | 'in_rehearsal' | 'in_performance' | 'closing' | 'closed'
+export type ContractStatus = 'draft' | 'sent' | 'signed' | 'expired' | 'needs_review'
+export type ContractType = 'cast' | 'creative' | 'vendor' | 'venue' | 'rights' | 'investor' | 'employment'
+export type DeadlineType = 'contract' | 'rehearsal' | 'tech' | 'preview' | 'opening' | 'press' | 'payroll' | 'royalty' | 'marketing' | 'settlement' | 'closing' | 'general'
+export type DeadlineStatus = 'upcoming' | 'completed' | 'overdue' | 'at_risk'
+
+export interface Production {
+  id: string
+  name: string
+  subtitle: string
+  status: ProductionStatus
+  venue: string
+  openingDate: string
+  closingDate: string
+  totalBudget: number
+  totalActual: number
+  cashOnHand: number
+  projectedGross: number
+  currentGross: number
+  color: string
+}
+
+export interface BudgetLine {
+  id: string
+  productionId: string
+  category: string
+  lineItem: string
+  budgeted: number
+  committed: number
+  actual: number
+  notes: string
+}
+
+export interface RevenueWeek {
+  id: string
+  productionId: string
+  weekEnding: string
+  performances: number
+  ticketsSold: number
+  grossRevenue: number
+  avgTicketPrice: number
+  capacityPct: number
+  comps: number
+  discounts: number
+  netRevenue: number
+  totalSeats: number
+}
+
+export interface Contract {
+  id: string
+  productionId: string
+  partyName: string
+  contractType: ContractType
+  status: ContractStatus
+  dueDate: string
+  fee: number
+  keyObligations: string
+  notes: string
+  hasFile: boolean
+}
+
+export interface CashFlowRow {
+  id: string
+  productionId: string
+  weekOf: string
+  startingCash: number
+  ticketRevenue: number
+  otherInflows: number
+  payroll: number
+  venueCosts: number
+  marketing: number
+  royalties: number
+  vendorPayments: number
+  otherOutflows: number
+  closingCash: number
+}
+
+export interface Deadline {
+  id: string
+  productionId: string
+  title: string
+  date: string
+  type: DeadlineType
+  status: DeadlineStatus
+  notes: string
+  assignedTo: string
+}
+
+export interface Document {
+  id: string
+  productionId: string
+  name: string
+  category: 'contracts' | 'budgets' | 'reports' | 'marketing' | 'legal' | 'insurance' | 'production'
+  uploadedAt: string
+  size: string
+  type: string
+}
