@@ -1,4 +1,4 @@
-import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document } from './types'
+import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign } from './types'
 
 export const PRODUCTIONS: Production[] = [
   {
@@ -277,4 +277,68 @@ export const DOCUMENTS: Document[] = [
   { id: 'doc3-3', productionId: 'prod-3', name: 'Live Nation Venue Package', category: 'contracts', uploadedAt: '2025-07-20', size: '2.9 MB', type: 'pdf' },
   { id: 'doc3-4', productionId: 'prod-3', name: 'Touring Insurance — All Risks Policy', category: 'insurance', uploadedAt: '2025-07-01', size: '460 KB', type: 'pdf' },
   { id: 'doc3-5', productionId: 'prod-3', name: 'Evergreen Capital Agreement', category: 'contracts', uploadedAt: '2025-05-10', size: '4.1 MB', type: 'pdf' },
+]
+
+// ─── MARKETING BUDGET LINES ──────────────────────────────────────────────────
+
+export const MARKETING_BUDGET_LINES: MarketingBudgetLine[] = [
+  // prod-1: A Winter's Dream
+  { id: 'mb1-1', productionId: 'prod-1', channel: 'digital_social', lineItem: 'Facebook & Instagram Ads', budgeted: 45000, actual: 48200, notes: 'Holiday push exceeded budget' },
+  { id: 'mb1-2', productionId: 'prod-1', channel: 'paid_search', lineItem: 'Google Search Ads', budgeted: 22000, actual: 21500, notes: '' },
+  { id: 'mb1-3', productionId: 'prod-1', channel: 'print', lineItem: 'NY Times & Playbill Ads', budgeted: 38000, actual: 37200, notes: '' },
+  { id: 'mb1-4', productionId: 'prod-1', channel: 'ooh', lineItem: 'NYC Subway & Bus Shelter', budgeted: 55000, actual: 57800, notes: '2-week holiday extension added' },
+  { id: 'mb1-5', productionId: 'prod-1', channel: 'email', lineItem: 'Email Campaigns', budgeted: 4000, actual: 3600, notes: '' },
+  { id: 'mb1-6', productionId: 'prod-1', channel: 'pr_press', lineItem: 'Press Representative', budgeted: 22000, actual: 22000, notes: '' },
+  { id: 'mb1-7', productionId: 'prod-1', channel: 'photography_video', lineItem: 'Production Photography & Trailer', budgeted: 18000, actual: 17400, notes: '' },
+  { id: 'mb1-8', productionId: 'prod-1', channel: 'agency_fees', lineItem: 'Agency Retainer (SpotCo)', budgeted: 16000, actual: 16000, notes: '' },
+  { id: 'mb1-9', productionId: 'prod-1', channel: 'other', lineItem: 'Group Sales Incentives', budgeted: 8000, actual: 6300, notes: '' },
+
+  // prod-2: The Silence Between
+  { id: 'mb2-1', productionId: 'prod-2', channel: 'digital_social', lineItem: 'Social Media Ads', budgeted: 12000, actual: 8500, notes: 'Campaign starts Dec' },
+  { id: 'mb2-2', productionId: 'prod-2', channel: 'print', lineItem: 'New Yorker & WQXR Print', budgeted: 14000, actual: 10200, notes: '' },
+  { id: 'mb2-3', productionId: 'prod-2', channel: 'email', lineItem: 'BAM Subscriber Emails', budgeted: 2500, actual: 2500, notes: 'Via BAM partnership' },
+  { id: 'mb2-4', productionId: 'prod-2', channel: 'pr_press', lineItem: 'Press Representative', budgeted: 15000, actual: 10500, notes: 'Through opening night' },
+  { id: 'mb2-5', productionId: 'prod-2', channel: 'photography_video', lineItem: 'Rehearsal Photography', budgeted: 6000, actual: 3800, notes: '' },
+  { id: 'mb2-6', productionId: 'prod-2', channel: 'agency_fees', lineItem: 'Design & Print Production', budgeted: 9500, actual: 7200, notes: '' },
+  { id: 'mb2-7', productionId: 'prod-2', channel: 'other', lineItem: 'Pre-show Talk Promotion', budgeted: 2500, actual: 0, notes: 'Scheduled post-opening' },
+
+  // prod-3: Echoes Tour
+  { id: 'mb3-1', productionId: 'prod-3', channel: 'digital_social', lineItem: 'National Social Campaigns', budgeted: 85000, actual: 82000, notes: 'Per-market targeting' },
+  { id: 'mb3-2', productionId: 'prod-3', channel: 'paid_search', lineItem: 'Google & Bing Search', budgeted: 42000, actual: 39500, notes: '' },
+  { id: 'mb3-3', productionId: 'prod-3', channel: 'radio', lineItem: 'Drive-time Radio Spots', budgeted: 55000, actual: 52000, notes: '18 markets' },
+  { id: 'mb3-4', productionId: 'prod-3', channel: 'ooh', lineItem: 'Arena & Transit Posters', budgeted: 38000, actual: 36500, notes: '' },
+  { id: 'mb3-5', productionId: 'prod-3', channel: 'tv', lineItem: 'Local TV Spots', budgeted: 65000, actual: 61000, notes: 'Top 10 markets only' },
+  { id: 'mb3-6', productionId: 'prod-3', channel: 'email', lineItem: 'Fan Email List', budgeted: 8000, actual: 7200, notes: '' },
+  { id: 'mb3-7', productionId: 'prod-3', channel: 'pr_press', lineItem: 'National PR Firm', budgeted: 48000, actual: 45000, notes: '' },
+  { id: 'mb3-8', productionId: 'prod-3', channel: 'photography_video', lineItem: 'Tour Sizzle Reel & Assets', budgeted: 22000, actual: 21500, notes: '' },
+  { id: 'mb3-9', productionId: 'prod-3', channel: 'agency_fees', lineItem: 'Marketing Agency', budgeted: 17000, actual: 17000, notes: '' },
+]
+
+// ─── MARKETING CAMPAIGNS ─────────────────────────────────────────────────────
+
+export const MARKETING_CAMPAIGNS: MarketingCampaign[] = [
+  // prod-1: A Winter's Dream
+  { id: 'mc1-1', productionId: 'prod-1', title: 'On-Sale Announcement', channel: 'digital_social', startDate: '2025-09-15', endDate: '2025-09-22', status: 'completed', budget: 8000, notes: 'Initial on-sale push' },
+  { id: 'mc1-2', productionId: 'prod-1', title: 'Early Bird Campaign', channel: 'email', startDate: '2025-09-23', endDate: '2025-10-15', status: 'completed', budget: 1200, notes: 'Subscriber discount offer' },
+  { id: 'mc1-3', productionId: 'prod-1', title: 'NYC Subway Takeover', channel: 'ooh', startDate: '2025-10-27', endDate: '2025-12-27', status: 'completed', budget: 57800, notes: '8-week run, full car cards + station domination' },
+  { id: 'mc1-4', productionId: 'prod-1', title: 'Holiday Push — Digital', channel: 'digital_social', startDate: '2025-11-24', endDate: '2025-12-24', status: 'completed', budget: 24000, notes: 'Thanksgiving–Christmas sprint' },
+  { id: 'mc1-5', productionId: 'prod-1', title: 'NY Times Full Page', channel: 'print', startDate: '2025-12-07', endDate: '2025-12-07', status: 'completed', budget: 18000, notes: 'Sunday Arts section' },
+  { id: 'mc1-6', productionId: 'prod-1', title: 'Closing Week Urgency', channel: 'digital_social', startDate: '2025-12-29', endDate: '2026-01-04', status: 'completed', budget: 5000, notes: 'Last chance messaging' },
+
+  // prod-2: The Silence Between
+  { id: 'mc2-1', productionId: 'prod-2', title: 'World Premiere Announcement', channel: 'pr_press', startDate: '2025-10-01', endDate: '2025-10-15', status: 'completed', budget: 3000, notes: 'Press release + media outreach' },
+  { id: 'mc2-2', productionId: 'prod-2', title: 'BAM Season Brochure Feature', channel: 'print', startDate: '2025-10-15', endDate: '2025-10-15', status: 'completed', budget: 0, notes: 'Included in BAM season materials' },
+  { id: 'mc2-3', productionId: 'prod-2', title: 'Composer Profile — New Yorker', channel: 'pr_press', startDate: '2025-12-01', endDate: '2025-12-31', status: 'active', budget: 0, notes: 'Pitching feature on Amara Osei' },
+  { id: 'mc2-4', productionId: 'prod-2', title: 'Digital Launch Campaign', channel: 'digital_social', startDate: '2025-12-20', endDate: '2026-01-20', status: 'planned', budget: 12000, notes: '4-week pre-opening push' },
+  { id: 'mc2-5', productionId: 'prod-2', title: 'Opening Night Press Campaign', channel: 'pr_press', startDate: '2026-02-14', endDate: '2026-02-25', status: 'planned', budget: 4000, notes: 'Reviews + feature placement' },
+  { id: 'mc2-6', productionId: 'prod-2', title: 'WQXR Radio Spots', channel: 'radio', startDate: '2026-01-15', endDate: '2026-02-21', status: 'planned', budget: 8500, notes: '5-week drive-time schedule' },
+
+  // prod-3: Echoes Tour
+  { id: 'mc3-1', productionId: 'prod-3', title: 'Tour Announcement', channel: 'digital_social', startDate: '2025-06-01', endDate: '2025-06-14', status: 'completed', budget: 12000, notes: 'National tour announcement across all channels' },
+  { id: 'mc3-2', productionId: 'prod-3', title: 'Pre-Sale Email Blast', channel: 'email', startDate: '2025-07-01', endDate: '2025-07-07', status: 'completed', budget: 1500, notes: 'Fan club pre-sale' },
+  { id: 'mc3-3', productionId: 'prod-3', title: 'Market-by-Market Radio', channel: 'radio', startDate: '2025-08-01', endDate: '2026-04-01', status: 'active', budget: 52000, notes: 'Rolling market activations, 2 weeks before each city' },
+  { id: 'mc3-4', productionId: 'prod-3', title: 'National Social Retargeting', channel: 'digital_social', startDate: '2025-08-15', endDate: '2026-04-15', status: 'active', budget: 55000, notes: 'Always-on retargeting of ticket page visitors' },
+  { id: 'mc3-5', productionId: 'prod-3', title: 'TV Spots — Top 10 Markets', channel: 'tv', startDate: '2025-09-01', endDate: '2026-03-01', status: 'active', budget: 61000, notes: 'Rolling 2-week windows per market' },
+  { id: 'mc3-6', productionId: 'prod-3', title: 'Sizzle Reel Release', channel: 'photography_video', startDate: '2025-09-10', endDate: '2025-09-10', status: 'completed', budget: 0, notes: 'YouTube + social distribution' },
+  { id: 'mc3-7', productionId: 'prod-3', title: 'Closing City Push', channel: 'digital_social', startDate: '2026-03-15', endDate: '2026-04-20', status: 'planned', budget: 15000, notes: 'Final cities + closing announcement' },
 ]

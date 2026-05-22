@@ -86,6 +86,43 @@ export interface Deadline {
   assignedTo: string
 }
 
+export type MarketingChannel =
+  | 'digital_social'
+  | 'paid_search'
+  | 'print'
+  | 'radio'
+  | 'ooh'
+  | 'tv'
+  | 'email'
+  | 'pr_press'
+  | 'agency_fees'
+  | 'photography_video'
+  | 'other'
+
+export type CampaignStatus = 'planned' | 'active' | 'completed' | 'paused'
+
+export interface MarketingBudgetLine {
+  id: string
+  productionId: string
+  channel: MarketingChannel
+  lineItem: string
+  budgeted: number
+  actual: number
+  notes: string
+}
+
+export interface MarketingCampaign {
+  id: string
+  productionId: string
+  title: string
+  channel: MarketingChannel
+  startDate: string
+  endDate: string
+  status: CampaignStatus
+  budget: number
+  notes: string
+}
+
 export interface Document {
   id: string
   productionId: string

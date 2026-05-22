@@ -1,7 +1,7 @@
 'use client'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document } from './types'
+import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign } from './types'
 import {
   PRODUCTIONS,
   BUDGET_LINES,
@@ -10,6 +10,8 @@ import {
   CASH_FLOW_ROWS,
   DEADLINES,
   DOCUMENTS,
+  MARKETING_BUDGET_LINES,
+  MARKETING_CAMPAIGNS,
 } from './mockData'
 
 interface StageOpsState {
@@ -20,8 +22,9 @@ interface StageOpsState {
   cashFlowRows: CashFlowRow[]
   deadlines: Deadline[]
   documents: Document[]
+  marketingBudgetLines: MarketingBudgetLine[]
+  marketingCampaigns: MarketingCampaign[]
 
-  // Mutations
   addBudgetLine: (line: BudgetLine) => void
   updateBudgetLine: (line: BudgetLine) => void
   deleteBudgetLine: (id: string) => void
@@ -44,6 +47,14 @@ interface StageOpsState {
 
   addProduction: (production: Production) => void
   updateProduction: (production: Production) => void
+
+  addMarketingBudgetLine: (line: MarketingBudgetLine) => void
+  updateMarketingBudgetLine: (line: MarketingBudgetLine) => void
+  deleteMarketingBudgetLine: (id: string) => void
+
+  addMarketingCampaign: (campaign: MarketingCampaign) => void
+  updateMarketingCampaign: (campaign: MarketingCampaign) => void
+  deleteMarketingCampaign: (id: string) => void
 }
 
 export const useStore = create<StageOpsState>()(
@@ -56,6 +67,8 @@ export const useStore = create<StageOpsState>()(
       cashFlowRows: CASH_FLOW_ROWS,
       deadlines: DEADLINES,
       documents: DOCUMENTS,
+      marketingBudgetLines: MARKETING_BUDGET_LINES,
+      marketingCampaigns: MARKETING_CAMPAIGNS,
 
       addBudgetLine: (line) => set((s) => ({ budgetLines: [...s.budgetLines, line] })),
       updateBudgetLine: (line) => set((s) => ({ budgetLines: s.budgetLines.map((l) => (l.id === line.id ? line : l)) })),
@@ -79,6 +92,14 @@ export const useStore = create<StageOpsState>()(
 
       addProduction: (production) => set((s) => ({ productions: [...s.productions, production] })),
       updateProduction: (production) => set((s) => ({ productions: s.productions.map((p) => (p.id === production.id ? production : p)) })),
+
+      addMarketingBudgetLine: (line) => set((s) => ({ marketingBudgetLines: [...s.marketingBudgetLines, line] })),
+      updateMarketingBudgetLine: (line) => set((s) => ({ marketingBudgetLines: s.marketingBudgetLines.map((l) => (l.id === line.id ? line : l)) })),
+      deleteMarketingBudgetLine: (id) => set((s) => ({ marketingBudgetLines: s.marketingBudgetLines.filter((l) => l.id !== id) })),
+
+      addMarketingCampaign: (campaign) => set((s) => ({ marketingCampaigns: [...s.marketingCampaigns, campaign] })),
+      updateMarketingCampaign: (campaign) => set((s) => ({ marketingCampaigns: s.marketingCampaigns.map((c) => (c.id === campaign.id ? campaign : c)) })),
+      deleteMarketingCampaign: (id) => set((s) => ({ marketingCampaigns: s.marketingCampaigns.filter((c) => c.id !== id) })),
     }),
     { name: 'stageops-store' }
   )
