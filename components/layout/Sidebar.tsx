@@ -3,10 +3,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Film, DollarSign, TrendingUp, FileText,
-  ArrowRightLeft, CalendarDays, FileBarChart, FolderOpen, Settings, ChevronRight, Megaphone
+  ArrowRightLeft, CalendarDays, FileBarChart, FolderOpen, Settings, ChevronRight, Megaphone, Wand2,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useStore } from '@/lib/store'
+import { useDemo } from '@/contexts/DemoContext'
 
 const navItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -20,11 +21,25 @@ const navItems = [
   { label: 'Reports', href: '/reports', icon: FileBarChart },
   { label: 'Documents', href: '/documents', icon: FolderOpen },
   { label: 'Settings', href: '/settings', icon: Settings },
+  { label: 'Demo Creator', href: '/settings/demos', icon: Wand2 },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
   const { productions } = useStore()
+  const { isDemo, config } = useDemo()
+
+  const orgName = isDemo && config?.org ? config.org : 'Adam Blanshay Prods.'
+  const userName = isDemo && config?.user ? config.user : 'Leon Kay'
+  const userTitle = isDemo && config?.title ? config.title : 'General Manager'
+  const accentColor = isDemo && config?.color ? config.color : null
+
+  const initials = userName
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
 
   return (
     <aside className="w-56 shrink-0 bg-stone-950 min-h-screen flex flex-col">
@@ -34,7 +49,19 @@ export function Sidebar() {
           <span className="text-white font-semibold text-base tracking-tight">StageOps</span>
           <span className="text-stone-500 text-xs">GM</span>
         </div>
-        <p className="text-stone-500 text-xs mt-0.5">General Management</p>
+        <p className="text-stone-500 text-xs mt-0.5 truncate">{orgName}</p>
+        {isDemo && (
+          <span
+            className="inline-flex items-center gap-1 mt-1.5 px-1.5 py-0.5 rounded text-xs font-medium"
+            style={{
+              backgroundColor: accentColor ? `${accentColor}22` : '#6366f122',
+              color: accentColor ?? '#6366f1',
+            }}
+          >
+            <span className="w-1 h-1 rounded-full" style={{ backgroundColor: accentColor ?? '#6366f1' }} />
+            Demo
+          </span>
+        )}
       </div>
 
       {/* Nav */}
@@ -48,9 +75,10 @@ export function Sidebar() {
               className={cn(
                 'flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors',
                 active
-                  ? 'bg-stone-800 text-white'
+                  ? 'text-white'
                   : 'text-stone-400 hover:text-white hover:bg-stone-900',
               )}
+              style={active ? { backgroundColor: accentColor ?? '#292524' } : undefined}
             >
               <Icon size={15} />
               {label}
@@ -78,12 +106,19 @@ export function Sidebar() {
       {/* User */}
       <div className="px-5 py-4 border-t border-stone-800">
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-full bg-stone-700 flex items-center justify-center text-xs text-stone-300 font-medium">
-            LK
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium"
+            style={
+              accentColor
+                ? { backgroundColor: `${accentColor}33`, color: accentColor }
+                : { backgroundColor: '#44403c', color: '#d6d3d1' }
+            }
+          >
+            {initials}
           </div>
           <div>
-            <p className="text-xs text-stone-300 font-medium">Leon Kay</p>
-            <p className="text-xs text-stone-500">General Manager</p>
+            <p className="text-xs text-stone-300 font-medium truncate">{userName}</p>
+            <p className="text-xs text-stone-500 truncate">{userTitle}</p>
           </div>
         </div>
       </div>

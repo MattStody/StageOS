@@ -13,6 +13,7 @@ import {
   MARKETING_BUDGET_LINES,
   MARKETING_CAMPAIGNS,
 } from './mockData'
+import type { ScenarioData } from './demoScenarios'
 
 interface StageOpsState {
   productions: Production[]
@@ -55,6 +56,9 @@ interface StageOpsState {
   addMarketingCampaign: (campaign: MarketingCampaign) => void
   updateMarketingCampaign: (campaign: MarketingCampaign) => void
   deleteMarketingCampaign: (id: string) => void
+
+  loadScenario: (data: ScenarioData) => void
+  resetToDefaults: () => void
 }
 
 export const useStore = create<StageOpsState>()(
@@ -100,6 +104,30 @@ export const useStore = create<StageOpsState>()(
       addMarketingCampaign: (campaign) => set((s) => ({ marketingCampaigns: [...s.marketingCampaigns, campaign] })),
       updateMarketingCampaign: (campaign) => set((s) => ({ marketingCampaigns: s.marketingCampaigns.map((c) => (c.id === campaign.id ? campaign : c)) })),
       deleteMarketingCampaign: (id) => set((s) => ({ marketingCampaigns: s.marketingCampaigns.filter((c) => c.id !== id) })),
+
+      loadScenario: (data) => set(() => ({
+        productions: data.productions,
+        budgetLines: data.budgetLines,
+        revenueWeeks: data.revenueWeeks,
+        contracts: data.contracts,
+        cashFlowRows: data.cashFlowRows,
+        deadlines: data.deadlines,
+        documents: data.documents,
+        marketingBudgetLines: data.marketingBudgetLines,
+        marketingCampaigns: data.marketingCampaigns,
+      })),
+
+      resetToDefaults: () => set(() => ({
+        productions: PRODUCTIONS,
+        budgetLines: BUDGET_LINES,
+        revenueWeeks: REVENUE_WEEKS,
+        contracts: CONTRACTS,
+        cashFlowRows: CASH_FLOW_ROWS,
+        deadlines: DEADLINES,
+        documents: DOCUMENTS,
+        marketingBudgetLines: MARKETING_BUDGET_LINES,
+        marketingCampaigns: MARKETING_CAMPAIGNS,
+      })),
     }),
     { name: 'stageops-store' }
   )
