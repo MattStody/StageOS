@@ -33,6 +33,8 @@ export function Sidebar() {
   const userName = isDemo && config?.user ? config.user : 'Leon Kay'
   const userTitle = isDemo && config?.title ? config.title : 'General Manager'
   const accentColor = isDemo && config?.color ? config.color : null
+  const navColor = isDemo && config?.navColor ? config.navColor : null
+  const logoUrl = isDemo && config?.logoUrl ? config.logoUrl : null
 
   const initials = userName
     .split(' ')
@@ -42,13 +44,25 @@ export function Sidebar() {
     .toUpperCase()
 
   return (
-    <aside className="w-56 shrink-0 bg-stone-950 min-h-screen flex flex-col">
+    <aside
+      className="w-56 shrink-0 bg-stone-950 min-h-screen flex flex-col"
+      style={navColor ? { backgroundColor: navColor } : undefined}
+    >
       {/* Logo */}
-      <div className="px-5 py-6 border-b border-stone-800">
-        <div className="flex items-baseline gap-1">
-          <span className="text-white font-semibold text-base tracking-tight">StageOps</span>
-          <span className="text-stone-500 text-xs">GM</span>
-        </div>
+      <div className="px-5 py-6 border-b border-white/10">
+        {logoUrl ? (
+          <img
+            src={logoUrl}
+            alt={orgName}
+            className="h-8 max-w-[140px] object-contain object-left"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
+        ) : (
+          <div className="flex items-baseline gap-1">
+            <span className="text-white font-semibold text-base tracking-tight">StageOps</span>
+            <span className="text-stone-500 text-xs">GM</span>
+          </div>
+        )}
         <p className="text-stone-500 text-xs mt-0.5 truncate">{orgName}</p>
         {isDemo && (
           <span
@@ -88,7 +102,7 @@ export function Sidebar() {
       </nav>
 
       {/* Productions quick list */}
-      <div className="px-3 pb-4 border-t border-stone-800 pt-4">
+      <div className="px-3 pb-4 border-t border-white/10 pt-4">
         <p className="px-3 text-xs text-stone-600 uppercase tracking-wider mb-2">Productions</p>
         {productions.map((p) => (
           <Link
@@ -104,7 +118,7 @@ export function Sidebar() {
       </div>
 
       {/* User */}
-      <div className="px-5 py-4 border-t border-stone-800">
+      <div className="px-5 py-4 border-t border-white/10">
         <div className="flex items-center gap-3">
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium"

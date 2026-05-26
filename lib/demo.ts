@@ -14,6 +14,8 @@ export interface DemoConfig {
   title: string
   color: string
   scenario: DemoScenario
+  logoUrl?: string
+  navColor?: string
   overrides?: DemoProductionOverride[]
 }
 
@@ -30,6 +32,16 @@ export const SCENARIO_DESCRIPTIONS: Record<DemoScenario, string> = {
   tour: 'National touring concert production mid-run across 28 cities',
   mixed: 'Full portfolio: Broadway show, nonprofit opera, and national tour',
 }
+
+export const NAV_COLORS = [
+  { label: 'Obsidian', value: '#0c0a09' },
+  { label: 'Navy', value: '#0f172a' },
+  { label: 'Charcoal', value: '#1c1917' },
+  { label: 'Forest', value: '#052e16' },
+  { label: 'Burgundy', value: '#3b0764' },
+  { label: 'Midnight', value: '#172554' },
+  { label: 'Espresso', value: '#1c0a00' },
+]
 
 export const ACCENT_COLORS = [
   { label: 'Indigo', value: '#6366f1' },

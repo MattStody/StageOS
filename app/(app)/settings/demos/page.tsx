@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import {
   type DemoConfig, type DemoScenario,
-  SCENARIO_LABELS, SCENARIO_DESCRIPTIONS, ACCENT_COLORS,
+  SCENARIO_LABELS, SCENARIO_DESCRIPTIONS, ACCENT_COLORS, NAV_COLORS,
   encodeDemo, DEMO_SESSION_KEY,
 } from '@/lib/demo'
 import { getScenarioData } from '@/lib/demoScenarios'
@@ -36,6 +36,8 @@ export default function DemoCreatorPage() {
   const [title, setTitle] = useState('General Manager')
   const [scenario, setScenario] = useState<DemoScenario>('mixed')
   const [color, setColor] = useState(ACCENT_COLORS[0].value)
+  const [navColor, setNavColor] = useState(NAV_COLORS[0].value)
+  const [logoUrl, setLogoUrl] = useState('')
   const [overrides, setOverrides] = useState<Record<string, { name: string; venue: string; subtitle: string }>>({})
   const [generatedUrl, setGeneratedUrl] = useState('')
   const [copied, setCopied] = useState(false)
@@ -72,9 +74,11 @@ export default function DemoCreatorPage() {
       title,
       color,
       scenario,
+      ...(navColor && navColor !== NAV_COLORS[0].value && { navColor }),
+      ...(logoUrl.trim() && { logoUrl: logoUrl.trim() }),
       ...(prodOverrides && prodOverrides.length > 0 && { overrides: prodOverrides }),
     }
-  }, [org, user, title, color, scenario, overrides, scenarioProductions])
+  }, [org, user, title, color, navColor, logoUrl, scenario, overrides, scenarioProductions])
 
   function generate() {
     const config = buildConfig()
@@ -231,6 +235,85 @@ export default function DemoCreatorPage() {
                   />
                 </div>
               </div>
+            </CardBody>
+          </Card>
+
+          {/* Nav Color */}
+          <Card>
+            <CardHeader><CardTitle>Navigation Color</CardTitle></CardHeader>
+            <CardBody>
+              <div className="flex gap-3 flex-wrap items-center">
+                {NAV_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    onClick={() => setNavColor(c.value)}
+                    title={c.label}
+                    className="w-9 h-9 rounded transition-transform hover:scale-110 relative border-2"
+                    style={{
+                      backgroundColor: c.value,
+                      borderColor: navColor === c.value ? '#e7e5e4' : 'transparent',
+                    }}
+                  >
+                    {navColor === c.value && (
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="w-2 h-2 rounded-full bg-white opacity-80" />
+                      </span>
+                    )}
+                  </button>
+                ))}
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-stone-500">Custom:</label>
+                  <input
+                    type="color"
+                    value={navColor}
+                    onChange={(e) => setNavColor(e.target.value)}
+                    className="w-9 h-9 rounded cursor-pointer border border-stone-200"
+                  />
+                </div>
+                <div
+                  className="ml-auto flex items-center gap-2 px-3 py-2 rounded text-xs font-medium text-white"
+                  style={{ backgroundColor: navColor }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
+                  Preview
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* Logo */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Custom Logo</CardTitle>
+              <span className="text-xs text-stone-400">Optional — replaces &quot;StageOps&quot; text in the sidebar</span>
+            </CardHeader>
+            <CardBody className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1.5">
+                  Logo URL
+                </label>
+                <input
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  placeholder="https://example.com/logo.png"
+                  className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+                />
+                <p className="text-xs text-stone-400 mt-1.5">Use a publicly accessible PNG, SVG, or WebP. Works best on dark backgrounds (white or light-coloured logo).</p>
+              </div>
+              {logoUrl.trim() && (
+                <div
+                  className="flex items-center gap-3 p-3 rounded"
+                  style={{ backgroundColor: navColor }}
+                >
+                  <img
+                    src={logoUrl}
+                    alt="Logo preview"
+                    className="h-8 max-w-[140px] object-contain object-left"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                  />
+                  <span className="text-xs text-white/50">Sidebar preview</span>
+                </div>
+              )}
             </CardBody>
           </Card>
 
