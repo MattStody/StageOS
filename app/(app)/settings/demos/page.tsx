@@ -496,10 +496,24 @@ export default function DemoCreatorPage() {
             </CardBody>
           </Card>
 
-          <div className="flex gap-3">
-            <Button onClick={generate}>Generate Demo Link</Button>
+          <div className="space-y-3">
+            <div className="flex gap-3">
+              <Button onClick={generate}>Generate Demo Link</Button>
+              {generatedUrl && (
+                <Button onClick={saveDemo}>Save Demo</Button>
+              )}
+            </div>
             {generatedUrl && (
-              <Button onClick={saveDemo}>Save Demo</Button>
+              <div className="p-3 bg-stone-100 rounded border border-stone-200 flex items-center gap-3">
+                <p className="text-xs font-mono text-stone-600 flex-1 break-all leading-relaxed">{generatedUrl}</p>
+                <button
+                  onClick={() => copyUrl(generatedUrl)}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-stone-900 text-white text-xs rounded hover:bg-stone-800 transition-colors"
+                >
+                  {copied ? <Check size={12} /> : <Copy size={12} />}
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
             )}
           </div>
         </div>
