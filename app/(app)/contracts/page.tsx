@@ -8,6 +8,7 @@ import { Modal } from '@/components/ui/Modal'
 import { RiskAlert } from '@/components/ui/RiskAlert'
 import { fmt, formatDate, daysUntil, statusLabel } from '@/lib/utils'
 import { Plus, Trash2, Pencil, FileText, AlertTriangle, File } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 import type { Contract, ContractType, ContractStatus } from '@/lib/types'
 
 const CONTRACT_TYPES: ContractType[] = ['cast', 'creative', 'vendor', 'venue', 'rights', 'investor', 'employment']
@@ -32,6 +33,7 @@ const typeLabel: Record<ContractType, string> = {
 
 export default function ContractsPage() {
   const { productions, contracts, addContract, updateContract, deleteContract } = useStore()
+  const { isAdmin } = useAuth()
 
   const [selectedProd, setSelectedProd] = useState('all')
   const [filterStatus, setFilterStatus] = useState<ContractStatus | 'all'>('all')
@@ -82,7 +84,7 @@ export default function ContractsPage() {
       <PageHeader
         title="Contract Tracker"
         subtitle="Manage all production agreements"
-        actions={<Button onClick={openAdd} size="sm"><Plus size={13} /> Add Contract</Button>}
+        actions={isAdmin ? <Button onClick={openAdd} size="sm"><Plus size={13} /> Add Contract</Button> : undefined}
       />
 
       {/* Risk alerts */}
@@ -179,8 +181,8 @@ export default function ContractsPage() {
                         <td className="px-4 py-3 text-xs text-stone-400 max-w-xs truncate">{c.notes}</td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                            <button onClick={() => openEdit(c)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>
-                            <button onClick={() => deleteContract(c.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>
+                            {isAdmin && <button onClick={() => openEdit(c)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
+                            {isAdmin && <button onClick={() => deleteContract(c.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
                           </div>
                         </td>
                       </tr>

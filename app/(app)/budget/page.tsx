@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { fmt, fmtPct, variance, variancePct } from '@/lib/utils'
 import { Plus, Trash2, Pencil, ChevronDown, ChevronRight } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 import type { BudgetLine } from '@/lib/types'
 
 const CATEGORIES = [
@@ -28,6 +29,7 @@ const blankLine = (productionId: string): Omit<BudgetLine, 'id'> => ({
 
 export default function BudgetPage() {
   const { productions, budgetLines, addBudgetLine, updateBudgetLine, deleteBudgetLine } = useStore()
+  const { isAdmin } = useAuth()
 
   const [selectedProd, setSelectedProd] = useState(productions[0]?.id || '')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
@@ -80,10 +82,11 @@ export default function BudgetPage() {
       <PageHeader
         title="Production Budget"
         subtitle="Track budgeted, committed, and actual costs"
-        actions={
+        actions={isAdmin ? (
           <Button onClick={openAdd} size="sm">
             <Plus size={13} /> Add Line
           </Button>
+        ) : undefined
         }
       />
 
@@ -176,8 +179,8 @@ export default function BudgetPage() {
                       <td className="px-4 py-2.5 text-xs text-stone-400">{line.notes}</td>
                       <td className="px-4 py-2.5">
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                          <button onClick={() => openEdit(line)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>
-                          <button onClick={() => deleteBudgetLine(line.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>
+                          {isAdmin && <button onClick={() => openEdit(line)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
+                          {isAdmin && <button onClick={() => deleteBudgetLine(line.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
                         </div>
                       </td>
                     </tr>

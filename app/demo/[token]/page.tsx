@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { decodeDemo, DEMO_SESSION_KEY } from '@/lib/demo'
 import { getScenarioData, applyProductionOverrides } from '@/lib/demoScenarios'
 import { useStore } from '@/lib/store'
+import { ADMIN_SESSION_KEY } from '@/lib/auth'
 
 export default function DemoEntryPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params)
@@ -32,6 +33,7 @@ export default function DemoEntryPage({ params }: { params: Promise<{ token: str
     loadScenario(withOverrides)
     try {
       sessionStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(config))
+      sessionStorage.removeItem(ADMIN_SESSION_KEY)
     } catch {}
     router.push('/dashboard')
   }

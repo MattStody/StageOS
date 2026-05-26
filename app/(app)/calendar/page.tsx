@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { formatDate, daysUntil, statusLabel } from '@/lib/utils'
 import { Plus, Trash2, Pencil, AlertTriangle } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 import type { Deadline, DeadlineType, DeadlineStatus } from '@/lib/types'
 
 const DEADLINE_TYPES: DeadlineType[] = [
@@ -43,6 +44,7 @@ const blank = (productionId: string): Omit<Deadline, 'id'> => ({
 
 export default function CalendarPage() {
   const { productions, deadlines, addDeadline, updateDeadline, deleteDeadline } = useStore()
+  const { isAdmin } = useAuth()
 
   const [selectedProd, setSelectedProd] = useState('all')
   const [filterType, setFilterType] = useState<DeadlineType | 'all'>('all')
@@ -123,8 +125,8 @@ export default function CalendarPage() {
           </div>
           <Badge variant={d.status}>{statusLabel(d.status)}</Badge>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button onClick={() => openEdit(d)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>
-            <button onClick={() => deleteDeadline(d.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>
+            {isAdmin && <button onClick={() => openEdit(d)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
+            {isAdmin && <button onClick={() => deleteDeadline(d.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
           </div>
         </div>
       </div>
@@ -136,7 +138,7 @@ export default function CalendarPage() {
       <PageHeader
         title="Production Calendar"
         subtitle="Deadlines, milestones, and key dates"
-        actions={<Button onClick={openAdd} size="sm"><Plus size={13} /> Add Deadline</Button>}
+        actions={isAdmin ? <Button onClick={openAdd} size="sm"><Plus size={13} /> Add Deadline</Button> : undefined}
       />
 
       {/* Filters */}

@@ -9,6 +9,7 @@ import { StatCard } from '@/components/ui/StatCard'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { fmt, fmtPct, formatDate, formatDateShort } from '@/lib/utils'
 import { Plus, Trash2, Pencil, ChevronDown, ChevronRight } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 import type { MarketingBudgetLine, MarketingCampaign, MarketingChannel, CampaignStatus } from '@/lib/types'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
@@ -61,6 +62,7 @@ export default function MarketingPage() {
     marketingBudgetLines, addMarketingBudgetLine, updateMarketingBudgetLine, deleteMarketingBudgetLine,
     marketingCampaigns, addMarketingCampaign, updateMarketingCampaign, deleteMarketingCampaign,
   } = useStore()
+  const { isAdmin } = useAuth()
 
   const [selectedProd, setSelectedProd] = useState(productions[0]?.id || '')
   const [tab, setTab] = useState<'budget' | 'campaigns'>('budget')
@@ -155,11 +157,11 @@ export default function MarketingPage() {
       <PageHeader
         title="Marketing"
         subtitle="Channel budget and campaign tracker"
-        actions={
+        actions={isAdmin ? (
           tab === 'budget'
             ? <Button onClick={openAddLine} size="sm"><Plus size={13} /> Add Line</Button>
             : <Button onClick={openAddCampaign} size="sm"><Plus size={13} /> Add Campaign</Button>
-        }
+        ) : undefined}
       />
 
       {/* Production tabs */}
@@ -284,8 +286,8 @@ export default function MarketingPage() {
                             <td className="px-4 py-2.5 text-xs text-stone-400">{line.notes}</td>
                             <td className="px-4 py-2.5">
                               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                                <button onClick={() => openEditLine(line)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>
-                                <button onClick={() => deleteMarketingBudgetLine(line.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>
+                                {isAdmin && <button onClick={() => openEditLine(line)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
+                                {isAdmin && <button onClick={() => deleteMarketingBudgetLine(line.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
                               </div>
                             </td>
                           </tr>
@@ -364,8 +366,8 @@ export default function MarketingPage() {
                           <td className="px-4 py-3 text-xs text-stone-400 max-w-xs truncate">{c.notes}</td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                              <button onClick={() => openEditCampaign(c)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>
-                              <button onClick={() => deleteMarketingCampaign(c.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>
+                              {isAdmin && <button onClick={() => openEditCampaign(c)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
+                              {isAdmin && <button onClick={() => deleteMarketingCampaign(c.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
                             </div>
                           </td>
                         </tr>

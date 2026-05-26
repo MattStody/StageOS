@@ -1,5 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -22,6 +24,13 @@ interface SavedDemo {
 const SAVED_DEMOS_KEY = 'stageops-saved-demos'
 
 export default function DemoCreatorPage() {
+  const router = useRouter()
+  const { isAdmin } = useAuth()
+
+  useEffect(() => {
+    if (!isAdmin) router.replace('/dashboard')
+  }, [isAdmin, router])
+
   const [org, setOrg] = useState('')
   const [user, setUser] = useState('')
   const [title, setTitle] = useState('General Manager')
