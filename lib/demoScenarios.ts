@@ -1,11 +1,11 @@
 import type { DemoScenario, DemoProductionOverride } from './demo'
 import type {
   Production, BudgetLine, RevenueWeek, Contract,
-  CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign,
+  CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent,
 } from './types'
 import {
   PRODUCTIONS, BUDGET_LINES, REVENUE_WEEKS, CONTRACTS,
-  CASH_FLOW_ROWS, DEADLINES, DOCUMENTS, MARKETING_BUDGET_LINES, MARKETING_CAMPAIGNS,
+  CASH_FLOW_ROWS, DEADLINES, DOCUMENTS, MARKETING_BUDGET_LINES, MARKETING_CAMPAIGNS, CUSTOM_EVENTS,
 } from './mockData'
 
 export interface ScenarioData {
@@ -18,6 +18,7 @@ export interface ScenarioData {
   documents: Document[]
   marketingBudgetLines: MarketingBudgetLine[]
   marketingCampaigns: MarketingCampaign[]
+  customEvents: CustomEvent[]
 }
 
 const SCENARIO_PROD_IDS: Record<DemoScenario, string[]> = {
@@ -39,6 +40,7 @@ export function getScenarioData(scenario: DemoScenario): ScenarioData {
     documents: DOCUMENTS.filter((d) => ids.includes(d.productionId)),
     marketingBudgetLines: MARKETING_BUDGET_LINES.filter((m) => ids.includes(m.productionId)),
     marketingCampaigns: MARKETING_CAMPAIGNS.filter((m) => ids.includes(m.productionId)),
+    customEvents: CUSTOM_EVENTS.filter((e) => ids.includes(e.productionId)),
   }
 }
 

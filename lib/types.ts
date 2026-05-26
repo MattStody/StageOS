@@ -123,6 +123,16 @@ export interface MarketingCampaign {
   notes: string
 }
 
+export interface CustomEvent {
+  id: string
+  productionId: string
+  title: string
+  date: string
+  color: string
+  category: string
+  notes: string
+}
+
 export interface Document {
   id: string
   productionId: string

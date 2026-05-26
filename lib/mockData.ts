@@ -1,4 +1,4 @@
-import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign } from './types'
+import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent } from './types'
 
 export const PRODUCTIONS: Production[] = [
   {
@@ -341,4 +341,17 @@ export const MARKETING_CAMPAIGNS: MarketingCampaign[] = [
   { id: 'mc3-5', productionId: 'prod-3', title: 'TV Spots — Top 10 Markets', channel: 'tv', startDate: '2025-09-01', endDate: '2026-03-01', status: 'active', budget: 61000, notes: 'Rolling 2-week windows per market' },
   { id: 'mc3-6', productionId: 'prod-3', title: 'Sizzle Reel Release', channel: 'photography_video', startDate: '2025-09-10', endDate: '2025-09-10', status: 'completed', budget: 0, notes: 'YouTube + social distribution' },
   { id: 'mc3-7', productionId: 'prod-3', title: 'Closing City Push', channel: 'digital_social', startDate: '2026-03-15', endDate: '2026-04-20', status: 'planned', budget: 15000, notes: 'Final cities + closing announcement' },
+]
+
+// ─── CUSTOM EVENTS ────────────────────────────────────────────────────────────
+
+export const CUSTOM_EVENTS: CustomEvent[] = [
+  { id: 'ce1-1', productionId: 'prod-1', title: 'Investor Cocktail Reception', date: '2025-11-20', color: '#6366f1', category: 'Investor Relations', notes: 'St. James green room — 40 guests' },
+  { id: 'ce1-2', productionId: 'prod-1', title: 'Production Photography', date: '2025-11-22', color: '#0891b2', category: 'Marketing', notes: 'Full company call, 10am–2pm' },
+  { id: 'ce1-3', productionId: 'prod-1', title: 'Holiday Gala Benefit Performance', date: '2025-12-18', color: '#e11d48', category: 'Special Event', notes: 'Fundraiser, post-show reception' },
+  { id: 'ce2-1', productionId: 'prod-2', title: 'Donor Cultivation Dinner', date: '2026-01-18', color: '#059669', category: 'Development', notes: 'BAM Fisher Building, board + major donors' },
+  { id: 'ce2-2', productionId: 'prod-2', title: 'Composer Talk-Back', date: '2026-02-22', color: '#7c3aed', category: 'Audience Engagement', notes: 'Post-show, Amara Osei on stage' },
+  { id: 'ce3-1', productionId: 'prod-3', title: 'Meet & Greet — Chicago', date: '2025-10-26', color: '#d97706', category: 'Fan Event', notes: 'VIP package holders only, backstage' },
+  { id: 'ce3-2', productionId: 'prod-3', title: 'Tour Documentary Shoot', date: '2025-11-15', color: '#7c3aed', category: 'Media', notes: 'Follows 3 tour dates — crew of 4' },
+  { id: 'ce3-3', productionId: 'prod-3', title: 'Label Showcase — LA', date: '2026-01-10', color: '#0891b2', category: 'Industry', notes: 'Private performance for industry guests' },
 ]

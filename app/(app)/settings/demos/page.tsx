@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -22,6 +22,40 @@ interface SavedDemo {
 }
 
 const SAVED_DEMOS_KEY = 'stageops-saved-demos'
+
+function HexColorInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [text, setText] = useState(value)
+  const prevValue = useRef(value)
+  useEffect(() => {
+    if (value !== prevValue.current) {
+      prevValue.current = value
+      setText(value)
+    }
+  }, [value])
+  function handleText(raw: string) {
+    setText(raw)
+    const clean = raw.startsWith('#') ? raw : `#${raw}`
+    if (/^#[0-9a-fA-F]{6}$/.test(clean)) onChange(clean)
+  }
+  return (
+    <div className="flex items-center border border-stone-300 rounded overflow-hidden">
+      <input
+        type="color"
+        value={value}
+        onChange={(e) => { prevValue.current = e.target.value; onChange(e.target.value) }}
+        className="w-9 h-9 cursor-pointer border-0 bg-transparent p-0.5 shrink-0"
+      />
+      <input
+        type="text"
+        value={text}
+        onChange={(e) => handleText(e.target.value)}
+        className="w-20 text-xs font-mono bg-transparent border-0 outline-none px-2 py-1"
+        maxLength={7}
+        spellCheck={false}
+      />
+    </div>
+  )
+}
 
 export default function DemoCreatorPage() {
   const router = useRouter()
@@ -225,15 +259,7 @@ export default function DemoCreatorPage() {
                     )}
                   </button>
                 ))}
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-stone-500">Custom:</label>
-                  <input
-                    type="color"
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)}
-                    className="w-9 h-9 rounded cursor-pointer border border-stone-200"
-                  />
-                </div>
+                <HexColorInput value={color} onChange={setColor} />
               </div>
             </CardBody>
           </Card>
@@ -261,15 +287,7 @@ export default function DemoCreatorPage() {
                     )}
                   </button>
                 ))}
-                <div className="flex items-center gap-2">
-                  <label className="text-xs text-stone-500">Custom:</label>
-                  <input
-                    type="color"
-                    value={navColor}
-                    onChange={(e) => setNavColor(e.target.value)}
-                    className="w-9 h-9 rounded cursor-pointer border border-stone-200"
-                  />
-                </div>
+                <HexColorInput value={navColor} onChange={setNavColor} />
                 <div
                   className="ml-auto flex items-center gap-2 px-3 py-2 rounded text-xs font-medium text-white"
                   style={{ backgroundColor: navColor }}
