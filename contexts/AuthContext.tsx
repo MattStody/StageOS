@@ -4,23 +4,27 @@ import { ADMIN_SESSION_KEY, checkAdminCredentials } from '@/lib/auth'
 
 interface AuthContextValue {
   isAdmin: boolean
+  isAuthLoading: boolean
   login: (email: string, password: string) => boolean
   logout: () => void
 }
 
 const AuthContext = createContext<AuthContextValue>({
   isAdmin: false,
+  isAuthLoading: true,
   login: () => false,
   logout: () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isAuthLoading, setIsAuthLoading] = useState(true)
 
   useEffect(() => {
     try {
       setIsAdmin(sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true')
     } catch {}
+    setIsAuthLoading(false)
   }, [])
 
   function login(email: string, password: string): boolean {
@@ -40,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ isAdmin, isAuthLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

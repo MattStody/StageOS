@@ -59,11 +59,11 @@ function HexColorInput({ value, onChange }: { value: string; onChange: (v: strin
 
 export default function DemoCreatorPage() {
   const router = useRouter()
-  const { isAdmin } = useAuth()
+  const { isAdmin, isAuthLoading } = useAuth()
 
   useEffect(() => {
-    if (!isAdmin) router.replace('/dashboard')
-  }, [isAdmin, router])
+    if (!isAuthLoading && !isAdmin) router.replace('/dashboard')
+  }, [isAdmin, isAuthLoading, router])
 
   const [org, setOrg] = useState('')
   const [user, setUser] = useState('')
@@ -163,6 +163,8 @@ export default function DemoCreatorPage() {
       return { ...prev, [prodId]: { ...existing, [field]: value } }
     })
   }
+
+  if (isAuthLoading) return null
 
   return (
     <div>
