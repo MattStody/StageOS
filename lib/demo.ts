@@ -5,6 +5,8 @@ export interface DemoProductionOverride {
   name?: string
   venue?: string
   subtitle?: string
+  openingDate?: string
+  closingDate?: string
 }
 
 export interface DemoConfig {

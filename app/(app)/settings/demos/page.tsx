@@ -72,7 +72,7 @@ export default function DemoCreatorPage() {
   const [color, setColor] = useState(ACCENT_COLORS[0].value)
   const [navColor, setNavColor] = useState(NAV_COLORS[0].value)
   const [logoUrl, setLogoUrl] = useState('')
-  const [overrides, setOverrides] = useState<Record<string, { name: string; venue: string; subtitle: string }>>({})
+  const [overrides, setOverrides] = useState<Record<string, { name: string; venue: string; subtitle: string; openingDate: string; closingDate: string }>>({})
   const [generatedUrl, setGeneratedUrl] = useState('')
   const [copied, setCopied] = useState(false)
   const [savedDemos, setSavedDemos] = useState<SavedDemo[]>([])
@@ -92,11 +92,13 @@ export default function DemoCreatorPage() {
       .map((p) => {
         const ov = overrides[p.id]
         if (!ov) return null
-        const entry: { id: string; name?: string; venue?: string; subtitle?: string } = { id: p.id }
+        const entry: { id: string; name?: string; venue?: string; subtitle?: string; openingDate?: string; closingDate?: string } = { id: p.id }
         if (ov.name && ov.name !== p.name) entry.name = ov.name
         if (ov.venue && ov.venue !== p.venue) entry.venue = ov.venue
         if (ov.subtitle && ov.subtitle !== p.subtitle) entry.subtitle = ov.subtitle
-        if (!entry.name && !entry.venue && !entry.subtitle) return null
+        if (ov.openingDate && ov.openingDate !== p.openingDate) entry.openingDate = ov.openingDate
+        if (ov.closingDate && ov.closingDate !== p.closingDate) entry.closingDate = ov.closingDate
+        if (!entry.name && !entry.venue && !entry.subtitle && !entry.openingDate && !entry.closingDate) return null
         return entry
       })
       .filter(Boolean) as DemoConfig['overrides']
@@ -157,9 +159,9 @@ export default function DemoCreatorPage() {
     } catch {}
   }
 
-  function updateOverride(prodId: string, field: 'name' | 'venue' | 'subtitle', value: string) {
+  function updateOverride(prodId: string, field: 'name' | 'venue' | 'subtitle' | 'openingDate' | 'closingDate', value: string) {
     setOverrides((prev) => {
-      const existing = prev[prodId] ?? { name: '', venue: '', subtitle: '' }
+      const existing = prev[prodId] ?? { name: '', venue: '', subtitle: '', openingDate: '', closingDate: '' }
       return { ...prev, [prodId]: { ...existing, [field]: value } }
     })
   }
@@ -351,17 +353,11 @@ export default function DemoCreatorPage() {
                     <p className="text-xs font-medium text-stone-600 uppercase tracking-wider">{p.name}</p>
                   </div>
                   <div className="grid grid-cols-1 gap-2 pl-4">
-                    <input
-                      value={overrides[p.id]?.name ?? ''}
-                      onChange={(e) => updateOverride(p.id, 'name', e.target.value)}
-                      placeholder={`Production title (default: "${p.name}")`}
-                      className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500"
-                    />
                     <div className="grid grid-cols-2 gap-2">
                       <input
-                        value={overrides[p.id]?.venue ?? ''}
-                        onChange={(e) => updateOverride(p.id, 'venue', e.target.value)}
-                        placeholder={`Venue (default: "${p.venue}")`}
+                        value={overrides[p.id]?.name ?? ''}
+                        onChange={(e) => updateOverride(p.id, 'name', e.target.value)}
+                        placeholder={`Title (default: "${p.name}")`}
                         className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500"
                       />
                       <input
@@ -370,6 +366,32 @@ export default function DemoCreatorPage() {
                         placeholder={`Subtitle (default: "${p.subtitle}")`}
                         className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500"
                       />
+                    </div>
+                    <input
+                      value={overrides[p.id]?.venue ?? ''}
+                      onChange={(e) => updateOverride(p.id, 'venue', e.target.value)}
+                      placeholder={`Venue (default: "${p.venue}")`}
+                      className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs text-stone-400 mb-1">Opening date (default: {p.openingDate})</label>
+                        <input
+                          type="date"
+                          value={overrides[p.id]?.openingDate ?? ''}
+                          onChange={(e) => updateOverride(p.id, 'openingDate', e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-stone-400 mb-1">Closing date (default: {p.closingDate})</label>
+                        <input
+                          type="date"
+                          value={overrides[p.id]?.closingDate ?? ''}
+                          onChange={(e) => updateOverride(p.id, 'closingDate', e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>

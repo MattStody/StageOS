@@ -59,6 +59,8 @@ export function applyProductionOverrides(
         ...(ov.name !== undefined && { name: ov.name }),
         ...(ov.venue !== undefined && { venue: ov.venue }),
         ...(ov.subtitle !== undefined && { subtitle: ov.subtitle }),
+        ...(ov.openingDate !== undefined && { openingDate: ov.openingDate }),
+        ...(ov.closingDate !== undefined && { closingDate: ov.closingDate }),
       }
     }),
   }
