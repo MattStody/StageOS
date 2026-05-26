@@ -2,7 +2,7 @@
 import { use, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { decodeDemo, DEMO_SESSION_KEY } from '@/lib/demo'
-import { getScenarioData, applyProductionOverrides } from '@/lib/demoScenarios'
+import { getScenarioData, applyProductionOverrides, applyExtraProductions } from '@/lib/demoScenarios'
 import { useStore } from '@/lib/store'
 import { ADMIN_SESSION_KEY } from '@/lib/auth'
 
@@ -30,7 +30,8 @@ export default function DemoEntryPage({ params }: { params: Promise<{ token: str
     e.preventDefault()
     const data = getScenarioData(config!.scenario)
     const withOverrides = applyProductionOverrides(data, config!.overrides)
-    loadScenario(withOverrides)
+    const withExtras = applyExtraProductions(withOverrides, config!.extraProductions)
+    loadScenario(withExtras)
     try {
       sessionStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(config))
       sessionStorage.removeItem(ADMIN_SESSION_KEY)
@@ -75,7 +76,7 @@ export default function DemoEntryPage({ params }: { params: Promise<{ token: str
 
           <div className="mt-12 space-y-4">
             {[
-              { label: 'Productions loaded', value: getScenarioData(config.scenario).productions.length.toString() },
+              { label: 'Productions loaded', value: (getScenarioData(config.scenario).productions.length + (config.extraProductions?.length ?? 0)).toString() },
               { label: 'Data scenario', value: scenarioShortLabel(config.scenario) },
               { label: 'Interactive', value: 'Fully editable' },
             ].map(({ label, value }) => (

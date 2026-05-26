@@ -1,3 +1,5 @@
+import type { ProductionStatus } from './types'
+
 export type DemoScenario = 'broadway' | 'nonprofit' | 'tour' | 'mixed'
 
 export interface DemoProductionOverride {
@@ -7,6 +9,16 @@ export interface DemoProductionOverride {
   subtitle?: string
   openingDate?: string
   closingDate?: string
+}
+
+export interface DemoExtraProduction {
+  name: string
+  subtitle: string
+  venue: string
+  status: ProductionStatus
+  openingDate: string
+  closingDate: string
+  color: string
 }
 
 export interface DemoConfig {
@@ -19,6 +31,7 @@ export interface DemoConfig {
   logoUrl?: string
   navColor?: string
   overrides?: DemoProductionOverride[]
+  extraProductions?: DemoExtraProduction[]
 }
 
 export const SCENARIO_LABELS: Record<DemoScenario, string> = {

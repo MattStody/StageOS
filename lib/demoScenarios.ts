@@ -1,4 +1,4 @@
-import type { DemoScenario, DemoProductionOverride } from './demo'
+import type { DemoScenario, DemoProductionOverride, DemoExtraProduction } from './demo'
 import type {
   Production, BudgetLine, RevenueWeek, Contract,
   CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent,
@@ -42,6 +42,29 @@ export function getScenarioData(scenario: DemoScenario): ScenarioData {
     marketingCampaigns: MARKETING_CAMPAIGNS.filter((m) => ids.includes(m.productionId)),
     customEvents: CUSTOM_EVENTS.filter((e) => ids.includes(e.productionId)),
   }
+}
+
+export function applyExtraProductions(
+  data: ScenarioData,
+  extras?: DemoExtraProduction[],
+): ScenarioData {
+  if (!extras || extras.length === 0) return data
+  const newProductions: Production[] = extras.map((e, i) => ({
+    id: `demo-extra-${i}`,
+    name: e.name || 'Untitled Production',
+    subtitle: e.subtitle || '',
+    status: e.status,
+    venue: e.venue || '',
+    openingDate: e.openingDate || '',
+    closingDate: e.closingDate || '',
+    totalBudget: 0,
+    totalActual: 0,
+    cashOnHand: 0,
+    projectedGross: 0,
+    currentGross: 0,
+    color: e.color || '#6366f1',
+  }))
+  return { ...data, productions: [...data.productions, ...newProductions] }
 }
 
 export function applyProductionOverrides(

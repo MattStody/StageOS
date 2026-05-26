@@ -6,12 +6,12 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import {
-  type DemoConfig, type DemoScenario,
+  type DemoConfig, type DemoScenario, type DemoExtraProduction,
   SCENARIO_LABELS, SCENARIO_DESCRIPTIONS, ACCENT_COLORS, NAV_COLORS,
   encodeDemo, DEMO_SESSION_KEY,
 } from '@/lib/demo'
 import { getScenarioData } from '@/lib/demoScenarios'
-import { Copy, Check, Trash2, ExternalLink } from 'lucide-react'
+import { Copy, Check, Trash2, ExternalLink, Plus } from 'lucide-react'
 
 interface SavedDemo {
   id: string
@@ -73,6 +73,7 @@ export default function DemoCreatorPage() {
   const [navColor, setNavColor] = useState(NAV_COLORS[0].value)
   const [logoUrl, setLogoUrl] = useState('')
   const [overrides, setOverrides] = useState<Record<string, { name: string; venue: string; subtitle: string; openingDate: string; closingDate: string }>>({})
+  const [extraProductions, setExtraProductions] = useState<DemoExtraProduction[]>([])
   const [generatedUrl, setGeneratedUrl] = useState('')
   const [copied, setCopied] = useState(false)
   const [savedDemos, setSavedDemos] = useState<SavedDemo[]>([])
@@ -113,8 +114,9 @@ export default function DemoCreatorPage() {
       ...(navColor && navColor !== NAV_COLORS[0].value && { navColor }),
       ...(logoUrl.trim() && { logoUrl: logoUrl.trim() }),
       ...(prodOverrides && prodOverrides.length > 0 && { overrides: prodOverrides }),
+      ...(extraProductions.length > 0 && { extraProductions }),
     }
-  }, [org, user, title, color, navColor, logoUrl, scenario, overrides, scenarioProductions])
+  }, [org, user, title, color, navColor, logoUrl, scenario, overrides, scenarioProductions, extraProductions])
 
   function generate() {
     const config = buildConfig()
@@ -396,6 +398,101 @@ export default function DemoCreatorPage() {
                   </div>
                 </div>
               ))}
+            </CardBody>
+          </Card>
+
+          {/* Additional productions */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Additional Productions</CardTitle>
+              <span className="text-xs text-stone-400">Add productions beyond the scenario&apos;s defaults</span>
+            </CardHeader>
+            <CardBody className="space-y-4">
+              {extraProductions.map((ep, i) => (
+                <div key={i} className="border border-stone-200 rounded p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <HexColorInput
+                        value={ep.color}
+                        onChange={(v) => setExtraProductions((prev) => prev.map((x, j) => j === i ? { ...x, color: v } : x))}
+                      />
+                      <span className="text-xs text-stone-500 font-medium">Production {i + 1}</span>
+                    </div>
+                    <button
+                      onClick={() => setExtraProductions((prev) => prev.filter((_, j) => j !== i))}
+                      className="p-1 text-stone-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      value={ep.name}
+                      onChange={(e) => setExtraProductions((prev) => prev.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
+                      placeholder="Production title *"
+                      className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500"
+                    />
+                    <input
+                      value={ep.subtitle}
+                      onChange={(e) => setExtraProductions((prev) => prev.map((x, j) => j === i ? { ...x, subtitle: e.target.value } : x))}
+                      placeholder="Subtitle"
+                      className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500"
+                    />
+                  </div>
+                  <input
+                    value={ep.venue}
+                    onChange={(e) => setExtraProductions((prev) => prev.map((x, j) => j === i ? { ...x, venue: e.target.value } : x))}
+                    placeholder="Venue"
+                    className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500"
+                  />
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-xs text-stone-400 mb-1">Opening date</label>
+                      <input
+                        type="date"
+                        value={ep.openingDate}
+                        onChange={(e) => setExtraProductions((prev) => prev.map((x, j) => j === i ? { ...x, openingDate: e.target.value } : x))}
+                        className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-stone-400 mb-1">Closing date</label>
+                      <input
+                        type="date"
+                        value={ep.closingDate}
+                        onChange={(e) => setExtraProductions((prev) => prev.map((x, j) => j === i ? { ...x, closingDate: e.target.value } : x))}
+                        className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-stone-400 mb-1">Status</label>
+                      <select
+                        value={ep.status}
+                        onChange={(e) => setExtraProductions((prev) => prev.map((x, j) => j === i ? { ...x, status: e.target.value as DemoExtraProduction['status'] } : x))}
+                        className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500 bg-white"
+                      >
+                        <option value="pre_production">Pre-Production</option>
+                        <option value="in_rehearsal">In Rehearsal</option>
+                        <option value="in_performance">In Performance</option>
+                        <option value="closing">Closing</option>
+                        <option value="closed">Closed</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <button
+                onClick={() => setExtraProductions((prev) => [...prev, {
+                  name: '', subtitle: '', venue: '',
+                  status: 'pre_production',
+                  openingDate: '', closingDate: '',
+                  color: ACCENT_COLORS[extraProductions.length % ACCENT_COLORS.length].value,
+                }])}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-stone-500 border border-dashed border-stone-300 rounded hover:border-stone-400 hover:text-stone-700 transition-colors w-full justify-center"
+              >
+                <Plus size={14} />
+                Add Production
+              </button>
             </CardBody>
           </Card>
 
