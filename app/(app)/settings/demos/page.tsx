@@ -11,7 +11,7 @@ import {
   encodeDemo, DEMO_SESSION_KEY,
 } from '@/lib/demo'
 import { getScenarioData } from '@/lib/demoScenarios'
-import { Copy, Check, Trash2, ExternalLink, Plus } from 'lucide-react'
+import { Copy, Check, Trash2, ExternalLink, Plus, Pencil } from 'lucide-react'
 
 interface SavedDemo {
   id: string
@@ -78,6 +78,7 @@ export default function DemoCreatorPage() {
   const [copied, setCopied] = useState(false)
   const [savedDemos, setSavedDemos] = useState<SavedDemo[]>([])
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   useEffect(() => {
     try {
@@ -136,21 +137,65 @@ export default function DemoCreatorPage() {
     }
   }
 
+  function loadDemoForEditing(demo: SavedDemo) {
+    const c = demo.config
+    setOrg(c.org === 'Demo Organization' ? '' : c.org)
+    setUser(c.user === 'Demo User' ? '' : c.user)
+    setTitle(c.title)
+    setScenario(c.scenario)
+    setColor(c.color)
+    setNavColor(c.navColor ?? NAV_COLORS[0].value)
+    setLogoUrl(c.logoUrl ?? '')
+    const ovRecord: Record<string, { name: string; venue: string; subtitle: string; openingDate: string; closingDate: string }> = {}
+    for (const ov of c.overrides ?? []) {
+      ovRecord[ov.id] = {
+        name: ov.name ?? '',
+        venue: ov.venue ?? '',
+        subtitle: ov.subtitle ?? '',
+        openingDate: ov.openingDate ?? '',
+        closingDate: ov.closingDate ?? '',
+      }
+    }
+    setOverrides(ovRecord)
+    setExtraProductions(c.extraProductions ?? [])
+    setGeneratedUrl(demo.url)
+    setEditingId(demo.id)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   function saveDemo() {
     if (!generatedUrl) return
     const config = buildConfig()
-    const demo: SavedDemo = {
-      id: Date.now().toString(),
-      label: org || 'Demo',
-      config,
-      createdAt: new Date().toISOString(),
-      url: generatedUrl,
+    const token = encodeDemo(config)
+    const url = `${window.location.origin}/demo/${token}`
+    let updated: SavedDemo[]
+    if (editingId) {
+      updated = savedDemos.map((d) =>
+        d.id === editingId ? { ...d, label: org || 'Demo', config, url } : d
+      )
+      setEditingId(null)
+    } else {
+      updated = [{ id: Date.now().toString(), label: org || 'Demo', config, createdAt: new Date().toISOString(), url }, ...savedDemos]
     }
-    const updated = [demo, ...savedDemos]
     setSavedDemos(updated)
+    setGeneratedUrl(url)
     try {
       localStorage.setItem(SAVED_DEMOS_KEY, JSON.stringify(updated))
     } catch {}
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setOrg('')
+    setUser('')
+    setTitle('General Manager')
+    setScenario('mixed')
+    setColor(ACCENT_COLORS[0].value)
+    setNavColor(NAV_COLORS[0].value)
+    setLogoUrl('')
+    setOverrides({})
+    setExtraProductions([])
+    setGeneratedUrl('')
   }
 
   function deleteDemo(id: string) {
@@ -173,8 +218,8 @@ export default function DemoCreatorPage() {
   return (
     <div>
       <PageHeader
-        title="Demo Creator"
-        subtitle="Generate custom, shareable demo links for prospects"
+        title={editingId ? 'Editing Demo' : 'Demo Creator'}
+        subtitle={editingId ? `Editing "${org || 'Demo'}" — changes will update the saved link` : 'Generate custom, shareable demo links for prospects'}
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -497,10 +542,13 @@ export default function DemoCreatorPage() {
           </Card>
 
           <div className="space-y-3">
-            <div className="flex gap-3">
-              <Button onClick={generate}>Generate Demo Link</Button>
+            <div className="flex gap-3 flex-wrap">
+              <Button onClick={generate}>{editingId ? 'Regenerate Link' : 'Generate Demo Link'}</Button>
               {generatedUrl && (
-                <Button onClick={saveDemo}>Save Demo</Button>
+                <Button onClick={saveDemo}>{editingId ? 'Save Changes' : 'Save Demo'}</Button>
+              )}
+              {editingId && (
+                <Button variant="ghost" onClick={cancelEdit}>Cancel Edit</Button>
               )}
             </div>
             {generatedUrl && (
@@ -573,7 +621,10 @@ export default function DemoCreatorPage() {
               <CardBody className="p-0">
                 <div className="divide-y divide-stone-100">
                   {savedDemos.map((demo) => (
-                    <div key={demo.id} className="flex items-center justify-between px-5 py-3 gap-3">
+                    <div
+                      key={demo.id}
+                      className={`flex items-center justify-between px-5 py-3 gap-3 ${editingId === demo.id ? 'bg-stone-50' : ''}`}
+                    >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <span
@@ -581,12 +632,22 @@ export default function DemoCreatorPage() {
                             style={{ backgroundColor: demo.config.color }}
                           />
                           <p className="text-sm font-medium text-stone-800 truncate">{demo.label}</p>
+                          {editingId === demo.id && (
+                            <span className="text-xs text-stone-400 italic">editing</span>
+                          )}
                         </div>
                         <p className="text-xs text-stone-400 mt-0.5">
                           {SCENARIO_LABELS[demo.config.scenario]} · {new Date(demo.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => loadDemoForEditing(demo)}
+                          className="p-1.5 text-stone-400 hover:text-stone-700 transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil size={14} />
+                        </button>
                         <button
                           onClick={() => copyUrl(demo.url, demo.id)}
                           className="p-1.5 text-stone-400 hover:text-stone-700 transition-colors"
