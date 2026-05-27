@@ -10,18 +10,18 @@ import { useStore } from '@/lib/store'
 import { useDemo } from '@/contexts/DemoContext'
 
 const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Productions', href: '/productions', icon: Film },
-  { label: 'Budget', href: '/budget', icon: DollarSign },
-  { label: 'Revenue', href: '/revenue', icon: TrendingUp },
-  { label: 'Contracts', href: '/contracts', icon: FileText },
-  { label: 'Cash Flow', href: '/cashflow', icon: ArrowRightLeft },
-  { label: 'Marketing', href: '/marketing', icon: Megaphone },
-  { label: 'Calendar', href: '/calendar', icon: CalendarDays },
-  { label: 'Reports', href: '/reports', icon: FileBarChart },
-  { label: 'Documents', href: '/documents', icon: FolderOpen },
-  { label: 'Settings', href: '/settings', icon: Settings },
-  { label: 'Demo Creator', href: '/settings/demos', icon: Wand2 },
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: false },
+  { label: 'Productions', href: '/productions', icon: Film, exact: false },
+  { label: 'Budget', href: '/budget', icon: DollarSign, exact: false },
+  { label: 'Revenue', href: '/revenue', icon: TrendingUp, exact: false },
+  { label: 'Contracts', href: '/contracts', icon: FileText, exact: false },
+  { label: 'Cash Flow', href: '/cashflow', icon: ArrowRightLeft, exact: false },
+  { label: 'Marketing', href: '/marketing', icon: Megaphone, exact: false },
+  { label: 'Calendar', href: '/calendar', icon: CalendarDays, exact: false },
+  { label: 'Reports', href: '/reports', icon: FileBarChart, exact: false },
+  { label: 'Documents', href: '/documents', icon: FolderOpen, exact: false },
+  { label: 'Settings', href: '/settings', icon: Settings, exact: true },
+  { label: 'Demo Creator', href: '/settings/demos', icon: Wand2, exact: false },
 ]
 
 export function Sidebar() {
@@ -80,8 +80,8 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {navItems.map(({ label, href, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + '/')
+        {navItems.map(({ label, href, icon: Icon, exact }) => {
+          const active = pathname === href || (!exact && pathname.startsWith(href + '/'))
           return (
             <Link
               key={href}

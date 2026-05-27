@@ -70,7 +70,7 @@ export const ACCENT_COLORS = [
 
 export function encodeDemo(config: DemoConfig): string {
   const json = JSON.stringify(config)
-  const b64 = btoa(json)
+  const b64 = btoa(encodeURIComponent(json))
   return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
 }
 
@@ -78,7 +78,7 @@ export function decodeDemo(token: string): DemoConfig | null {
   try {
     const pad = token.length % 4
     const padded = token.replace(/-/g, '+').replace(/_/g, '/') + (pad ? '='.repeat(4 - pad) : '')
-    const json = atob(padded)
+    const json = decodeURIComponent(atob(padded))
     const parsed = JSON.parse(json)
     if (parsed.v === 1 && parsed.org && parsed.scenario) return parsed as DemoConfig
     return null

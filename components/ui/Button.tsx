@@ -20,13 +20,14 @@ const sizes = {
 export function Button({ variant = 'primary', size = 'md', className, children, ...props }: ButtonProps) {
   return (
     <button
+      type="button"
+      {...props}
       className={cn(
         'inline-flex items-center gap-1.5 rounded font-medium transition-colors cursor-pointer disabled:opacity-50',
         variants[variant],
         sizes[size],
         className,
       )}
-      {...props}
     >
       {children}
     </button>
