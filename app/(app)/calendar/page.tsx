@@ -160,9 +160,9 @@ export default function CalendarPage() {
     const days = daysUntil(d.date)
     const prod = productions.find((p) => p.id === d.productionId)
     return (
-      <div className="flex items-center justify-between px-5 py-3 border-b border-stone-100 hover:bg-stone-50/50 group last:border-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 text-center shrink-0">
+      <div className="flex items-center justify-between px-3 sm:px-5 py-3 border-b border-stone-100 hover:bg-stone-50/50 group last:border-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="w-6 sm:w-8 text-center shrink-0">
             {d.status === 'overdue' ? (
               <AlertTriangle size={14} className="text-red-500 mx-auto" />
             ) : days <= 7 && d.status !== 'completed' ? (
@@ -171,28 +171,27 @@ export default function CalendarPage() {
               <div className="w-1.5 h-1.5 rounded-full mx-auto" style={{ backgroundColor: prod?.color || '#a8a29e' }} />
             )}
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-0.5">
-              <p className={`text-sm font-medium ${d.status === 'completed' ? 'text-stone-400 line-through' : 'text-stone-800'}`}>{d.title}</p>
-              <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${typeColor[d.type]}`}>{typeLabel[d.type]}</span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+              <p className={`text-sm font-medium truncate ${d.status === 'completed' ? 'text-stone-400 line-through' : 'text-stone-800'}`}>{d.title}</p>
+              <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 hidden sm:inline ${typeColor[d.type]}`}>{typeLabel[d.type]}</span>
             </div>
             <div className="flex items-center gap-2 text-xs text-stone-500">
-              {selectedProd === 'all' && <span>{prod?.name}</span>}
+              {selectedProd === 'all' && <span className="truncate">{prod?.name}</span>}
               {selectedProd === 'all' && d.assignedTo && <span>·</span>}
-              {d.assignedTo && <span>{d.assignedTo}</span>}
-              {d.notes && <><span>·</span><span className="truncate max-w-xs">{d.notes}</span></>}
+              {d.assignedTo && <span className="truncate">{d.assignedTo}</span>}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0 ml-4">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-3">
           <div className="text-right">
-            <p className="text-xs text-stone-700 font-medium">{formatDate(d.date)}</p>
+            <p className="text-xs text-stone-700 font-medium whitespace-nowrap">{formatDate(d.date)}</p>
             <p className={`text-xs ${d.status === 'completed' ? 'text-stone-400' : days < 0 ? 'text-red-600' : days <= 7 ? 'text-amber-600' : 'text-stone-500'}`}>
-              {d.status === 'completed' ? 'Done' : days < 0 ? `${Math.abs(days)}d overdue` : days === 0 ? 'Today' : `${days}d`}
+              {d.status === 'completed' ? 'Done' : days < 0 ? `${Math.abs(days)}d over` : days === 0 ? 'Today' : `${days}d`}
             </p>
           </div>
-          <Badge variant={d.status}>{statusLabel(d.status)}</Badge>
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Badge variant={d.status} className="hidden sm:inline-flex">{statusLabel(d.status)}</Badge>
+          <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             {isAdmin && <button onClick={() => openEditDeadline(d)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
             {isAdmin && <button onClick={() => deleteDeadline(d.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
           </div>
@@ -205,17 +204,17 @@ export default function CalendarPage() {
     const prod = productions.find((p) => p.id === e.productionId)
     const days = daysUntil(e.date)
     return (
-      <div className="flex items-center justify-between px-5 py-3 border-b border-stone-100 hover:bg-stone-50/50 group last:border-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 text-center shrink-0">
+      <div className="flex items-center justify-between px-3 sm:px-5 py-3 border-b border-stone-100 hover:bg-stone-50/50 group last:border-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="w-6 sm:w-8 text-center shrink-0">
             <div className="w-2 h-2 rounded-full mx-auto" style={{ backgroundColor: e.color }} />
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-0.5">
-              <p className="text-sm font-medium text-stone-800">{e.title}</p>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+              <p className="text-sm font-medium text-stone-800 truncate">{e.title}</p>
               {e.category && (
                 <span
-                  className="text-xs px-1.5 py-0.5 rounded font-medium text-white"
+                  className="text-xs px-1.5 py-0.5 rounded font-medium text-white shrink-0 hidden sm:inline"
                   style={{ backgroundColor: e.color }}
                 >
                   {e.category}
@@ -223,19 +222,18 @@ export default function CalendarPage() {
               )}
             </div>
             <div className="flex items-center gap-2 text-xs text-stone-500">
-              {selectedProd === 'all' && <span>{prod?.name}</span>}
-              {e.notes && <><span>·</span><span className="truncate max-w-xs">{e.notes}</span></>}
+              {selectedProd === 'all' && <span className="truncate">{prod?.name}</span>}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0 ml-4">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-3">
           <div className="text-right">
-            <p className="text-xs text-stone-700 font-medium">{formatDate(e.date)}</p>
+            <p className="text-xs text-stone-700 font-medium whitespace-nowrap">{formatDate(e.date)}</p>
             <p className={`text-xs ${days < 0 ? 'text-stone-400' : days === 0 ? 'text-emerald-600' : days <= 7 ? 'text-amber-600' : 'text-stone-500'}`}>
               {days < 0 ? `${Math.abs(days)}d ago` : days === 0 ? 'Today' : `in ${days}d`}
             </p>
           </div>
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             {isAdmin && <button onClick={() => openEditEvent(e)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
             {isAdmin && <button onClick={() => deleteCustomEvent(e.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
           </div>
@@ -345,7 +343,7 @@ export default function CalendarPage() {
             <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Title</label>
             <input value={deadlineForm.title} onChange={(e) => setDeadlineForm({ ...deadlineForm, title: e.target.value })} className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Date</label>
               <input type="date" value={deadlineForm.date} onChange={(e) => setDeadlineForm({ ...deadlineForm, date: e.target.value })} className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />

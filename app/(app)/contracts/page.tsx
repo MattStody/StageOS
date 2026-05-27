@@ -138,8 +138,8 @@ export default function ContractsPage() {
         return (
           <div key={type} className="mb-6">
             <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">{typeLabel[type]}</h3>
-            <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="bg-white border border-stone-200 rounded-lg overflow-x-auto">
+              <table className="w-full min-w-[700px] text-sm">
                 <thead>
                   <tr className="border-b border-stone-100 bg-stone-50">
                     <th className="text-left px-5 py-2.5 text-xs font-medium text-stone-500 uppercase tracking-wider">Party</th>
@@ -224,7 +224,7 @@ export default function ContractsPage() {
             <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Party Name</label>
             <input value={form.partyName} onChange={(e) => setForm({ ...form, partyName: e.target.value })} className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Status</label>
               <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as ContractStatus })} className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500">

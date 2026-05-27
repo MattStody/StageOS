@@ -97,7 +97,7 @@ export default function CashFlowPage() {
       />
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         {productions.map((p) => (
           <button key={p.id} onClick={() => setSelectedProd(p.id)}
             className={`px-3 py-1.5 rounded text-sm transition-colors ${selectedProd === p.id ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-400'}`}>
@@ -213,7 +213,7 @@ export default function CashFlowPage() {
             ))}
           </div>
           <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Outflows</p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[['Payroll', 'payroll'], ['Venue', 'venueCosts'], ['Marketing', 'marketing'], ['Royalties', 'royalties'], ['Vendors', 'vendorPayments'], ['Other', 'otherOutflows']].map(([label, field]) => (
               <div key={field}>
                 <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">{label}</label>

@@ -165,7 +165,7 @@ export default function MarketingPage() {
       />
 
       {/* Production tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         {productions.map((p) => (
           <button
             key={p.id}
@@ -231,8 +231,8 @@ export default function MarketingPage() {
           )}
 
           {/* Table */}
-          <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white border border-stone-200 rounded-lg overflow-x-auto">
+            <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr className="border-b border-stone-100 bg-stone-50">
                   <th className="text-left px-4 py-3 text-xs font-medium text-stone-500 uppercase tracking-wider">Line Item</th>
@@ -336,8 +336,8 @@ export default function MarketingPage() {
             return (
               <div key={status} className="mb-6">
                 <h3 className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">{statusMeta.label}</h3>
-                <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
+                <div className="bg-white border border-stone-200 rounded-lg overflow-x-auto">
+                  <table className="w-full min-w-[600px] text-sm">
                     <thead>
                       <tr className="border-b border-stone-100 bg-stone-50">
                         <th className="text-left px-5 py-2.5 text-xs font-medium text-stone-500 uppercase tracking-wider">Campaign</th>

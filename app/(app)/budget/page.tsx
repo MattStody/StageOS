@@ -91,7 +91,7 @@ export default function BudgetPage() {
       />
 
       {/* Production selector */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         {productions.map((p) => (
           <button
             key={p.id}
@@ -104,7 +104,7 @@ export default function BudgetPage() {
       </div>
 
       {/* Totals row */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
           { label: 'Total Budgeted', value: fmt(totalBudgeted) },
           { label: 'Total Committed', value: fmt(totalCommitted) },
@@ -119,8 +119,8 @@ export default function BudgetPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-white border border-stone-200 rounded-lg overflow-x-auto">
+        <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-stone-100 bg-stone-50">
               <th className="text-left px-4 py-3 text-xs font-medium text-stone-500 uppercase tracking-wider">Line Item</th>
@@ -223,7 +223,7 @@ export default function BudgetPage() {
               className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
             />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {(['budgeted', 'committed', 'actual'] as const).map((field) => (
               <div key={field}>
                 <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1 capitalize">{field}</label>

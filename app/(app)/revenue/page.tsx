@@ -95,7 +95,7 @@ export default function RevenuePage() {
       />
 
       {/* Production tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         {productions.map((p) => (
           <button
             key={p.id}
@@ -157,8 +157,8 @@ export default function RevenuePage() {
       )}
 
       {/* Table */}
-      <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-white border border-stone-200 rounded-lg overflow-x-auto">
+        <table className="w-full min-w-[780px] text-sm">
           <thead>
             <tr className="border-b border-stone-100 bg-stone-50">
               {['Week Ending', 'Perfs', 'Tickets Sold', 'Gross Revenue', 'Avg Ticket', 'Capacity', 'Comps', 'Discounts', 'Net Revenue', ''].map((h) => (
