@@ -25,6 +25,7 @@ export default function DemoEntryPage({ params }: { params: Promise<{ token: str
   }
 
   const accent = config.color || '#6366f1'
+  const navBg = config.navColor || '#0c0a09'
 
   function handleEnter(e: React.FormEvent) {
     e.preventDefault()
@@ -48,73 +49,56 @@ export default function DemoEntryPage({ params }: { params: Promise<{ token: str
     .slice(0, 2)
     .toUpperCase()
 
-  const navBg = config.navColor || '#0c0a09'
-
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: navBg }}>
-      {/* Left panel */}
-      <div className="hidden lg:flex lg:flex-col lg:w-1/2 p-16 justify-between" style={{ backgroundColor: navBg }}>
-        <div>
-          {config.logoUrl ? (
-            <img
-              src={config.logoUrl}
-              alt={config.org}
-              className="h-9 max-w-[160px] object-contain object-left"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-            />
-          ) : (
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-white font-semibold text-xl tracking-tight">StageOps</span>
-              <span className="text-stone-500 text-sm">GM</span>
-            </div>
-          )}
-        </div>
-
-        <div>
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-8"
-            style={{ backgroundColor: `${accent}22`, color: accent, border: `1px solid ${accent}44` }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: accent }} />
-            Personalized for {config.org}
-          </div>
-
-          <h2 className="text-stone-200 text-2xl font-light leading-snug mb-3">
-            {config.org}&apos;s<br />StageOps workspace
-          </h2>
-          <p className="text-stone-500 text-sm leading-relaxed max-w-xs">
-            Explore a live demo tailored to your organization —
-            real production data, budgets, contracts, and cash flow.
-          </p>
-
-          <div className="mt-12 space-y-4">
-            {[
-              { label: 'Productions loaded', value: (getScenarioData(config.scenario).productions.length + (config.extraProductions?.length ?? 0)).toString() },
-              { label: 'Data scenario', value: scenarioShortLabel(config.scenario) },
-              { label: 'Interactive', value: 'Fully editable' },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex items-baseline gap-4">
-                <span className="text-2xl font-light text-white">{value}</span>
-                <span className="text-stone-500 text-sm">{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <p className="text-stone-700 text-xs">© 2026 StageOps. Built for theatre.</p>
-      </div>
+    <div className="min-h-screen flex bg-stone-50">
+      {/* Left panel — purely decorative */}
+      <div
+        className="hidden lg:block lg:w-1/2 shrink-0"
+        style={
+          config.bgImageUrl
+            ? { backgroundImage: `url(${config.bgImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+            : { backgroundColor: navBg }
+        }
+      />
 
       {/* Right panel */}
       <div className="flex-1 flex items-center justify-center p-8 bg-stone-50">
         <div className="w-full max-w-sm">
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-4">
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold text-white"
-                style={{ backgroundColor: accent }}
-              >
-                {initials}
+          {/* Logo */}
+          <div className="mb-10">
+            {config.logoUrl ? (
+              <img
+                src={config.logoUrl}
+                alt={config.org}
+                className="h-8 max-w-[160px] object-contain object-left"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+            ) : (
+              <div className="flex items-baseline gap-1">
+                <span className="font-semibold text-base tracking-tight text-stone-900">StageOps</span>
+                <span className="text-stone-400 text-xs ml-0.5">GM</span>
               </div>
+            )}
+          </div>
+
+          {/* User */}
+          <div className="mb-8">
+            <div className="flex items-center gap-3 mb-5">
+              {config.userAvatarUrl ? (
+                <img
+                  src={config.userAvatarUrl}
+                  alt={config.user}
+                  className="w-11 h-11 rounded-full object-cover shrink-0"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                />
+              ) : (
+                <div
+                  className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold text-white shrink-0"
+                  style={{ backgroundColor: accent }}
+                >
+                  {initials}
+                </div>
+              )}
               <div>
                 <p className="text-sm font-medium text-stone-900">{config.user}</p>
                 <p className="text-xs text-stone-500">{config.title} · {config.org}</p>
@@ -139,7 +123,7 @@ export default function DemoEntryPage({ params }: { params: Promise<{ token: str
             </div>
             <button
               type="submit"
-              className="w-full py-2.5 rounded text-sm font-medium text-white transition-opacity hover:opacity-90 mt-2"
+              className="w-full py-2.5 rounded text-sm font-medium text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: accent }}
             >
               Enter Demo Workspace
@@ -154,14 +138,4 @@ export default function DemoEntryPage({ params }: { params: Promise<{ token: str
       </div>
     </div>
   )
-}
-
-function scenarioShortLabel(scenario: string): string {
-  const map: Record<string, string> = {
-    broadway: 'Broadway',
-    nonprofit: 'Nonprofit',
-    tour: 'National Tour',
-    mixed: 'Full Portfolio',
-  }
-  return map[scenario] ?? scenario
 }

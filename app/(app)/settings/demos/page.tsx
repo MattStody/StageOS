@@ -72,6 +72,8 @@ export default function DemoCreatorPage() {
   const [color, setColor] = useState(ACCENT_COLORS[0].value)
   const [navColor, setNavColor] = useState(NAV_COLORS[0].value)
   const [logoUrl, setLogoUrl] = useState('')
+  const [userAvatarUrl, setUserAvatarUrl] = useState('')
+  const [bgImageUrl, setBgImageUrl] = useState('')
   const [overrides, setOverrides] = useState<Record<string, { name: string; venue: string; subtitle: string; openingDate: string; closingDate: string }>>({})
   const [extraProductions, setExtraProductions] = useState<DemoExtraProduction[]>([])
   const [noBaseProductions, setNoBaseProductions] = useState(false)
@@ -115,11 +117,13 @@ export default function DemoCreatorPage() {
       scenario,
       ...(navColor && navColor !== NAV_COLORS[0].value && { navColor }),
       ...(logoUrl.trim() && { logoUrl: logoUrl.trim() }),
+      ...(userAvatarUrl.trim() && { userAvatarUrl: userAvatarUrl.trim() }),
+      ...(bgImageUrl.trim() && { bgImageUrl: bgImageUrl.trim() }),
       ...(prodOverrides && prodOverrides.length > 0 && { overrides: prodOverrides }),
       ...(extraProductions.length > 0 && { extraProductions }),
       ...(noBaseProductions && { noBaseProductions: true }),
     }
-  }, [org, user, title, color, navColor, logoUrl, scenario, overrides, scenarioProductions, extraProductions, noBaseProductions])
+  }, [org, user, title, color, navColor, logoUrl, userAvatarUrl, bgImageUrl, scenario, overrides, scenarioProductions, extraProductions, noBaseProductions])
 
   function generate() {
     const config = buildConfig()
@@ -148,6 +152,8 @@ export default function DemoCreatorPage() {
     setColor(c.color)
     setNavColor(c.navColor ?? NAV_COLORS[0].value)
     setLogoUrl(c.logoUrl ?? '')
+    setUserAvatarUrl(c.userAvatarUrl ?? '')
+    setBgImageUrl(c.bgImageUrl ?? '')
     const ovRecord: Record<string, { name: string; venue: string; subtitle: string; openingDate: string; closingDate: string }> = {}
     for (const ov of c.overrides ?? []) {
       ovRecord[ov.id] = {
@@ -196,6 +202,8 @@ export default function DemoCreatorPage() {
     setColor(ACCENT_COLORS[0].value)
     setNavColor(NAV_COLORS[0].value)
     setLogoUrl('')
+    setUserAvatarUrl('')
+    setBgImageUrl('')
     setOverrides({})
     setExtraProductions([])
     setNoBaseProductions(false)
@@ -267,6 +275,27 @@ export default function DemoCreatorPage() {
                   placeholder="e.g. General Manager"
                   className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1.5">
+                  Contact Avatar URL <span className="normal-case text-stone-400 font-normal">(optional)</span>
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    value={userAvatarUrl}
+                    onChange={(e) => setUserAvatarUrl(e.target.value)}
+                    placeholder="https://example.com/photo.jpg"
+                    className="flex-1 px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+                  />
+                  {userAvatarUrl.trim() && (
+                    <img
+                      src={userAvatarUrl}
+                      alt="Avatar preview"
+                      className="w-9 h-9 rounded-full object-cover shrink-0 border border-stone-200"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
+                  )}
+                </div>
               </div>
             </CardBody>
           </Card>
@@ -395,6 +424,24 @@ export default function DemoCreatorPage() {
                   />
                   <span className="text-xs text-white/50">Sidebar preview</span>
                 </div>
+              )}
+              <div>
+                <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1.5">
+                  Login Page Background Image <span className="normal-case text-stone-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  value={bgImageUrl}
+                  onChange={(e) => setBgImageUrl(e.target.value)}
+                  placeholder="https://example.com/theatre-bg.jpg"
+                  className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+                />
+                <p className="text-xs text-stone-400 mt-1.5">Fills the left half of the demo login page. If blank, the navigation colour is used instead.</p>
+              </div>
+              {bgImageUrl.trim() && (
+                <div
+                  className="h-24 rounded overflow-hidden border border-stone-200"
+                  style={{ backgroundImage: `url(${bgImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                />
               )}
             </CardBody>
           </Card>

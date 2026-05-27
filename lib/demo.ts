@@ -33,6 +33,8 @@ export interface DemoConfig {
   overrides?: DemoProductionOverride[]
   extraProductions?: DemoExtraProduction[]
   noBaseProductions?: boolean
+  userAvatarUrl?: string
+  bgImageUrl?: string
 }
 
 export const SCENARIO_LABELS: Record<DemoScenario, string> = {
