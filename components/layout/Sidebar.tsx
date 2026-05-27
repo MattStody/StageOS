@@ -80,7 +80,7 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {navItems.map(({ label, href, icon: Icon, exact }) => {
+        {navItems.filter(({ href }) => !(isDemo && href === '/settings/demos')).map(({ label, href, icon: Icon, exact }) => {
           const active = pathname === href || (!exact && pathname.startsWith(href + '/'))
           return (
             <Link
