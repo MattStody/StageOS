@@ -48,10 +48,12 @@ export default function DemoEntryPage({ params }: { params: Promise<{ token: str
     .slice(0, 2)
     .toUpperCase()
 
+  const navBg = config.navColor || '#0c0a09'
+
   return (
-    <div className="min-h-screen bg-stone-950 flex">
+    <div className="min-h-screen flex" style={{ backgroundColor: navBg }}>
       {/* Left panel */}
-      <div className="hidden lg:flex lg:flex-col lg:w-1/2 p-16 bg-stone-950 justify-between">
+      <div className="hidden lg:flex lg:flex-col lg:w-1/2 p-16 justify-between" style={{ backgroundColor: navBg }}>
         <div>
           {config.logoUrl ? (
             <img
