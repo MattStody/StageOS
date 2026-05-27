@@ -100,8 +100,9 @@ export default function DemoEntryPage({ params }: { params: Promise<{ token: str
                 </div>
               )}
               <div>
-                <p className="text-sm font-medium text-stone-900">{config.user}</p>
-                <p className="text-xs text-stone-500">{config.title} · {config.org}</p>
+                <p className="text-base font-semibold text-stone-900">{config.user}</p>
+                <p className="text-sm text-stone-600 mt-0.5">{config.org}</p>
+                <p className="text-xs text-stone-400">{config.title}</p>
               </div>
             </div>
             <h1 className="text-2xl font-light text-stone-900 tracking-tight">Your demo is ready</h1>

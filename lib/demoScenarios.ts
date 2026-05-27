@@ -44,12 +44,22 @@ export function getScenarioData(scenario: DemoScenario): ScenarioData {
   }
 }
 
+function addDays(base: string, days: number): string {
+  const d = new Date(base || new Date().toISOString().split('T')[0])
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().split('T')[0]
+}
+
 function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
   production: Production
   budgetLines: BudgetLine[]
   revenueWeeks: RevenueWeek[]
   contracts: Contract[]
   cashFlowRows: CashFlowRow[]
+  deadlines: Deadline[]
+  marketingBudgetLines: MarketingBudgetLine[]
+  marketingCampaigns: MarketingCampaign[]
+  documents: Document[]
 } {
   const seed = i + 1
   const budget = 480000 + seed * 55000
@@ -59,6 +69,7 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
   const currentGross = weeklyGross * weeksPlayed
   const projectedGross = weeklyGross * 16
   const cashOnHand = 95000 + seed * 18000
+  const mktgBudget = Math.round(budget * 0.12)
 
   const production: Production = {
     id: prodId,
@@ -83,9 +94,11 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
     { id: `${prodId}-bl-4`, productionId: prodId, category: 'Physical Production', lineItem: 'Lighting & Sound', budgeted: Math.round(budget * 0.07), committed: Math.round(budget * 0.07), actual: Math.round(budget * 0.068), notes: '' },
     { id: `${prodId}-bl-5`, productionId: prodId, category: 'Running Costs', lineItem: 'Cast & Crew Payroll', budgeted: Math.round(budget * 0.22), committed: Math.round(budget * 0.22), actual: Math.round(budget * 0.21), notes: '' },
     { id: `${prodId}-bl-6`, productionId: prodId, category: 'Running Costs', lineItem: 'Venue Rental', budgeted: Math.round(budget * 0.18), committed: Math.round(budget * 0.18), actual: Math.round(budget * 0.178), notes: '' },
-    { id: `${prodId}-bl-7`, productionId: prodId, category: 'Marketing', lineItem: 'Marketing & Advertising', budgeted: Math.round(budget * 0.12), committed: Math.round(budget * 0.12), actual: Math.round(budget * 0.11), notes: '' },
+    { id: `${prodId}-bl-7`, productionId: prodId, category: 'Marketing', lineItem: 'Marketing & Advertising', budgeted: mktgBudget, committed: mktgBudget, actual: Math.round(mktgBudget * 0.92), notes: '' },
     { id: `${prodId}-bl-8`, productionId: prodId, category: 'General & Administrative', lineItem: 'General Management', budgeted: Math.round(budget * 0.06), committed: Math.round(budget * 0.06), actual: Math.round(budget * 0.058), notes: '' },
     { id: `${prodId}-bl-9`, productionId: prodId, category: 'General & Administrative', lineItem: 'Contingency Reserve', budgeted: Math.round(budget * 0.06), committed: 0, actual: Math.round(budget * 0.014), notes: '' },
+    { id: `${prodId}-bl-10`, productionId: prodId, category: 'Running Costs', lineItem: 'Royalties', budgeted: Math.round(budget * 0.08), committed: Math.round(budget * 0.08), actual: Math.round(budget * 0.076), notes: '' },
+    { id: `${prodId}-bl-11`, productionId: prodId, category: 'General & Administrative', lineItem: 'Legal & Insurance', budgeted: Math.round(budget * 0.03), committed: Math.round(budget * 0.03), actual: Math.round(budget * 0.028), notes: '' },
   ]
 
   const revenueWeeks: RevenueWeek[] = weeksPlayed > 0 ? Array.from({ length: Math.min(weeksPlayed, 4) }, (_, w) => {
@@ -97,7 +110,7 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
     return {
       id: `${prodId}-rw-${w}`,
       productionId: prodId,
-      weekEnding: '',
+      weekEnding: addDays(e.openingDate, (w + 1) * 7),
       performances: 8,
       ticketsSold: sold,
       grossRevenue: gross,
@@ -111,10 +124,12 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
   }) : []
 
   const contracts: Contract[] = [
-    { id: `${prodId}-ct-1`, productionId: prodId, partyName: 'Creative Director', contractType: 'creative', status: 'signed', dueDate: '', fee: 28000 + seed * 2000, keyObligations: 'Direction of production', notes: '', hasFile: true },
-    { id: `${prodId}-ct-2`, productionId: prodId, partyName: e.venue || 'Venue Partner', contractType: 'venue', status: 'signed', dueDate: '', fee: Math.round(budget * 0.18), keyObligations: 'Exclusive venue use per agreed schedule', notes: '', hasFile: true },
-    { id: `${prodId}-ct-3`, productionId: prodId, partyName: 'Lead Cast Member', contractType: 'cast', status: 'signed', dueDate: '', fee: 4200 * Math.max(weeksPlayed, 8), keyObligations: 'Lead role, 8 performances per week', notes: '', hasFile: false },
-    { id: `${prodId}-ct-4`, productionId: prodId, partyName: 'Marketing Agency', contractType: 'vendor', status: weeksPlayed > 0 ? 'signed' : 'sent', dueDate: '', fee: Math.round(budget * 0.05), keyObligations: 'Full campaign management', notes: '', hasFile: false },
+    { id: `${prodId}-ct-1`, productionId: prodId, partyName: 'Creative Director', contractType: 'creative', status: 'signed', dueDate: addDays(e.openingDate, -80), fee: 28000 + seed * 2000, keyObligations: 'Direction of production', notes: '', hasFile: true },
+    { id: `${prodId}-ct-2`, productionId: prodId, partyName: e.venue || 'Venue Partner', contractType: 'venue', status: 'signed', dueDate: addDays(e.openingDate, -75), fee: Math.round(budget * 0.18), keyObligations: 'Exclusive venue use per agreed schedule', notes: '', hasFile: true },
+    { id: `${prodId}-ct-3`, productionId: prodId, partyName: 'Lead Cast Member', contractType: 'cast', status: 'signed', dueDate: addDays(e.openingDate, -60), fee: 4200 * Math.max(weeksPlayed, 8), keyObligations: 'Lead role, 8 performances per week', notes: '', hasFile: false },
+    { id: `${prodId}-ct-4`, productionId: prodId, partyName: 'Marketing Agency', contractType: 'vendor', status: weeksPlayed > 0 ? 'signed' : 'sent', dueDate: addDays(e.openingDate, -45), fee: Math.round(budget * 0.05), keyObligations: 'Full campaign management', notes: '', hasFile: false },
+    { id: `${prodId}-ct-5`, productionId: prodId, partyName: 'Rights Holder', contractType: 'rights', status: 'signed', dueDate: addDays(e.openingDate, -90), fee: Math.round(budget * 0.08), keyObligations: 'Royalty-bearing license for production run', notes: '', hasFile: true },
+    { id: `${prodId}-ct-6`, productionId: prodId, partyName: 'Stage Manager', contractType: 'employment', status: weeksPlayed > 0 ? 'signed' : 'sent', dueDate: addDays(e.openingDate, -55), fee: 3200 * Math.max(weeksPlayed, 8), keyObligations: 'Full run stage management', notes: '', hasFile: false },
   ]
 
   const cashFlowRows: CashFlowRow[] = weeksPlayed > 0 ? Array.from({ length: Math.min(weeksPlayed, 4) }, (_, w) => {
@@ -123,13 +138,13 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
     return {
       id: `${prodId}-cf-${w}`,
       productionId: prodId,
-      weekOf: '',
+      weekOf: addDays(e.openingDate, w * 7),
       startingCash: Math.round(start),
       ticketRevenue: rev,
       otherInflows: Math.round(rev * 0.04),
       payroll: Math.round(budget * 0.22 / 16),
       venueCosts: Math.round(budget * 0.18 / 16),
-      marketing: Math.round(budget * 0.12 / 16),
+      marketing: Math.round(mktgBudget / 16),
       royalties: Math.round(rev * 0.06),
       vendorPayments: Math.round(budget * 0.05 / 16),
       otherOutflows: Math.round(rev * 0.02),
@@ -137,7 +152,46 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
     }
   }) : []
 
-  return { production, budgetLines, revenueWeeks, contracts, cashFlowRows }
+  const deadlines: Deadline[] = [
+    { id: `${prodId}-dl-1`, productionId: prodId, title: 'All Contracts Signed', date: addDays(e.openingDate, -60), type: 'contract', status: weeksPlayed > 0 ? 'completed' : 'upcoming', notes: 'All key production contracts executed', assignedTo: '' },
+    { id: `${prodId}-dl-2`, productionId: prodId, title: 'First Day of Rehearsal', date: addDays(e.openingDate, -42), type: 'rehearsal', status: weeksPlayed > 0 || e.status === 'in_rehearsal' ? 'completed' : 'upcoming', notes: '', assignedTo: '' },
+    { id: `${prodId}-dl-3`, productionId: prodId, title: 'Tech Rehearsal Begins', date: addDays(e.openingDate, -14), type: 'tech', status: weeksPlayed > 0 ? 'completed' : e.status === 'in_rehearsal' ? 'upcoming' : 'upcoming', notes: '', assignedTo: '' },
+    { id: `${prodId}-dl-4`, productionId: prodId, title: 'First Preview Performance', date: addDays(e.openingDate, -7), type: 'preview', status: weeksPlayed > 0 ? 'completed' : 'upcoming', notes: '', assignedTo: '' },
+    { id: `${prodId}-dl-5`, productionId: prodId, title: 'Opening Night', date: e.openingDate || addDays(new Date().toISOString().split('T')[0], 30), type: 'opening', status: weeksPlayed > 0 ? 'completed' : 'upcoming', notes: '', assignedTo: '' },
+    { id: `${prodId}-dl-6`, productionId: prodId, title: 'Press Night', date: addDays(e.openingDate, 3), type: 'press', status: weeksPlayed >= 1 ? 'completed' : 'upcoming', notes: '', assignedTo: '' },
+    { id: `${prodId}-dl-7`, productionId: prodId, title: 'First Weekly Payroll', date: addDays(e.openingDate, 7), type: 'payroll', status: weeksPlayed >= 2 ? 'completed' : 'upcoming', notes: 'Cast & crew payroll run', assignedTo: '' },
+    { id: `${prodId}-dl-8`, productionId: prodId, title: 'Marketing Performance Report', date: addDays(e.openingDate, 14), type: 'marketing', status: weeksPlayed >= 3 ? 'completed' : 'upcoming', notes: '', assignedTo: '' },
+    { id: `${prodId}-dl-9`, productionId: prodId, title: 'Month-1 Royalty Settlement', date: addDays(e.openingDate, 28), type: 'royalty', status: weeksPlayed >= 5 ? 'completed' : 'upcoming', notes: 'Monthly royalty payment to rights holders', assignedTo: '' },
+    { id: `${prodId}-dl-10`, productionId: prodId, title: 'Closing Night', date: e.closingDate || addDays(e.openingDate, 120), type: 'closing', status: e.status === 'closed' ? 'completed' : 'upcoming', notes: '', assignedTo: '' },
+    { id: `${prodId}-dl-11`, productionId: prodId, title: 'Final Settlement', date: addDays(e.closingDate || addDays(e.openingDate, 120), 14), type: 'settlement', status: e.status === 'closed' ? 'completed' : 'upcoming', notes: 'Final production cost settlement', assignedTo: '' },
+  ]
+
+  const marketingBudgetLines: MarketingBudgetLine[] = [
+    { id: `${prodId}-mb-1`, productionId: prodId, channel: 'digital_social', lineItem: 'Social Media & Digital Ads', budgeted: Math.round(mktgBudget * 0.30), actual: Math.round(mktgBudget * 0.28), notes: '' },
+    { id: `${prodId}-mb-2`, productionId: prodId, channel: 'print', lineItem: 'Print & Outdoor Advertising', budgeted: Math.round(mktgBudget * 0.20), actual: Math.round(mktgBudget * 0.19), notes: '' },
+    { id: `${prodId}-mb-3`, productionId: prodId, channel: 'paid_search', lineItem: 'Google & Search Ads', budgeted: Math.round(mktgBudget * 0.15), actual: Math.round(mktgBudget * 0.14), notes: '' },
+    { id: `${prodId}-mb-4`, productionId: prodId, channel: 'pr_press', lineItem: 'PR & Press Agency Fees', budgeted: Math.round(mktgBudget * 0.20), actual: Math.round(mktgBudget * 0.20), notes: '' },
+    { id: `${prodId}-mb-5`, productionId: prodId, channel: 'email', lineItem: 'Email Campaigns', budgeted: Math.round(mktgBudget * 0.05), actual: Math.round(mktgBudget * 0.04), notes: '' },
+    { id: `${prodId}-mb-6`, productionId: prodId, channel: 'agency_fees', lineItem: 'Marketing Agency Retainer', budgeted: Math.round(mktgBudget * 0.10), actual: Math.round(mktgBudget * 0.10), notes: '' },
+  ]
+
+  const marketingCampaigns: MarketingCampaign[] = [
+    { id: `${prodId}-mc-1`, productionId: prodId, title: 'Opening Week Launch', channel: 'digital_social', startDate: addDays(e.openingDate, -14), endDate: addDays(e.openingDate, 7), status: weeksPlayed >= 2 ? 'completed' : weeksPlayed >= 1 ? 'active' : 'planned', budget: Math.round(mktgBudget * 0.25), notes: 'Opening week promotional push across social channels' },
+    { id: `${prodId}-mc-2`, productionId: prodId, title: 'Press Night Media Push', channel: 'pr_press', startDate: addDays(e.openingDate, 1), endDate: addDays(e.openingDate, 10), status: weeksPlayed >= 2 ? 'completed' : 'planned', budget: Math.round(mktgBudget * 0.12), notes: 'Press night coverage and critic outreach' },
+    { id: `${prodId}-mc-3`, productionId: prodId, title: 'Pre-Opening Subscriber Drive', channel: 'email', startDate: addDays(e.openingDate, -30), endDate: addDays(e.openingDate, -1), status: weeksPlayed > 0 ? 'completed' : 'active', budget: Math.round(mktgBudget * 0.06), notes: 'Email campaign to existing subscriber base' },
+    { id: `${prodId}-mc-4`, productionId: prodId, title: 'Season Run Search Campaign', channel: 'paid_search', startDate: addDays(e.openingDate, 7), endDate: addDays(e.closingDate || addDays(e.openingDate, 120), -14), status: weeksPlayed >= 3 ? 'active' : 'planned', budget: Math.round(mktgBudget * 0.15), notes: 'Ongoing paid search for ticket sales' },
+  ]
+
+  const documents: Document[] = [
+    { id: `${prodId}-doc-1`, productionId: prodId, name: `${e.name || 'Production'} — Production Budget`, category: 'budgets', uploadedAt: addDays(e.openingDate, -90), size: '48 KB', type: 'xlsx' },
+    { id: `${prodId}-doc-2`, productionId: prodId, name: `${e.name || 'Production'} — Venue Contract`, category: 'contracts', uploadedAt: addDays(e.openingDate, -80), size: '312 KB', type: 'pdf' },
+    { id: `${prodId}-doc-3`, productionId: prodId, name: `${e.name || 'Production'} — Certificate of Insurance`, category: 'insurance', uploadedAt: addDays(e.openingDate, -75), size: '156 KB', type: 'pdf' },
+    { id: `${prodId}-doc-4`, productionId: prodId, name: `${e.name || 'Production'} — Marketing Plan`, category: 'marketing', uploadedAt: addDays(e.openingDate, -60), size: '2.1 MB', type: 'pdf' },
+    { id: `${prodId}-doc-5`, productionId: prodId, name: `${e.name || 'Production'} — Cast Contracts Summary`, category: 'contracts', uploadedAt: addDays(e.openingDate, -45), size: '89 KB', type: 'pdf' },
+    { id: `${prodId}-doc-6`, productionId: prodId, name: `${e.name || 'Production'} — Rights & Licensing Agreement`, category: 'legal', uploadedAt: addDays(e.openingDate, -85), size: '420 KB', type: 'pdf' },
+  ]
+
+  return { production, budgetLines, revenueWeeks, contracts, cashFlowRows, deadlines, marketingBudgetLines, marketingCampaigns, documents }
 }
 
 export function stripBaseProductions(data: ScenarioData): ScenarioData {
@@ -164,12 +218,16 @@ export function applyExtraProductions(
   const result = { ...data }
   extras.forEach((e, i) => {
     const prodId = `demo-extra-${i}`
-    const { production, budgetLines, revenueWeeks, contracts, cashFlowRows } = boilerplate(prodId, e, i)
+    const { production, budgetLines, revenueWeeks, contracts, cashFlowRows, deadlines, marketingBudgetLines, marketingCampaigns, documents } = boilerplate(prodId, e, i)
     result.productions = [...result.productions, production]
     result.budgetLines = [...result.budgetLines, ...budgetLines]
     result.revenueWeeks = [...result.revenueWeeks, ...revenueWeeks]
     result.contracts = [...result.contracts, ...contracts]
     result.cashFlowRows = [...result.cashFlowRows, ...cashFlowRows]
+    result.deadlines = [...result.deadlines, ...deadlines]
+    result.marketingBudgetLines = [...result.marketingBudgetLines, ...marketingBudgetLines]
+    result.marketingCampaigns = [...result.marketingCampaigns, ...marketingCampaigns]
+    result.documents = [...result.documents, ...documents]
   })
   return result
 }

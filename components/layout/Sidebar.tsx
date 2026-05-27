@@ -58,10 +58,7 @@ export function Sidebar() {
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
         ) : (
-          <div className="flex items-baseline gap-1">
-            <span className="text-white font-semibold text-base tracking-tight">StageOps</span>
-            <span className="text-stone-500 text-xs">GM</span>
-          </div>
+          <p className="text-white font-semibold text-sm tracking-tight truncate">{userName}</p>
         )}
         <p className="text-stone-500 text-xs mt-0.5 truncate">{orgName}</p>
         {isDemo && (
@@ -90,7 +87,7 @@ export function Sidebar() {
                 'flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors',
                 active
                   ? 'text-white'
-                  : 'text-stone-400 hover:text-white hover:bg-stone-900',
+                  : 'text-white/70 hover:text-white hover:bg-white/10',
               )}
               style={active ? { backgroundColor: accentColor ?? '#292524' } : undefined}
             >
