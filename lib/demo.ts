@@ -32,6 +32,7 @@ export interface DemoConfig {
   navColor?: string
   overrides?: DemoProductionOverride[]
   extraProductions?: DemoExtraProduction[]
+  noBaseProductions?: boolean
 }
 
 export const SCENARIO_LABELS: Record<DemoScenario, string> = {

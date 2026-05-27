@@ -1,5 +1,6 @@
 'use client'
 import { useStore } from '@/lib/store'
+import { useDemo } from '@/contexts/DemoContext'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { StatCard } from '@/components/ui/StatCard'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
@@ -11,6 +12,8 @@ import { ArrowRight } from 'lucide-react'
 
 export default function DashboardPage() {
   const { productions, contracts, deadlines, budgetLines, revenueWeeks, cashFlowRows } = useStore()
+  const { isDemo, config } = useDemo()
+  const firstName = isDemo && config?.user ? config.user.split(' ')[0] : null
 
   const totalGross = productions.reduce((s, p) => s + p.currentGross, 0)
   const totalBudget = productions.reduce((s, p) => s + p.totalBudget, 0)
@@ -35,6 +38,9 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {firstName && (
+        <p className="text-stone-400 text-sm mb-1">Hello, {firstName}</p>
+      )}
       <PageHeader
         title="Command Center"
         subtitle="All productions — current snapshot"

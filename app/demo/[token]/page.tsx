@@ -2,7 +2,7 @@
 import { use, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { decodeDemo, DEMO_SESSION_KEY } from '@/lib/demo'
-import { getScenarioData, applyProductionOverrides, applyExtraProductions } from '@/lib/demoScenarios'
+import { getScenarioData, applyProductionOverrides, applyExtraProductions, stripBaseProductions } from '@/lib/demoScenarios'
 import { useStore } from '@/lib/store'
 import { ADMIN_SESSION_KEY } from '@/lib/auth'
 
@@ -28,9 +28,11 @@ export default function DemoEntryPage({ params }: { params: Promise<{ token: str
 
   function handleEnter(e: React.FormEvent) {
     e.preventDefault()
-    const data = getScenarioData(config!.scenario)
-    const withOverrides = applyProductionOverrides(data, config!.overrides)
-    const withExtras = applyExtraProductions(withOverrides, config!.extraProductions)
+    let data = getScenarioData(config!.scenario)
+    data = config!.noBaseProductions
+      ? stripBaseProductions(data)
+      : applyProductionOverrides(data, config!.overrides)
+    const withExtras = applyExtraProductions(data, config!.extraProductions)
     loadScenario(withExtras)
     try {
       sessionStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(config))
@@ -51,10 +53,19 @@ export default function DemoEntryPage({ params }: { params: Promise<{ token: str
       {/* Left panel */}
       <div className="hidden lg:flex lg:flex-col lg:w-1/2 p-16 bg-stone-950 justify-between">
         <div>
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-white font-semibold text-xl tracking-tight">StageOps</span>
-            <span className="text-stone-500 text-sm">GM</span>
-          </div>
+          {config.logoUrl ? (
+            <img
+              src={config.logoUrl}
+              alt={config.org}
+              className="h-9 max-w-[160px] object-contain object-left"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+          ) : (
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-white font-semibold text-xl tracking-tight">StageOps</span>
+              <span className="text-stone-500 text-sm">GM</span>
+            </div>
+          )}
         </div>
 
         <div>

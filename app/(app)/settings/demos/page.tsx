@@ -74,6 +74,7 @@ export default function DemoCreatorPage() {
   const [logoUrl, setLogoUrl] = useState('')
   const [overrides, setOverrides] = useState<Record<string, { name: string; venue: string; subtitle: string; openingDate: string; closingDate: string }>>({})
   const [extraProductions, setExtraProductions] = useState<DemoExtraProduction[]>([])
+  const [noBaseProductions, setNoBaseProductions] = useState(false)
   const [generatedUrl, setGeneratedUrl] = useState('')
   const [copied, setCopied] = useState(false)
   const [savedDemos, setSavedDemos] = useState<SavedDemo[]>([])
@@ -116,8 +117,9 @@ export default function DemoCreatorPage() {
       ...(logoUrl.trim() && { logoUrl: logoUrl.trim() }),
       ...(prodOverrides && prodOverrides.length > 0 && { overrides: prodOverrides }),
       ...(extraProductions.length > 0 && { extraProductions }),
+      ...(noBaseProductions && { noBaseProductions: true }),
     }
-  }, [org, user, title, color, navColor, logoUrl, scenario, overrides, scenarioProductions, extraProductions])
+  }, [org, user, title, color, navColor, logoUrl, scenario, overrides, scenarioProductions, extraProductions, noBaseProductions])
 
   function generate() {
     const config = buildConfig()
@@ -158,6 +160,7 @@ export default function DemoCreatorPage() {
     }
     setOverrides(ovRecord)
     setExtraProductions(c.extraProductions ?? [])
+    setNoBaseProductions(c.noBaseProductions ?? false)
     setGeneratedUrl(demo.url)
     setEditingId(demo.id)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -195,6 +198,7 @@ export default function DemoCreatorPage() {
     setLogoUrl('')
     setOverrides({})
     setExtraProductions([])
+    setNoBaseProductions(false)
     setGeneratedUrl('')
   }
 
@@ -270,7 +274,7 @@ export default function DemoCreatorPage() {
           {/* Scenario */}
           <Card>
             <CardHeader><CardTitle>Data Scenario</CardTitle></CardHeader>
-            <CardBody>
+            <CardBody className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 {(Object.keys(SCENARIO_LABELS) as DemoScenario[]).map((s) => (
                   <button
@@ -287,6 +291,15 @@ export default function DemoCreatorPage() {
                   </button>
                 ))}
               </div>
+              <label className="flex items-center gap-3 cursor-pointer select-none group">
+                <div
+                  onClick={() => setNoBaseProductions((v) => !v)}
+                  className={`relative w-9 h-5 rounded-full transition-colors ${noBaseProductions ? 'bg-stone-900' : 'bg-stone-300'}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${noBaseProductions ? 'translate-x-4' : ''}`} />
+                </div>
+                <span className="text-sm text-stone-700">Hide the 3 default productions — use only my custom ones</span>
+              </label>
             </CardBody>
           </Card>
 
@@ -387,7 +400,7 @@ export default function DemoCreatorPage() {
           </Card>
 
           {/* Production overrides */}
-          <Card>
+          {!noBaseProductions && <Card>
             <CardHeader>
               <CardTitle>Production Name Overrides</CardTitle>
               <span className="text-xs text-stone-400">Optional — leave blank to use default names</span>
@@ -444,7 +457,7 @@ export default function DemoCreatorPage() {
                 </div>
               ))}
             </CardBody>
-          </Card>
+          </Card>}
 
           {/* Additional productions */}
           <Card>
