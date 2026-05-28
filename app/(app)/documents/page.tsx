@@ -110,7 +110,14 @@ export default function DocumentsPage() {
                 {catDocs.map((doc) => {
                   const prod = productions.find((p) => p.id === doc.productionId)
                   return (
-                    <div key={doc.id} className="bg-white border border-stone-200 rounded-lg p-4 hover:border-stone-300 transition-colors cursor-pointer group">
+                    <a
+                      key={doc.id}
+                      href={doc.type === 'pdf' ? '/template-agreement.html' : '#'}
+                      target={doc.type === 'pdf' ? '_blank' : undefined}
+                      rel={doc.type === 'pdf' ? 'noopener noreferrer' : undefined}
+                      onClick={doc.type !== 'pdf' ? (e) => e.preventDefault() : undefined}
+                      className="bg-white border border-stone-200 rounded-lg p-4 hover:border-stone-300 transition-colors cursor-pointer group block no-underline"
+                    >
                       <div className="flex items-start gap-3">
                         <div className="w-10 h-10 rounded bg-stone-100 flex items-center justify-center text-lg shrink-0">
                           {typeIcon[doc.type] || '📄'}
@@ -130,9 +137,14 @@ export default function DocumentsPage() {
                             <span className="text-stone-300">·</span>
                             <span className="text-xs text-stone-400">{formatDate(doc.uploadedAt)}</span>
                           </div>
+                          {doc.type === 'pdf' && (
+                            <p className="text-xs text-stone-400 mt-1 flex items-center gap-1 group-hover:text-stone-600 transition-colors">
+                              <span>↗</span> Open
+                            </p>
+                          )}
                         </div>
                       </div>
-                    </div>
+                    </a>
                   )
                 })}
 

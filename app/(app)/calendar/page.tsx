@@ -1,12 +1,12 @@
 'use client'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useStore } from '@/lib/store'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { formatDate, daysUntil, statusLabel } from '@/lib/utils'
-import { Plus, Trash2, Pencil, AlertTriangle } from 'lucide-react'
+import { Plus, Trash2, Pencil, AlertTriangle, CalendarDays } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Deadline, DeadlineType, DeadlineStatus, CustomEvent } from '@/lib/types'
 
@@ -78,8 +78,12 @@ export default function CalendarPage() {
   const { productions, deadlines, addDeadline, updateDeadline, deleteDeadline, customEvents, addCustomEvent, updateCustomEvent, deleteCustomEvent } = useStore()
   const { isAdmin } = useAuth()
 
-  const [tab, setTab] = useState<'deadlines' | 'events'>('deadlines')
+  const [tab, setTab] = useState<'deadlines' | 'events' | 'calendar'>('deadlines')
   const [selectedProd, setSelectedProd] = useState('all')
+
+  const today = new Date()
+  const [calYear, setCalYear] = useState(today.getFullYear())
+  const [calMonth, setCalMonth] = useState(today.getMonth()) // 0-indexed
 
   // Deadline state
   const [filterStatus, setFilterStatus] = useState<DeadlineStatus | 'all'>('all')
@@ -242,10 +246,39 @@ export default function CalendarPage() {
     )
   }
 
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December']
+
+  const calendarDays = useMemo(() => {
+    const firstDay = new Date(Date.UTC(calYear, calMonth, 1))
+    const lastDay = new Date(Date.UTC(calYear, calMonth + 1, 0))
+    // Start grid on Monday
+    let startDow = firstDay.getUTCDay() // 0=Sun
+    startDow = startDow === 0 ? 6 : startDow - 1 // convert to Mon=0
+    const days: Array<{ date: string | null; day: number | null }> = []
+    for (let i = 0; i < startDow; i++) days.push({ date: null, day: null })
+    for (let d = 1; d <= lastDay.getUTCDate(); d++) {
+      const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      days.push({ date: dateStr, day: d })
+    }
+    // Pad to fill last row
+    while (days.length % 7 !== 0) days.push({ date: null, day: null })
+    return days
+  }, [calYear, calMonth])
+
+  const calDeadlines = deadlines.filter((d) => selectedProd === 'all' || d.productionId === selectedProd)
+  const calEvents = customEvents.filter((e) => selectedProd === 'all' || e.productionId === selectedProd)
+
+  function getItemsForDate(dateStr: string) {
+    const dl = calDeadlines.filter((d) => d.date === dateStr)
+    const ev = calEvents.filter((e) => e.date === dateStr)
+    return { dl, ev }
+  }
+
   const addAction = isAdmin
     ? tab === 'deadlines'
       ? <Button onClick={openAddDeadline} size="sm"><Plus size={13} /> Add Deadline</Button>
-      : <Button onClick={openAddEvent} size="sm"><Plus size={13} /> Add Event</Button>
+      : tab === 'events' ? <Button onClick={openAddEvent} size="sm"><Plus size={13} /> Add Event</Button>
+      : undefined
     : undefined
 
   return (
@@ -272,6 +305,9 @@ export default function CalendarPage() {
             </span>
           </button>
         ))}
+        <button key="calendar" onClick={() => setTab('calendar')} className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${tab === 'calendar' ? 'border-stone-900 text-stone-900' : 'border-transparent text-stone-500 hover:text-stone-700'}`}>
+          Calendar
+        </button>
       </div>
 
       {/* Production filter */}
@@ -328,6 +364,75 @@ export default function CalendarPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* ── Calendar tab ── */}
+      {tab === 'calendar' && (
+        <div>
+          {/* Month navigation */}
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => { if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1) } else setCalMonth(m => m - 1) }}
+              className="px-3 py-1.5 text-sm border border-stone-200 rounded hover:border-stone-400 transition-colors bg-white"
+            >
+              ← Prev
+            </button>
+            <h3 className="text-sm font-semibold text-stone-800">{MONTH_NAMES[calMonth]} {calYear}</h3>
+            <button
+              onClick={() => { if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1) } else setCalMonth(m => m + 1) }}
+              className="px-3 py-1.5 text-sm border border-stone-200 rounded hover:border-stone-400 transition-colors bg-white"
+            >
+              Next →
+            </button>
+          </div>
+
+          {/* Day-of-week header */}
+          <div className="grid grid-cols-7 mb-1">
+            {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map((d) => (
+              <div key={d} className="text-center text-xs font-medium text-stone-400 py-2">{d}</div>
+            ))}
+          </div>
+
+          {/* Calendar grid */}
+          <div className="grid grid-cols-7 border-l border-t border-stone-200 rounded-lg overflow-hidden">
+            {calendarDays.map((cell, idx) => {
+              if (!cell.date) {
+                return <div key={`empty-${idx}`} className="min-h-[80px] bg-stone-50 border-r border-b border-stone-200" />
+              }
+              const { dl, ev } = getItemsForDate(cell.date)
+              const isToday = cell.date === new Date().toISOString().split('T')[0]
+              const total = dl.length + ev.length
+              const showItems = [...dl.slice(0, 2).map(d => ({ type: 'dl' as const, item: d })), ...ev.slice(0, Math.max(0, 3 - dl.length)).map(e => ({ type: 'ev' as const, item: e }))]
+              const overflow = total - showItems.length
+              return (
+                <div key={cell.date} className={`min-h-[80px] border-r border-b border-stone-200 p-1.5 ${isToday ? 'bg-stone-50 ring-1 ring-inset ring-stone-400' : 'bg-white hover:bg-stone-50/50'}`}>
+                  <div className={`text-xs font-medium mb-1 w-5 h-5 flex items-center justify-center rounded-full ${isToday ? 'bg-stone-900 text-white' : 'text-stone-500'}`}>
+                    {cell.day}
+                  </div>
+                  <div className="space-y-0.5">
+                    {showItems.map(({ type, item }) => {
+                      const prod = productions.find(p => p.id === item.productionId)
+                      const color = type === 'ev' ? (item as CustomEvent).color : prod?.color || '#a8a29e'
+                      return (
+                        <div
+                          key={item.id}
+                          title={item.title}
+                          className="text-xs px-1 py-0.5 rounded truncate text-white leading-tight"
+                          style={{ backgroundColor: color }}
+                        >
+                          {item.title}
+                        </div>
+                      )
+                    })}
+                    {overflow > 0 && (
+                      <div className="text-xs text-stone-400 pl-1">+{overflow} more</div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       )}
 
       {/* ── Deadline modal ── */}

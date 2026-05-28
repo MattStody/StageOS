@@ -151,6 +151,14 @@ export const REVENUE_WEEKS: RevenueWeek[] = [
   { id: 'r1-7', productionId: 'prod-1', weekEnding: '2026-01-03', performances: 8, ticketsSold: 2680, grossRevenue: 348000, avgTicketPrice: 130, capacityPct: 91, comps: 55, discounts: 7200, netRevenue: 333000, totalSeats: 2932 },
   { id: 'r1-8', productionId: 'prod-1', weekEnding: '2026-01-05', performances: 3, ticketsSold: 820, grossRevenue: 109600, avgTicketPrice: 134, capacityPct: 94, comps: 18, discounts: 1800, netRevenue: 104000, totalSeats: 2932 },
 
+  // prod-2: The Silence Between — advance ticket sales (in rehearsal)
+  { id: 'r2-adv-1', productionId: 'prod-2', weekEnding: '2026-01-04', performances: 0, ticketsSold: 168, grossRevenue: 18816, avgTicketPrice: 112, capacityPct: 15, comps: 0, discounts: 0, netRevenue: 18816, totalSeats: 1100 },
+  { id: 'r2-adv-2', productionId: 'prod-2', weekEnding: '2026-01-11', performances: 0, ticketsSold: 285, grossRevenue: 31920, avgTicketPrice: 112, capacityPct: 26, comps: 0, discounts: 800, netRevenue: 31120, totalSeats: 1100 },
+  { id: 'r2-adv-3', productionId: 'prod-2', weekEnding: '2026-01-18', performances: 0, ticketsSold: 418, grossRevenue: 50160, avgTicketPrice: 120, capacityPct: 38, comps: 0, discounts: 1200, netRevenue: 48960, totalSeats: 1100 },
+  { id: 'r2-adv-4', productionId: 'prod-2', weekEnding: '2026-01-25', performances: 0, ticketsSold: 542, grossRevenue: 67750, avgTicketPrice: 125, capacityPct: 49, comps: 12, discounts: 1800, netRevenue: 65950, totalSeats: 1100 },
+  { id: 'r2-adv-5', productionId: 'prod-2', weekEnding: '2026-02-01', performances: 0, ticketsSold: 660, grossRevenue: 84480, avgTicketPrice: 128, capacityPct: 60, comps: 18, discounts: 2200, netRevenue: 82280, totalSeats: 1100 },
+  { id: 'r2-adv-6', productionId: 'prod-2', weekEnding: '2026-02-08', performances: 0, ticketsSold: 748, grossRevenue: 97240, avgTicketPrice: 130, capacityPct: 68, comps: 22, discounts: 2800, netRevenue: 94440, totalSeats: 1100 },
+
   // prod-3: Echoes Tour (18 weeks of tour so far)
   { id: 'r3-1', productionId: 'prod-3', weekEnding: '2025-09-13', performances: 4, ticketsSold: 24000, grossRevenue: 528000, avgTicketPrice: 22, capacityPct: 78, comps: 600, discounts: 18000, netRevenue: 498000, totalSeats: 30800 },
   { id: 'r3-2', productionId: 'prod-3', weekEnding: '2025-09-20', performances: 5, ticketsSold: 31500, grossRevenue: 724500, avgTicketPrice: 23, capacityPct: 82, comps: 500, discounts: 22000, netRevenue: 690000, totalSeats: 38500 },
@@ -277,6 +285,24 @@ export const DOCUMENTS: Document[] = [
   { id: 'doc3-3', productionId: 'prod-3', name: 'Live Nation Venue Package', category: 'contracts', uploadedAt: '2025-07-20', size: '2.9 MB', type: 'pdf' },
   { id: 'doc3-4', productionId: 'prod-3', name: 'Touring Insurance — All Risks Policy', category: 'insurance', uploadedAt: '2025-07-01', size: '460 KB', type: 'pdf' },
   { id: 'doc3-5', productionId: 'prod-3', name: 'Evergreen Capital Agreement', category: 'contracts', uploadedAt: '2025-05-10', size: '4.1 MB', type: 'pdf' },
+
+  // prod-1 reports
+  { id: 'doc1-7', productionId: 'prod-1', name: "Weekly Producer Report — Week of Nov 22", category: 'reports', uploadedAt: '2025-11-22', size: '195 KB', type: 'pdf' },
+  { id: 'doc1-8', productionId: 'prod-1', name: "Monthly P&L Summary — November 2025", category: 'reports', uploadedAt: '2025-12-01', size: '210 KB', type: 'pdf' },
+  { id: 'doc1-9', productionId: 'prod-1', name: "Investor Report — Q4 2025", category: 'reports', uploadedAt: '2025-12-15', size: '380 KB', type: 'pdf' },
+  { id: 'doc1-10', productionId: 'prod-1', name: "Cash Flow Analysis — December 2025", category: 'reports', uploadedAt: '2025-12-31', size: '165 KB', type: 'pdf' },
+  { id: 'doc1-11', productionId: 'prod-1', name: "Marketing Performance Report — Holiday Run", category: 'reports', uploadedAt: '2026-01-07', size: '290 KB', type: 'pdf' },
+
+  // prod-2 reports
+  { id: 'doc2-5', productionId: 'prod-2', name: "Pre-Production Budget Memo — November 2025", category: 'reports', uploadedAt: '2025-11-15', size: '145 KB', type: 'pdf' },
+  { id: 'doc2-6', productionId: 'prod-2', name: "Advance Sales Summary — January 2026", category: 'reports', uploadedAt: '2026-01-31', size: '180 KB', type: 'pdf' },
+  { id: 'doc2-7', productionId: 'prod-2', name: "NEA Grant Progress Report — Q4 2025", category: 'reports', uploadedAt: '2025-12-20', size: '320 KB', type: 'pdf' },
+
+  // prod-3 reports
+  { id: 'doc3-6', productionId: 'prod-3', name: "Tour Revenue Report — September 2025", category: 'reports', uploadedAt: '2025-09-30', size: '245 KB', type: 'pdf' },
+  { id: 'doc3-7', productionId: 'prod-3', name: "Monthly Investor Update — October 2025", category: 'reports', uploadedAt: '2025-10-31', size: '415 KB', type: 'pdf' },
+  { id: 'doc3-8', productionId: 'prod-3', name: "Mid-Tour Financial Review", category: 'reports', uploadedAt: '2025-11-15', size: '510 KB', type: 'pdf' },
+  { id: 'doc3-9', productionId: 'prod-3', name: "Q4 2025 Royalty Settlement Report", category: 'reports', uploadedAt: '2026-01-10', size: '185 KB', type: 'pdf' },
 ]
 
 // ─── MARKETING BUDGET LINES ──────────────────────────────────────────────────
@@ -354,4 +380,28 @@ export const CUSTOM_EVENTS: CustomEvent[] = [
   { id: 'ce3-1', productionId: 'prod-3', title: 'Meet & Greet — Chicago', date: '2025-10-26', color: '#d97706', category: 'Fan Event', notes: 'VIP package holders only, backstage' },
   { id: 'ce3-2', productionId: 'prod-3', title: 'Tour Documentary Shoot', date: '2025-11-15', color: '#7c3aed', category: 'Media', notes: 'Follows 3 tour dates — crew of 4' },
   { id: 'ce3-3', productionId: 'prod-3', title: 'Label Showcase — LA', date: '2026-01-10', color: '#0891b2', category: 'Industry', notes: 'Private performance for industry guests' },
+
+  // prod-1 additional
+  { id: 'ce1-4', productionId: 'prod-1', title: 'Sitzprobe', date: '2025-11-01', color: '#7c3aed', category: 'Music', notes: 'First rehearsal with full 10-piece orchestra' },
+  { id: 'ce1-5', productionId: 'prod-1', title: 'Invited Dress Rehearsal', date: '2025-11-08', color: '#6366f1', category: 'Rehearsal', notes: 'Friends & family preview, notes session to follow' },
+  { id: 'ce1-6', productionId: 'prod-1', title: 'Opening Night', date: '2025-11-15', color: '#d97706', category: 'Special Event', notes: 'Opening night celebration — St. James green room' },
+  { id: 'ce1-7', productionId: 'prod-1', title: 'Press Night', date: '2025-11-18', color: '#e11d48', category: 'Press', notes: 'All major critics in attendance' },
+  { id: 'ce1-8', productionId: 'prod-1', title: 'Group Sales Block', date: '2025-12-03', color: '#059669', category: 'Sales', notes: 'Large group buyer event — 200 seats reserved' },
+  { id: 'ce1-9', productionId: 'prod-1', title: 'Cast Recording', date: '2025-12-09', color: '#7c3aed', category: 'Recording', notes: 'Original cast album — 2-day session' },
+
+  // prod-2 additional
+  { id: 'ce2-3', productionId: 'prod-2', title: 'First Day of Rehearsal', date: '2026-01-12', color: '#0891b2', category: 'Rehearsal', notes: 'BAM studio space — company meet and read-through' },
+  { id: 'ce2-4', productionId: 'prod-2', title: 'Sitzprobe', date: '2026-02-01', color: '#7c3aed', category: 'Music', notes: 'First rehearsal with chamber orchestra' },
+  { id: 'ce2-5', productionId: 'prod-2', title: 'Designer Run-Through', date: '2026-02-05', color: '#0891b2', category: 'Rehearsal', notes: 'Creative team observes first full run' },
+  { id: 'ce2-6', productionId: 'prod-2', title: 'Production Photography', date: '2026-02-09', color: '#0891b2', category: 'Marketing', notes: 'Rehearsal photography shoot' },
+  { id: 'ce2-7', productionId: 'prod-2', title: 'First Preview', date: '2026-02-14', color: '#d97706', category: 'Performance', notes: 'Valentine\'s Day opening preview' },
+  { id: 'ce2-8', productionId: 'prod-2', title: 'Opening Night', date: '2026-02-21', color: '#e11d48', category: 'Special Event', notes: 'Press night same evening — BAM Fisher reception to follow' },
+
+  // prod-3 additional
+  { id: 'ce3-4', productionId: 'prod-3', title: 'Tour Kickoff — New York', date: '2025-09-05', color: '#059669', category: 'Performance', notes: 'Madison Square Garden — 2 nights' },
+  { id: 'ce3-5', productionId: 'prod-3', title: 'Press Roundtable — Chicago', date: '2025-10-21', color: '#e11d48', category: 'Press', notes: 'Media availability at venue' },
+  { id: 'ce3-6', productionId: 'prod-3', title: 'VIP Fan Package — Atlanta', date: '2025-11-08', color: '#d97706', category: 'Fan Event', notes: 'Pre-show soundcheck access for 50 VIP holders' },
+  { id: 'ce3-7', productionId: 'prod-3', title: 'Label Industry Showcase — LA', date: '2026-01-10', color: '#0891b2', category: 'Industry', notes: 'Private performance for industry guests' },
+  { id: 'ce3-8', productionId: 'prod-3', title: 'Tour Documentary Premiere', date: '2026-02-20', color: '#7c3aed', category: 'Media', notes: 'Streaming premiere of tour documentary film' },
+  { id: 'ce3-9', productionId: 'prod-3', title: 'Closing City — Miami', date: '2026-04-18', color: '#059669', category: 'Performance', notes: 'Final 2 nights of tour' },
 ]

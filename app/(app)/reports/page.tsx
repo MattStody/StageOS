@@ -12,6 +12,7 @@ export default function ReportsPage() {
   const { productions, budgetLines, revenueWeeks, contracts, cashFlowRows, deadlines } = useStore()
   const [selectedProd, setSelectedProd] = useState(productions[0]?.id || '')
   const [generated, setGenerated] = useState(false)
+  const [reportType, setReportType] = useState<'weekly' | 'monthly_pl' | 'contracts' | 'cashflow' | 'marketing'>('weekly')
 
   const prod = productions.find((p) => p.id === selectedProd)
   if (!prod) return null
@@ -81,10 +82,27 @@ export default function ReportsPage() {
               <FileBarChart size={32} className="text-stone-300 mx-auto mb-4" />
               <h2 className="text-lg font-medium text-stone-800 mb-2">Generate Weekly Report</h2>
               <p className="text-sm text-stone-500 mb-6 max-w-sm mx-auto">
-                This report compiles your current budget status, sales performance, cash flow, contracts, and deadlines into a clean producer brief.
+                Select a report type and generate a producer-ready summary from your live production data.
               </p>
+              <div className="grid grid-cols-1 gap-2 mb-6 text-left max-w-xs mx-auto">
+                {([
+                  ['weekly', 'Weekly Producer Report', 'Full operational overview with risks and actions'],
+                  ['monthly_pl', 'Monthly P&L Summary', 'Revenue, costs, and variance by category'],
+                  ['contracts', 'Contract Status Overview', 'Signed, pending, and overdue by party'],
+                  ['cashflow', 'Cash Flow Analysis', 'Weekly inflows, outflows, and closing balance'],
+                  ['marketing', 'Marketing Performance Report', 'Channel spend and campaign status'],
+                ] as const).map(([val, label, desc]) => (
+                  <label key={val} className={`flex items-start gap-3 p-3 rounded border cursor-pointer transition-colors ${reportType === val ? 'border-stone-900 bg-stone-50' : 'border-stone-200 hover:border-stone-300'}`}>
+                    <input type="radio" name="reportType" value={val} checked={reportType === val} onChange={() => setReportType(val)} className="mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-stone-800">{label}</p>
+                      <p className="text-xs text-stone-500">{desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
               <Button onClick={() => setGenerated(true)}>
-                <FileBarChart size={14} /> Generate Weekly Report
+                <FileBarChart size={14} /> Generate Report
               </Button>
             </CardBody>
           </Card>
@@ -96,7 +114,9 @@ export default function ReportsPage() {
             <div className="bg-stone-900 px-8 py-6 text-white">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-stone-400 text-xs uppercase tracking-wider mb-1">Weekly Producer Report</p>
+                  <p className="text-stone-400 text-xs uppercase tracking-wider mb-1">
+                    {reportType === 'weekly' ? 'Weekly Producer Report' : reportType === 'monthly_pl' ? 'Monthly P&L Summary' : reportType === 'contracts' ? 'Contract Status Overview' : reportType === 'cashflow' ? 'Cash Flow Analysis' : 'Marketing Performance Report'}
+                  </p>
                   <h1 className="text-xl font-light">{prod.name}</h1>
                   <p className="text-stone-400 text-sm mt-0.5">{prod.venue}</p>
                 </div>
@@ -275,7 +295,7 @@ export default function ReportsPage() {
           </div>
 
           <div className="flex justify-between items-center mt-4">
-            <Button variant="secondary" onClick={() => setGenerated(false)}>Regenerate</Button>
+            <Button variant="secondary" onClick={() => setGenerated(false)}>← Back to Reports</Button>
             <Button variant="ghost" size="sm" className="text-stone-500">
               <Download size={13} /> Export PDF
             </Button>
