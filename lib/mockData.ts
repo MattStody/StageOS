@@ -28,7 +28,7 @@ export const PRODUCTIONS: Production[] = [
     totalActual: 386000,
     cashOnHand: 295000,
     projectedGross: 620000,
-    currentGross: 0,
+    currentGross: 350366,
     color: '#0891b2',
   },
   {

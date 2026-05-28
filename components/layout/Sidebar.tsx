@@ -60,7 +60,7 @@ export function Sidebar() {
         ) : (
           <p className="text-white font-semibold text-sm tracking-tight truncate">{userName}</p>
         )}
-        <p className="text-stone-500 text-xs mt-0.5 truncate">{orgName}</p>
+        <p className="text-stone-400 text-xs mt-0.5 truncate">{orgName}</p>
         {isDemo && (
           <span
             className="inline-flex items-center gap-1 mt-1.5 px-1.5 py-0.5 rounded text-xs font-medium"
@@ -100,7 +100,7 @@ export function Sidebar() {
 
       {/* Productions quick list */}
       <div className="px-3 pb-4 border-t border-white/10 pt-4">
-        <p className="px-3 text-xs text-stone-600 uppercase tracking-wider mb-2">Productions</p>
+        <p className="px-3 text-xs text-stone-400 uppercase tracking-wider mb-2">Productions</p>
         {productions.map((p) => (
           <Link
             key={p.id}
@@ -129,7 +129,7 @@ export function Sidebar() {
           </div>
           <div>
             <p className="text-xs text-stone-300 font-medium truncate">{userName}</p>
-            <p className="text-xs text-stone-500 truncate">{userTitle}</p>
+            <p className="text-xs text-stone-400 truncate">{userTitle}</p>
           </div>
         </div>
       </div>
