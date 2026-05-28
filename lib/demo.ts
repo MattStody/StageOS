@@ -29,6 +29,7 @@ export interface DemoConfig {
   color: string
   scenario: DemoScenario
   logoUrl?: string
+  loginLogoUrl?: string
   navColor?: string
   overrides?: DemoProductionOverride[]
   extraProductions?: DemoExtraProduction[]

@@ -72,6 +72,7 @@ export default function DemoCreatorPage() {
   const [color, setColor] = useState(ACCENT_COLORS[0].value)
   const [navColor, setNavColor] = useState(NAV_COLORS[0].value)
   const [logoUrl, setLogoUrl] = useState('')
+  const [loginLogoUrl, setLoginLogoUrl] = useState('')
   const [userAvatarUrl, setUserAvatarUrl] = useState('')
   const [bgImageUrl, setBgImageUrl] = useState('')
   const [overrides, setOverrides] = useState<Record<string, { name: string; venue: string; subtitle: string; openingDate: string; closingDate: string }>>({})
@@ -117,13 +118,14 @@ export default function DemoCreatorPage() {
       scenario,
       ...(navColor && navColor !== NAV_COLORS[0].value && { navColor }),
       ...(logoUrl.trim() && { logoUrl: logoUrl.trim() }),
+      ...(loginLogoUrl.trim() && { loginLogoUrl: loginLogoUrl.trim() }),
       ...(userAvatarUrl.trim() && { userAvatarUrl: userAvatarUrl.trim() }),
       ...(bgImageUrl.trim() && { bgImageUrl: bgImageUrl.trim() }),
       ...(prodOverrides && prodOverrides.length > 0 && { overrides: prodOverrides }),
       ...(extraProductions.length > 0 && { extraProductions }),
       ...(noBaseProductions && { noBaseProductions: true }),
     }
-  }, [org, user, title, color, navColor, logoUrl, userAvatarUrl, bgImageUrl, scenario, overrides, scenarioProductions, extraProductions, noBaseProductions])
+  }, [org, user, title, color, navColor, logoUrl, loginLogoUrl, userAvatarUrl, bgImageUrl, scenario, overrides, scenarioProductions, extraProductions, noBaseProductions])
 
   function generate() {
     const config = buildConfig()
@@ -152,6 +154,7 @@ export default function DemoCreatorPage() {
     setColor(c.color)
     setNavColor(c.navColor ?? NAV_COLORS[0].value)
     setLogoUrl(c.logoUrl ?? '')
+    setLoginLogoUrl(c.loginLogoUrl ?? '')
     setUserAvatarUrl(c.userAvatarUrl ?? '')
     setBgImageUrl(c.bgImageUrl ?? '')
     const ovRecord: Record<string, { name: string; venue: string; subtitle: string; openingDate: string; closingDate: string }> = {}
@@ -202,6 +205,7 @@ export default function DemoCreatorPage() {
     setColor(ACCENT_COLORS[0].value)
     setNavColor(NAV_COLORS[0].value)
     setLogoUrl('')
+    setLoginLogoUrl('')
     setUserAvatarUrl('')
     setBgImageUrl('')
     setOverrides({})
@@ -395,13 +399,13 @@ export default function DemoCreatorPage() {
           {/* Logo */}
           <Card>
             <CardHeader>
-              <CardTitle>Custom Logo</CardTitle>
-              <span className="text-xs text-stone-400">Optional — replaces &quot;StageOps&quot; text in the sidebar</span>
+              <CardTitle>Logos &amp; Branding</CardTitle>
             </CardHeader>
-            <CardBody className="space-y-3">
+            <CardBody className="space-y-5">
+              {/* Sidebar logo */}
               <div>
                 <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1.5">
-                  Logo URL
+                  Sidebar Logo <span className="normal-case text-stone-400 font-normal">(optional)</span>
                 </label>
                 <input
                   value={logoUrl}
@@ -409,22 +413,54 @@ export default function DemoCreatorPage() {
                   placeholder="https://example.com/logo.png"
                   className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
                 />
-                <p className="text-xs text-stone-400 mt-1.5">Use a publicly accessible PNG, SVG, or WebP. Works best on dark backgrounds (white or light-coloured logo).</p>
+                <p className="text-xs text-stone-400 mt-1.5">Replaces the user name in the sidebar header. Use a light-coloured logo — it appears on a dark background.</p>
+                {logoUrl.trim() && (
+                  <div
+                    className="flex items-center gap-3 p-3 rounded mt-2"
+                    style={{ backgroundColor: navColor }}
+                  >
+                    <img
+                      src={logoUrl}
+                      alt="Logo preview"
+                      className="h-8 max-w-[140px] object-contain object-left"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
+                    <span className="text-xs text-white/50">Sidebar preview</span>
+                  </div>
+                )}
               </div>
-              {logoUrl.trim() && (
-                <div
-                  className="flex items-center gap-3 p-3 rounded"
-                  style={{ backgroundColor: navColor }}
-                >
-                  <img
-                    src={logoUrl}
-                    alt="Logo preview"
-                    className="h-8 max-w-[140px] object-contain object-left"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                  />
-                  <span className="text-xs text-white/50">Sidebar preview</span>
-                </div>
-              )}
+
+              {/* Login page logo */}
+              <div>
+                <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1.5">
+                  Login Page Logo <span className="normal-case text-stone-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  value={loginLogoUrl}
+                  onChange={(e) => setLoginLogoUrl(e.target.value)}
+                  placeholder="https://example.com/logo-dark.png"
+                  className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+                />
+                <p className="text-xs text-stone-400 mt-1.5">Appears on the demo entry page alongside the StageOps logo. Use a dark-coloured logo — it appears on a light background.</p>
+                {loginLogoUrl.trim() && (
+                  <div className="flex items-center gap-4 p-3 rounded mt-2 bg-stone-50 border border-stone-200">
+                    <div className="flex items-baseline gap-1 shrink-0">
+                      <span className="font-semibold text-sm tracking-tight text-stone-900">StageOps</span>
+                      <span className="text-stone-400 text-xs">GM</span>
+                    </div>
+                    <span className="text-stone-300 text-sm">×</span>
+                    <img
+                      src={loginLogoUrl}
+                      alt="Login logo preview"
+                      className="h-7 max-w-[120px] object-contain object-left"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
+                    <span className="text-xs text-stone-400 ml-auto">Login page preview</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Background image */}
               <div>
                 <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1.5">
                   Login Page Background Image <span className="normal-case text-stone-400 font-normal">(optional)</span>
@@ -436,13 +472,13 @@ export default function DemoCreatorPage() {
                   className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
                 />
                 <p className="text-xs text-stone-400 mt-1.5">Fills the left half of the demo login page. If blank, the navigation colour is used instead.</p>
+                {bgImageUrl.trim() && (
+                  <div
+                    className="h-24 rounded overflow-hidden border border-stone-200 mt-2"
+                    style={{ backgroundImage: `url(${bgImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                  />
+                )}
               </div>
-              {bgImageUrl.trim() && (
-                <div
-                  className="h-24 rounded overflow-hidden border border-stone-200"
-                  style={{ backgroundImage: `url(${bgImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-                />
-              )}
             </CardBody>
           </Card>
 

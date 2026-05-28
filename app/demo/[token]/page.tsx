@@ -66,19 +66,23 @@ export default function DemoEntryPage({ params }: { params: Promise<{ token: str
         <div className="w-full max-w-sm">
           {/* Logo */}
           <div className="mb-10">
-            {config.logoUrl ? (
-              <img
-                src={config.logoUrl}
-                alt={config.org}
-                className="h-8 max-w-[160px] object-contain object-left"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-              />
-            ) : (
+            <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-baseline gap-1">
                 <span className="font-semibold text-base tracking-tight text-stone-900">StageOps</span>
                 <span className="text-stone-400 text-xs ml-0.5">GM</span>
               </div>
-            )}
+              {config.loginLogoUrl && (
+                <>
+                  <span className="text-stone-300 text-sm">×</span>
+                  <img
+                    src={config.loginLogoUrl}
+                    alt={config.org}
+                    className="h-7 max-w-[120px] object-contain object-left"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                  />
+                </>
+              )}
+            </div>
           </div>
 
           {/* User */}
