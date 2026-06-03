@@ -103,6 +103,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
           {[
             { label: 'Budget', href: `/budget?prod=${id}` },
             { label: 'Revenue', href: `/revenue?prod=${id}` },
+            { label: 'Forecasting', href: `/productions/${id}/forecasting` },
             { label: 'Contracts', href: `/contracts?prod=${id}` },
             { label: 'Cash Flow', href: `/cashflow?prod=${id}` },
           ].map(({ label, href }) => (

@@ -31,6 +31,15 @@ export default function DashboardPage() {
   const highVarianceLines = budgetLines.filter((l) => l.budgeted > 0 && Math.abs((l.actual - l.budgeted) / l.budgeted) > 0.1 && l.actual > 0)
   if (highVarianceLines.length) risks.push(`${highVarianceLines.length} budget line${highVarianceLines.length > 1 ? 's' : ''} over 10% variance`)
 
+  const forecastAtRisk = productions.filter((p) => {
+    if (p.status !== 'in_performance' && p.status !== 'closing') return false
+    const totalMs = new Date(p.closingDate).getTime() - new Date(p.openingDate).getTime()
+    const elapsedMs = Date.now() - new Date(p.openingDate).getTime()
+    const runPct = totalMs > 0 ? elapsedMs / totalMs : 0
+    return runPct > 0.4 && p.projectedGross > 0 && p.currentGross < p.projectedGross * 0.5
+  })
+  if (forecastAtRisk.length) risks.push(`${forecastAtRisk.map(p => p.name).join(', ')} — gross revenue below 50% of target at mid-run`)
+
   const upcomingDeadlines = deadlines
     .filter((d) => d.status !== 'completed' && daysUntil(d.date) >= 0 && daysUntil(d.date) <= 14)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
