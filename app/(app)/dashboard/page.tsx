@@ -68,7 +68,17 @@ export default function DashboardPage() {
 
           return (
             <Link key={p.id} href={`/productions/${p.id}`} className="block">
-              <Card className="hover:border-stone-300 transition-colors cursor-pointer h-full">
+              <Card className="hover:border-stone-300 transition-colors cursor-pointer h-full overflow-hidden">
+                {p.imageUrl && (
+                  <div className="h-28 overflow-hidden">
+                    <img
+                      src={p.imageUrl}
+                      alt={p.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none' }}
+                    />
+                  </div>
+                )}
                 <CardBody className="p-5">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">

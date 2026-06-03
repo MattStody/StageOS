@@ -30,7 +30,13 @@ export default function ProductionsPage() {
               <div className="bg-white border border-stone-200 rounded-lg p-4 sm:p-6 hover:border-stone-300 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+                    {p.imageUrl ? (
+                      <div className="w-14 self-stretch shrink-0 rounded overflow-hidden min-h-[64px]">
+                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none' }} />
+                      </div>
+                    ) : (
+                      <div className="w-1 self-stretch rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <h2 className="text-base sm:text-lg font-medium text-stone-900">{p.name}</h2>

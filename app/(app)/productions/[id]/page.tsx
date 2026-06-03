@@ -1,19 +1,26 @@
 'use client'
-import { use } from 'react'
+import { use, useState } from 'react'
 import { useStore } from '@/lib/store'
 import { StatCard } from '@/components/ui/StatCard'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { RiskAlert } from '@/components/ui/RiskAlert'
+import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel, budgetUsedPct, variance } from '@/lib/utils'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight } from 'lucide-react'
+import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function ProductionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const { productions, budgetLines, revenueWeeks, contracts, deadlines, cashFlowRows } = useStore()
+  const { productions, budgetLines, revenueWeeks, contracts, deadlines, cashFlowRows, updateProduction } = useStore()
+  const { isAdmin } = useAuth()
+
+  const [editImageOpen, setEditImageOpen] = useState(false)
+  const [imageDraft, setImageDraft] = useState('')
 
   const prod = productions.find((p) => p.id === id)
   if (!prod) return notFound()
@@ -59,14 +66,35 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div>
+      {/* Hero image */}
+      {prod.imageUrl && (
+        <div className="w-full h-52 rounded-lg overflow-hidden mb-6">
+          <img
+            src={prod.imageUrl}
+            alt={prod.name}
+            className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none' }}
+          />
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-start gap-3">
           <div className="w-1 h-12 rounded-full mt-1" style={{ backgroundColor: prod.color }} />
           <div>
-            <div className="flex items-center gap-3 mb-0.5">
+            <div className="flex items-center gap-3 mb-0.5 flex-wrap">
               <h1 className="text-2xl font-light text-stone-900">{prod.name}</h1>
               <Badge variant={prod.status}>{statusLabel(prod.status)}</Badge>
+              {isAdmin && (
+                <button
+                  onClick={() => { setImageDraft(prod.imageUrl || ''); setEditImageOpen(true) }}
+                  className="p-1.5 text-stone-400 hover:text-stone-600 rounded hover:bg-stone-100 transition-colors"
+                  title={prod.imageUrl ? 'Change image' : 'Add image'}
+                >
+                  <ImageIcon size={14} />
+                </button>
+              )}
             </div>
             <p className="text-sm text-stone-500">{prod.venue} · {formatDate(prod.openingDate)} — {formatDate(prod.closingDate)}</p>
           </div>
@@ -167,6 +195,50 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
           </CardBody>
         </Card>
       </div>
+
+      {/* Image edit modal */}
+      <Modal open={editImageOpen} onClose={() => setEditImageOpen(false)} title="Production Image">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Image URL</label>
+            <input
+              value={imageDraft}
+              onChange={(e) => setImageDraft(e.target.value)}
+              placeholder="https://..."
+              className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+            />
+            <p className="text-xs text-stone-400 mt-1">Paste any image URL. Wide landscape photos work best.</p>
+          </div>
+          {imageDraft && (
+            <div className="h-40 rounded-lg overflow-hidden bg-stone-100 border border-stone-200">
+              <img
+                src={imageDraft}
+                alt="Preview"
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.2' }}
+              />
+            </div>
+          )}
+          <div className="flex justify-between items-center pt-2">
+            <div>
+              {prod.imageUrl && (
+                <button
+                  onClick={() => { updateProduction({ ...prod, imageUrl: undefined }); setEditImageOpen(false) }}
+                  className="text-xs text-red-500 hover:text-red-700"
+                >
+                  Remove image
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setEditImageOpen(false)}>Cancel</Button>
+              <Button onClick={() => { updateProduction({ ...prod, imageUrl: imageDraft.trim() || undefined }); setEditImageOpen(false) }}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       {/* Contracts + Deadlines */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

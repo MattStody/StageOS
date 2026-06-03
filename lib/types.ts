@@ -18,6 +18,7 @@ export interface Production {
   projectedGross: number
   currentGross: number
   color: string
+  imageUrl?: string
 }
 
 export interface BudgetLine {
