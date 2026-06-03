@@ -1,14 +1,68 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useStore } from '@/lib/store'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { fmt, fmtPct, variance, variancePct } from '@/lib/utils'
-import { Plus, Trash2, Pencil, ChevronDown, ChevronRight } from 'lucide-react'
+import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, Upload, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import type { BudgetLine } from '@/lib/types'
+
+type CsvRow = {
+  category: string
+  lineItem: string
+  budgeted: number
+  committed: number
+  actual: number
+  notes: string
+}
+
+function parseCSV(text: string): { rows: CsvRow[]; error: string | null } {
+  const lines = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').filter((l) => l.trim())
+  if (lines.length < 2) return { rows: [], error: 'CSV must have a header row and at least one data row.' }
+
+  const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, '').toLowerCase())
+  const colIdx = (names: string[]) => headers.findIndex((h) => names.includes(h))
+
+  const catIdx = colIdx(['category'])
+  const itemIdx = colIdx(['line item', 'lineitem', 'item'])
+  const budIdx = colIdx(['budgeted', 'budget'])
+  const comIdx = colIdx(['committed', 'commit'])
+  const actIdx = colIdx(['actual', 'actuals'])
+  const notesIdx = colIdx(['notes', 'note'])
+
+  if (catIdx === -1 || itemIdx === -1) {
+    return { rows: [], error: 'CSV must include "Category" and "Line Item" columns.' }
+  }
+
+  const parseNum = (val: string | undefined) => {
+    if (!val) return 0
+    const clean = val.replace(/^"|"$/g, '').replace(/[$,\s]/g, '')
+    const n = parseFloat(clean)
+    return isNaN(n) ? 0 : n
+  }
+
+  const rows: CsvRow[] = []
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].match(/("(?:[^"]|"")*"|[^,]*)/g) ?? []
+    const get = (idx: number) => (idx >= 0 ? (cols[idx] ?? '').trim().replace(/^"|"$/g, '') : '')
+    const lineItem = get(itemIdx)
+    if (!lineItem) continue
+    rows.push({
+      category: get(catIdx) || CATEGORIES[0],
+      lineItem,
+      budgeted: parseNum(get(budIdx)),
+      committed: parseNum(get(comIdx)),
+      actual: parseNum(get(actIdx)),
+      notes: get(notesIdx),
+    })
+  }
+
+  if (rows.length === 0) return { rows: [], error: 'No valid rows found in CSV.' }
+  return { rows, error: null }
+}
 
 const CATEGORIES = [
   'General Management', 'Cast', 'Creative Team', 'Musicians', 'Production Staff',
@@ -36,6 +90,36 @@ export default function BudgetPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<BudgetLine | null>(null)
   const [form, setForm] = useState<Omit<BudgetLine, 'id'>>(blankLine(selectedProd))
+
+  const [csvModalOpen, setCsvModalOpen] = useState(false)
+  const [csvRows, setCsvRows] = useState<CsvRow[]>([])
+  const [csvError, setCsvError] = useState<string | null>(null)
+  const [csvImported, setCsvImported] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  function handleCsvFile(file: File) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const text = e.target?.result as string
+      const { rows, error } = parseCSV(text)
+      setCsvRows(rows)
+      setCsvError(error)
+      setCsvImported(false)
+      setCsvModalOpen(true)
+    }
+    reader.readAsText(file)
+  }
+
+  function handleCsvImport() {
+    csvRows.forEach((row, i) => {
+      addBudgetLine({
+        ...row,
+        id: `b-csv-${Date.now()}-${i}`,
+        productionId: selectedProd,
+      })
+    })
+    setCsvImported(true)
+  }
 
   const prod = productions.find((p) => p.id === selectedProd)
   const lines = budgetLines.filter((l) => l.productionId === selectedProd)
@@ -83,9 +167,25 @@ export default function BudgetPage() {
         title="Production Budget"
         subtitle="Track budgeted, committed, and actual costs"
         actions={isAdmin ? (
-          <Button onClick={openAdd} size="sm">
-            <Plus size={13} /> Add Line
-          </Button>
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleCsvFile(file)
+                e.target.value = ''
+              }}
+            />
+            <Button variant="secondary" size="sm" onClick={() => fileInputRef.current?.click()}>
+              <Upload size={13} /> Import CSV
+            </Button>
+            <Button onClick={openAdd} size="sm">
+              <Plus size={13} /> Add Line
+            </Button>
+          </div>
         ) : undefined
         }
       />
@@ -201,6 +301,68 @@ export default function BudgetPage() {
           </tbody>
         </table>
       </div>
+
+      {/* CSV Import Modal */}
+      <Modal open={csvModalOpen} onClose={() => setCsvModalOpen(false)} title="Import Budget from CSV">
+        {csvError ? (
+          <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
+            <AlertCircle size={16} className="text-red-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-700">Could not parse CSV</p>
+              <p className="text-xs text-red-600 mt-0.5">{csvError}</p>
+            </div>
+          </div>
+        ) : csvImported ? (
+          <div className="flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-lg mb-4">
+            <CheckCircle2 size={16} className="text-emerald-500 shrink-0 mt-0.5" />
+            <p className="text-sm text-emerald-700">{csvRows.length} line{csvRows.length !== 1 ? 's' : ''} imported successfully.</p>
+          </div>
+        ) : (
+          <>
+            <p className="text-sm text-stone-500 mb-3">
+              Preview — {csvRows.length} row{csvRows.length !== 1 ? 's' : ''} detected. All will be added to <strong className="text-stone-700">{prod?.name}</strong>.
+            </p>
+            <div className="overflow-x-auto rounded border border-stone-200 mb-4 max-h-72 overflow-y-auto">
+              <table className="w-full min-w-[560px] text-xs">
+                <thead className="sticky top-0 bg-stone-50">
+                  <tr className="border-b border-stone-200">
+                    {['Category', 'Line Item', 'Budgeted', 'Committed', 'Actual', 'Notes'].map((h) => (
+                      <th key={h} className="text-left px-3 py-2 font-medium text-stone-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {csvRows.map((row, i) => (
+                    <tr key={i} className="border-b border-stone-100 hover:bg-stone-50">
+                      <td className="px-3 py-2 text-stone-600">{row.category}</td>
+                      <td className="px-3 py-2 text-stone-800">{row.lineItem}</td>
+                      <td className="px-3 py-2 text-stone-600 text-right">{fmt(row.budgeted)}</td>
+                      <td className="px-3 py-2 text-stone-600 text-right">{row.committed > 0 ? fmt(row.committed) : '—'}</td>
+                      <td className="px-3 py-2 text-stone-600 text-right">{row.actual > 0 ? fmt(row.actual) : '—'}</td>
+                      <td className="px-3 py-2 text-stone-400">{row.notes || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        <div className="mt-2 mb-3 p-3 bg-stone-50 rounded text-xs text-stone-500 border border-stone-200">
+          <strong className="text-stone-600">Expected columns:</strong> Category, Line Item, Budgeted, Committed, Actual, Notes
+        </div>
+
+        <div className="flex justify-end gap-2 pt-1">
+          <Button variant="secondary" onClick={() => setCsvModalOpen(false)}>
+            {csvImported ? 'Close' : 'Cancel'}
+          </Button>
+          {!csvError && !csvImported && (
+            <Button onClick={handleCsvImport}>
+              Import {csvRows.length} Line{csvRows.length !== 1 ? 's' : ''}
+            </Button>
+          )}
+        </div>
+      </Modal>
 
       {/* Modal */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Budget Line' : 'Add Budget Line'}>
