@@ -157,6 +157,7 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
     projectedGross,
     currentGross,
     color: e.color || '#6366f1',
+    ...(e.imageUrl && { imageUrl: e.imageUrl }),
   }
 
   const budgetLines: BudgetLine[] = [
@@ -409,6 +410,7 @@ export function applyProductionOverrides(
         ...(ov.subtitle !== undefined && { subtitle: ov.subtitle }),
         ...(ov.openingDate !== undefined && { openingDate: ov.openingDate }),
         ...(ov.closingDate !== undefined && { closingDate: ov.closingDate }),
+        ...(ov.imageUrl !== undefined && { imageUrl: ov.imageUrl }),
       }
     }),
   }

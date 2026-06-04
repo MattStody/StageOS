@@ -9,6 +9,7 @@ export interface DemoProductionOverride {
   subtitle?: string
   openingDate?: string
   closingDate?: string
+  imageUrl?: string
 }
 
 export interface DemoExtraProduction {
@@ -19,6 +20,7 @@ export interface DemoExtraProduction {
   openingDate: string
   closingDate: string
   color: string
+  imageUrl?: string
 }
 
 export interface DemoConfig {

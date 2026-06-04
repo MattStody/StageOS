@@ -12,6 +12,7 @@ import {
 } from '@/lib/demo'
 import { getScenarioData } from '@/lib/demoScenarios'
 import { Copy, Check, Trash2, ExternalLink, Plus, Pencil } from 'lucide-react'
+import { ProductionPoster } from '@/components/ui/ProductionPoster'
 
 interface SavedDemo {
   id: string
@@ -75,7 +76,7 @@ export default function DemoCreatorPage() {
   const [loginLogoUrl, setLoginLogoUrl] = useState('')
   const [userAvatarUrl, setUserAvatarUrl] = useState('')
   const [bgImageUrl, setBgImageUrl] = useState('')
-  const [overrides, setOverrides] = useState<Record<string, { name: string; venue: string; subtitle: string; openingDate: string; closingDate: string }>>({})
+  const [overrides, setOverrides] = useState<Record<string, { name: string; venue: string; subtitle: string; openingDate: string; closingDate: string; imageUrl: string }>>({})
   const [extraProductions, setExtraProductions] = useState<DemoExtraProduction[]>([])
   const [noBaseProductions, setNoBaseProductions] = useState(false)
   const [generatedUrl, setGeneratedUrl] = useState('')
@@ -98,13 +99,14 @@ export default function DemoCreatorPage() {
       .map((p) => {
         const ov = overrides[p.id]
         if (!ov) return null
-        const entry: { id: string; name?: string; venue?: string; subtitle?: string; openingDate?: string; closingDate?: string } = { id: p.id }
+        const entry: { id: string; name?: string; venue?: string; subtitle?: string; openingDate?: string; closingDate?: string; imageUrl?: string } = { id: p.id }
         if (ov.name && ov.name !== p.name) entry.name = ov.name
         if (ov.venue && ov.venue !== p.venue) entry.venue = ov.venue
         if (ov.subtitle && ov.subtitle !== p.subtitle) entry.subtitle = ov.subtitle
         if (ov.openingDate && ov.openingDate !== p.openingDate) entry.openingDate = ov.openingDate
         if (ov.closingDate && ov.closingDate !== p.closingDate) entry.closingDate = ov.closingDate
-        if (!entry.name && !entry.venue && !entry.subtitle && !entry.openingDate && !entry.closingDate) return null
+        if (ov.imageUrl && ov.imageUrl.trim()) entry.imageUrl = ov.imageUrl.trim()
+        if (!entry.name && !entry.venue && !entry.subtitle && !entry.openingDate && !entry.closingDate && !entry.imageUrl) return null
         return entry
       })
       .filter(Boolean) as DemoConfig['overrides']
@@ -157,7 +159,7 @@ export default function DemoCreatorPage() {
     setLoginLogoUrl(c.loginLogoUrl ?? '')
     setUserAvatarUrl(c.userAvatarUrl ?? '')
     setBgImageUrl(c.bgImageUrl ?? '')
-    const ovRecord: Record<string, { name: string; venue: string; subtitle: string; openingDate: string; closingDate: string }> = {}
+    const ovRecord: Record<string, { name: string; venue: string; subtitle: string; openingDate: string; closingDate: string; imageUrl: string }> = {}
     for (const ov of c.overrides ?? []) {
       ovRecord[ov.id] = {
         name: ov.name ?? '',
@@ -165,6 +167,7 @@ export default function DemoCreatorPage() {
         subtitle: ov.subtitle ?? '',
         openingDate: ov.openingDate ?? '',
         closingDate: ov.closingDate ?? '',
+        imageUrl: ov.imageUrl ?? '',
       }
     }
     setOverrides(ovRecord)
@@ -222,9 +225,9 @@ export default function DemoCreatorPage() {
     } catch {}
   }
 
-  function updateOverride(prodId: string, field: 'name' | 'venue' | 'subtitle' | 'openingDate' | 'closingDate', value: string) {
+  function updateOverride(prodId: string, field: 'name' | 'venue' | 'subtitle' | 'openingDate' | 'closingDate' | 'imageUrl', value: string) {
     setOverrides((prev) => {
-      const existing = prev[prodId] ?? { name: '', venue: '', subtitle: '', openingDate: '', closingDate: '' }
+      const existing = prev[prodId] ?? { name: '', venue: '', subtitle: '', openingDate: '', closingDate: '', imageUrl: '' }
       return { ...prev, [prodId]: { ...existing, [field]: value } }
     })
   }
@@ -536,6 +539,20 @@ export default function DemoCreatorPage() {
                         />
                       </div>
                     </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1">
+                        <label className="block text-xs text-stone-400 mb-1">Poster image URL <span className="text-stone-300">(optional)</span></label>
+                        <input
+                          value={overrides[p.id]?.imageUrl ?? ''}
+                          onChange={(e) => updateOverride(p.id, 'imageUrl', e.target.value)}
+                          placeholder="https://example.com/poster.jpg"
+                          className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500"
+                        />
+                      </div>
+                      {overrides[p.id]?.imageUrl?.trim() && (
+                        <ProductionPoster imageUrl={overrides[p.id].imageUrl} alt={p.name} className="w-16 shrink-0 mt-5" />
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -586,6 +603,22 @@ export default function DemoCreatorPage() {
                     placeholder="Venue"
                     className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500"
                   />
+                  {/* Production image */}
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1">
+                      <label className="block text-xs text-stone-400 mb-1">Poster image URL <span className="text-stone-300">(optional)</span></label>
+                      <input
+                        value={ep.imageUrl ?? ''}
+                        onChange={(e) => setExtraProductions((prev) => prev.map((x, j) => j === i ? { ...x, imageUrl: e.target.value } : x))}
+                        placeholder="https://example.com/poster.jpg"
+                        className="w-full px-3 py-2 text-sm border border-stone-200 rounded focus:outline-none focus:border-stone-500"
+                      />
+                      <p className="text-xs text-stone-400 mt-1">Displayed as a 4:5 poster. If the image isn't portrait, the background fills with a blurred version.</p>
+                    </div>
+                    {ep.imageUrl?.trim() && (
+                      <ProductionPoster imageUrl={ep.imageUrl} alt={ep.name} className="w-16 shrink-0" />
+                    )}
+                  </div>
                   <div className="grid grid-cols-3 gap-2">
                     <div>
                       <label className="block text-xs text-stone-400 mb-1">Opening date</label>
