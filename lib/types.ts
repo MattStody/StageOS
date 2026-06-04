@@ -143,3 +143,39 @@ export interface Document {
   size: string
   type: string
 }
+
+// ── Contract Obligations ────────────────────────────────────────────────────
+
+export type ObligationType =
+  | 'signature_required' | 'payment_due' | 'royalty_payment' | 'royalty_statement'
+  | 'report_due' | 'insurance_required' | 'approval_required' | 'deliverable_due'
+  | 'renewal_deadline' | 'option_deadline' | 'expiry_date' | 'termination_notice'
+  | 'reimbursement_due' | 'tax_form_required' | 'rights_restriction'
+  | 'publicity_credit' | 'confidentiality' | 'compliance' | 'other'
+
+export type ObligationStatus =
+  | 'not_started' | 'in_progress' | 'waiting_on_party' | 'completed' | 'overdue' | 'waived' | 'not_applicable'
+
+export type ObligationRisk = 'low' | 'medium' | 'high' | 'critical'
+
+export type ObligationSource = 'ai_extracted' | 'manual'
+
+export interface ContractObligation {
+  id: string
+  productionId: string
+  contractId: string
+  partyName: string
+  type: ObligationType
+  description: string
+  dueDate: string
+  amount?: number
+  status: ObligationStatus
+  owner: string
+  risk: ObligationRisk
+  source: ObligationSource
+  notes: string
+  syncedToCalendar: boolean
+  syncedToCashFlow: boolean
+  confidence?: 'high' | 'medium' | 'low'
+  createdAt: string
+}

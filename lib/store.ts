@@ -1,7 +1,7 @@
 'use client'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent } from './types'
+import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation } from './types'
 import {
   PRODUCTIONS,
   BUDGET_LINES,
@@ -13,6 +13,7 @@ import {
   MARKETING_BUDGET_LINES,
   MARKETING_CAMPAIGNS,
   CUSTOM_EVENTS,
+  OBLIGATIONS,
 } from './mockData'
 import type { ScenarioData } from './demoScenarios'
 
@@ -63,6 +64,11 @@ interface StageOpsState {
   updateCustomEvent: (event: CustomEvent) => void
   deleteCustomEvent: (id: string) => void
 
+  obligations: ContractObligation[]
+  addObligation: (obl: ContractObligation) => void
+  updateObligation: (obl: ContractObligation) => void
+  deleteObligation: (id: string) => void
+
   loadScenario: (data: ScenarioData) => void
   resetToDefaults: () => void
 }
@@ -80,6 +86,7 @@ export const useStore = create<StageOpsState>()(
       marketingBudgetLines: MARKETING_BUDGET_LINES,
       marketingCampaigns: MARKETING_CAMPAIGNS,
       customEvents: CUSTOM_EVENTS,
+      obligations: OBLIGATIONS,
 
       addBudgetLine: (line) => set((s) => ({ budgetLines: [...s.budgetLines, line] })),
       updateBudgetLine: (line) => set((s) => ({ budgetLines: s.budgetLines.map((l) => (l.id === line.id ? line : l)) })),
@@ -116,6 +123,10 @@ export const useStore = create<StageOpsState>()(
       updateCustomEvent: (event) => set((s) => ({ customEvents: s.customEvents.map((e) => (e.id === event.id ? event : e)) })),
       deleteCustomEvent: (id) => set((s) => ({ customEvents: s.customEvents.filter((e) => e.id !== id) })),
 
+      addObligation: (obl) => set((s) => ({ obligations: [...s.obligations, obl] })),
+      updateObligation: (obl) => set((s) => ({ obligations: s.obligations.map((o) => (o.id === obl.id ? obl : o)) })),
+      deleteObligation: (id) => set((s) => ({ obligations: s.obligations.filter((o) => o.id !== id) })),
+
       loadScenario: (data) => set(() => ({
         productions: data.productions,
         budgetLines: data.budgetLines,
@@ -127,6 +138,7 @@ export const useStore = create<StageOpsState>()(
         marketingBudgetLines: data.marketingBudgetLines,
         marketingCampaigns: data.marketingCampaigns,
         customEvents: data.customEvents,
+        obligations: OBLIGATIONS,
       })),
 
       resetToDefaults: () => set(() => ({
@@ -140,6 +152,7 @@ export const useStore = create<StageOpsState>()(
         marketingBudgetLines: MARKETING_BUDGET_LINES,
         marketingCampaigns: MARKETING_CAMPAIGNS,
         customEvents: CUSTOM_EVENTS,
+        obligations: OBLIGATIONS,
       })),
     }),
     { name: 'stageops-store' }

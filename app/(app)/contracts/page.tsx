@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { RiskAlert } from '@/components/ui/RiskAlert'
 import { fmt, formatDate, daysUntil, statusLabel } from '@/lib/utils'
-import { Plus, Trash2, Pencil, FileText, AlertTriangle, File } from 'lucide-react'
+import { Plus, Trash2, Pencil, FileText, AlertTriangle, File, Shield } from 'lucide-react'
+import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Contract, ContractType, ContractStatus } from '@/lib/types'
 
@@ -32,7 +33,7 @@ const typeLabel: Record<ContractType, string> = {
 }
 
 export default function ContractsPage() {
-  const { productions, contracts, addContract, updateContract, deleteContract } = useStore()
+  const { productions, contracts, obligations, addContract, updateContract, deleteContract } = useStore()
   const { isAdmin } = useAuth()
 
   const [selectedProd, setSelectedProd] = useState('all')
@@ -164,8 +165,22 @@ export default function ContractsPage() {
                               : <FileText size={12} className="text-stone-300 shrink-0" />
                             }
                             <div>
-                              <p className="text-stone-800 font-medium">{c.partyName}</p>
+                              <Link href={`/contracts/${c.id}`} className="text-stone-800 font-medium hover:text-stone-600 hover:underline">
+                                {c.partyName}
+                              </Link>
                               {selectedProd === 'all' && <p className="text-xs text-stone-400">{prod?.name}</p>}
+                              {(() => {
+                                const oblCount = obligations.filter((o) => o.contractId === c.id).length
+                                const critCount = obligations.filter((o) => o.contractId === c.id && (o.risk === 'critical' || o.risk === 'high')).length
+                                if (oblCount === 0) return null
+                                return (
+                                  <p className="text-[10px] text-stone-400 flex items-center gap-1 mt-0.5">
+                                    <Shield size={8} />
+                                    {oblCount} obligation{oblCount !== 1 ? 's' : ''}
+                                    {critCount > 0 && <span className="text-orange-600">· {critCount} high risk</span>}
+                                  </p>
+                                )
+                              })()}
                             </div>
                           </div>
                         </td>

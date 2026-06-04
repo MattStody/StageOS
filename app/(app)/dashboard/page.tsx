@@ -8,10 +8,10 @@ import { Badge } from '@/components/ui/Badge'
 import { RiskAlert } from '@/components/ui/RiskAlert'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel } from '@/lib/utils'
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Shield } from 'lucide-react'
 
 export default function DashboardPage() {
-  const { productions, contracts, deadlines, budgetLines, revenueWeeks, cashFlowRows } = useStore()
+  const { productions, contracts, deadlines, budgetLines, revenueWeeks, cashFlowRows, obligations } = useStore()
   const { isDemo, config } = useDemo()
   const firstName = (isDemo && config?.user ? config.user : 'Leon Kay').split(' ')[0]
 
@@ -30,6 +30,15 @@ export default function DashboardPage() {
 
   const highVarianceLines = budgetLines.filter((l) => l.budgeted > 0 && Math.abs((l.actual - l.budgeted) / l.budgeted) > 0.1 && l.actual > 0)
   if (highVarianceLines.length) risks.push(`${highVarianceLines.length} budget line${highVarianceLines.length > 1 ? 's' : ''} over 10% variance`)
+
+  const criticalObligations = obligations.filter((o) => {
+    if (o.status === 'completed' || o.status === 'waived' || o.status === 'not_applicable') return false
+    const isOverdue = o.dueDate && daysUntil(o.dueDate) < 0
+    return o.risk === 'critical' || (o.risk === 'high' && isOverdue)
+  })
+  if (criticalObligations.length) {
+    risks.push(`${criticalObligations.length} critical or high-risk contract obligation${criticalObligations.length > 1 ? 's' : ''} require attention`)
+  }
 
   const forecastAtRisk = productions.filter((p) => {
     if (p.status !== 'in_performance' && p.status !== 'closing') return false
@@ -180,33 +189,58 @@ export default function DashboardPage() {
           </CardBody>
         </Card>
 
-        {/* Contract status */}
+        {/* Contract obligations spotlight */}
         <Card>
           <CardHeader className="flex items-center justify-between">
-            <CardTitle>Contract Status</CardTitle>
-            <Link href="/contracts" className="text-xs text-stone-500 hover:text-stone-800">View all</Link>
+            <CardTitle className="flex items-center gap-2">
+              <Shield size={14} className="text-stone-500" />
+              Obligation Spotlight
+            </CardTitle>
+            <Link href="/contracts" className="text-xs text-stone-500 hover:text-stone-800">View contracts</Link>
           </CardHeader>
           <CardBody className="p-0">
-            <div className="divide-y divide-stone-100">
-              {contracts
-                .filter((c) => c.status !== 'signed' && c.status !== 'expired')
+            {(() => {
+              const urgent = obligations
+                .filter((o) => {
+                  if (o.status === 'completed' || o.status === 'waived' || o.status === 'not_applicable') return false
+                  return o.risk === 'critical' || o.risk === 'high'
+                })
+                .sort((a, b) => {
+                  const riskOrder = { critical: 0, high: 1, medium: 2, low: 3 }
+                  return (riskOrder[a.risk] - riskOrder[b.risk]) || new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+                })
                 .slice(0, 6)
-                .map((c) => {
-                  const prod = productions.find((p) => p.id === c.productionId)
-                  return (
-                    <div key={c.id} className="flex items-center justify-between px-6 py-3">
-                      <div className="flex items-center gap-3">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: prod?.color || '#a8a29e' }} />
-                        <div>
-                          <p className="text-sm text-stone-800">{c.partyName}</p>
-                          <p className="text-xs text-stone-500">{prod?.name}</p>
+
+              if (urgent.length === 0) {
+                return <p className="px-6 py-4 text-sm text-stone-500">No critical obligations outstanding.</p>
+              }
+
+              return (
+                <div className="divide-y divide-stone-100">
+                  {urgent.map((o) => {
+                    const prod = productions.find((p) => p.id === o.productionId)
+                    const isOverdue = o.dueDate && daysUntil(o.dueDate) < 0
+                    return (
+                      <Link key={o.id} href={`/contracts/${o.contractId}`} className="flex items-center justify-between px-6 py-3 hover:bg-stone-50 block">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: prod?.color || '#a8a29e' }} />
+                          <div className="min-w-0">
+                            <p className="text-sm text-stone-800 truncate">{o.description}</p>
+                            <p className="text-xs text-stone-500">{o.partyName}</p>
+                          </div>
                         </div>
-                      </div>
-                      <Badge variant={c.status}>{statusLabel(c.status)}</Badge>
-                    </div>
-                  )
-                })}
-            </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-3">
+                          {isOverdue && <span className="text-xs text-red-600 font-medium">{Math.abs(daysUntil(o.dueDate))}d overdue</span>}
+                          <span className={`text-xs px-2 py-0.5 rounded border font-medium capitalize ${
+                            o.risk === 'critical' ? 'text-red-700 bg-red-50 border-red-200' : 'text-orange-700 bg-orange-50 border-orange-200'
+                          }`}>{o.risk}</span>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )
+            })()}
           </CardBody>
         </Card>
       </div>

@@ -1,4 +1,4 @@
-import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent } from './types'
+import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation } from './types'
 
 export const PRODUCTIONS: Production[] = [
   {
@@ -404,4 +404,119 @@ export const CUSTOM_EVENTS: CustomEvent[] = [
   { id: 'ce3-7', productionId: 'prod-3', title: 'Label Industry Showcase — LA', date: '2026-01-10', color: '#0891b2', category: 'Industry', notes: 'Private performance for industry guests' },
   { id: 'ce3-8', productionId: 'prod-3', title: 'Tour Documentary Premiere', date: '2026-02-20', color: '#7c3aed', category: 'Media', notes: 'Streaming premiere of tour documentary film' },
   { id: 'ce3-9', productionId: 'prod-3', title: 'Closing City — Miami', date: '2026-04-18', color: '#059669', category: 'Performance', notes: 'Final 2 nights of tour' },
+]
+
+// ─── CONTRACT OBLIGATIONS ─────────────────────────────────────────────────────
+
+export const OBLIGATIONS: ContractObligation[] = [
+  // prod-1: A Winter's Dream — post-run obligations
+  {
+    id: 'obl-1-1', productionId: 'prod-1', contractId: 'c1-5', partyName: 'Premiere Rights LLC',
+    type: 'royalty_statement', description: 'Q1 2026 royalty statement to rights holder — 3% gross royalty per agreement',
+    dueDate: '2026-04-01', amount: 0, status: 'not_started', owner: 'GM', risk: 'critical',
+    source: 'ai_extracted', notes: 'Based on NY rights agreement', syncedToCalendar: true, syncedToCashFlow: false,
+    confidence: 'high', createdAt: '2026-01-06T09:00:00Z',
+  },
+  {
+    id: 'obl-1-2', productionId: 'prod-1', contractId: 'c1-8', partyName: 'Marcus Lee (Choreographer)',
+    type: 'approval_required', description: 'Transfer clause approval — choreographer must consent before any production transfer',
+    dueDate: '2026-01-10', amount: 0, status: 'in_progress', owner: 'Legal', risk: 'high',
+    source: 'ai_extracted', notes: 'Renegotiation in progress per contract status', syncedToCalendar: true, syncedToCashFlow: false,
+    confidence: 'high', createdAt: '2026-01-06T09:00:00Z',
+  },
+  {
+    id: 'obl-1-3', productionId: 'prod-1', contractId: 'c1-9', partyName: 'Horizon Investors LLC',
+    type: 'report_due', description: 'Final closing investor report — profit/loss, recoupment status, distribution schedule',
+    dueDate: '2026-03-01', amount: 0, status: 'not_started', owner: 'GM', risk: 'high',
+    source: 'ai_extracted', notes: 'Required per capitalization agreement', syncedToCalendar: true, syncedToCashFlow: false,
+    confidence: 'high', createdAt: '2026-01-06T09:00:00Z',
+  },
+  {
+    id: 'obl-1-4', productionId: 'prod-1', contractId: 'c1-6', partyName: 'St. James Theatre',
+    type: 'payment_due', description: 'Final venue settlement — post-run reconciliation and closing balance',
+    dueDate: '2026-01-20', amount: 28000, status: 'completed', owner: 'Finance', risk: 'low',
+    source: 'manual', notes: 'Settled Jan 18 — confirmed', syncedToCalendar: true, syncedToCashFlow: true,
+    createdAt: '2026-01-06T09:00:00Z',
+  },
+
+  // prod-2: The Silence Between — rehearsal/pre-opening + post-run
+  {
+    id: 'obl-2-1', productionId: 'prod-2', contractId: 'c2-2', partyName: 'Thomas Kline (Tenor)',
+    type: 'signature_required', description: 'AGMA male lead contract — sent Oct 15, awaiting counter-signature',
+    dueDate: '2025-11-30', amount: 38000, status: 'not_started', owner: 'Casting', risk: 'critical',
+    source: 'ai_extracted', notes: 'No response since Oct 15 — escalate immediately', syncedToCalendar: true, syncedToCashFlow: false,
+    confidence: 'high', createdAt: '2025-10-15T09:00:00Z',
+  },
+  {
+    id: 'obl-2-2', productionId: 'prod-2', contractId: 'c2-3', partyName: 'Amara Osei (Composer)',
+    type: 'royalty_statement', description: 'Post-run royalty statement — 4% gross royalty for world premiere run',
+    dueDate: '2026-04-15', amount: 0, status: 'not_started', owner: 'GM', risk: 'medium',
+    source: 'ai_extracted', notes: 'Quarterly report required per commission agreement', syncedToCalendar: true, syncedToCashFlow: false,
+    confidence: 'high', createdAt: '2025-10-15T09:00:00Z',
+  },
+  {
+    id: 'obl-2-3', productionId: 'prod-2', contractId: 'c2-6', partyName: 'NEA Grant Agreement',
+    type: 'report_due', description: 'NEA final programmatic report — outcomes, attendance, budget reconciliation',
+    dueDate: '2026-03-30', amount: 0, status: 'completed', owner: 'GM', risk: 'low',
+    source: 'ai_extracted', notes: 'Submitted Mar 28 — confirmed received', syncedToCalendar: true, syncedToCashFlow: false,
+    confidence: 'high', createdAt: '2025-10-15T09:00:00Z',
+  },
+  {
+    id: 'obl-2-4', productionId: 'prod-2', contractId: 'c2-7', partyName: 'Apex Sound Design',
+    type: 'signature_required', description: 'Sound design and rental contract — still in draft, must be executed before tech rehearsal',
+    dueDate: '2025-12-01', amount: 35000, status: 'not_started', owner: 'Production', risk: 'critical',
+    source: 'ai_extracted', notes: 'In negotiation — blocking tech prep', syncedToCalendar: true, syncedToCashFlow: false,
+    confidence: 'high', createdAt: '2025-10-15T09:00:00Z',
+  },
+  {
+    id: 'obl-2-5', productionId: 'prod-2', contractId: 'c2-8', partyName: 'Chamber Orchestra (8)',
+    type: 'tax_form_required', description: 'W-9 / tax forms for all AFM musicians prior to first payroll run',
+    dueDate: '2026-01-10', amount: 0, status: 'in_progress', owner: 'Finance', risk: 'medium',
+    source: 'manual', notes: '6 of 8 forms received', syncedToCalendar: false, syncedToCashFlow: false,
+    createdAt: '2025-11-01T09:00:00Z',
+  },
+  {
+    id: 'obl-2-6', productionId: 'prod-2', contractId: 'c2-3', partyName: 'Amara Osei (Composer)',
+    type: 'royalty_payment', description: 'Post-run royalty payment — 4% of net gross for 3-week run',
+    dueDate: '2026-05-01', amount: 24800, status: 'not_started', owner: 'Finance', risk: 'medium',
+    source: 'ai_extracted', notes: 'Amount estimated from projected gross', syncedToCalendar: true, syncedToCashFlow: false,
+    confidence: 'medium', createdAt: '2025-10-15T09:00:00Z',
+  },
+
+  // prod-3: Echoes Tour — active + post-tour
+  {
+    id: 'obl-3-1', productionId: 'prod-3', contractId: 'c3-4', partyName: 'Remaining 6 Cities (venues)',
+    type: 'signature_required', description: 'Venue contracts for remaining 6 cities — terms under negotiation, no executed agreements',
+    dueDate: '2025-11-30', amount: 120000, status: 'not_started', owner: 'GM', risk: 'critical',
+    source: 'ai_extracted', notes: 'Overdue — cannot confirm dates without executed contracts', syncedToCalendar: true, syncedToCashFlow: false,
+    confidence: 'high', createdAt: '2025-10-01T09:00:00Z',
+  },
+  {
+    id: 'obl-3-2', productionId: 'prod-3', contractId: 'c3-7', partyName: 'Evergreen Capital Partners',
+    type: 'report_due', description: 'Mid-tour investor progress report — gross to date, projection to close, cash position',
+    dueDate: '2026-01-15', amount: 0, status: 'completed', owner: 'GM', risk: 'low',
+    source: 'ai_extracted', notes: 'Delivered Jan 12 — well received', syncedToCalendar: true, syncedToCashFlow: false,
+    confidence: 'high', createdAt: '2025-10-01T09:00:00Z',
+  },
+  {
+    id: 'obl-3-3', productionId: 'prod-3', contractId: 'c3-7', partyName: 'Evergreen Capital Partners',
+    type: 'report_due', description: 'Final closing investor report — full P&L, recoupment calculation, distribution schedule',
+    dueDate: '2026-06-30', amount: 0, status: 'not_started', owner: 'GM', risk: 'medium',
+    source: 'ai_extracted', notes: 'Due 60 days after tour close (Apr 20)', syncedToCalendar: true, syncedToCashFlow: false,
+    confidence: 'high', createdAt: '2025-10-01T09:00:00Z',
+  },
+  {
+    id: 'obl-3-4', productionId: 'prod-3', contractId: 'c3-3', partyName: 'Live Nation Venues (22 cities)',
+    type: 'payment_due', description: 'Final tour settlement processing — 90/10 split reconciliation for all 22 cities',
+    dueDate: '2026-05-20', amount: 0, status: 'in_progress', owner: 'Finance', risk: 'medium',
+    source: 'manual', notes: '14 of 22 cities settled. 8 pending.', syncedToCalendar: true, syncedToCashFlow: true,
+    createdAt: '2026-04-22T09:00:00Z',
+  },
+  {
+    id: 'obl-3-5', productionId: 'prod-3', contractId: 'c3-8', partyName: 'National Media Rights',
+    type: 'signature_required', description: 'Film/streaming rights agreement for tour documentary — currently in draft',
+    dueDate: '2026-01-15', amount: 95000, status: 'not_started', owner: 'Legal', risk: 'high',
+    source: 'ai_extracted', notes: 'Documentary premiere Feb 20 — contract must precede', syncedToCalendar: true, syncedToCashFlow: false,
+    confidence: 'high', createdAt: '2025-10-01T09:00:00Z',
+  },
 ]
