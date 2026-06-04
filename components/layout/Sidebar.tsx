@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Film, DollarSign, TrendingUp, FileText,
-  ArrowRightLeft, CalendarDays, FileBarChart, FolderOpen, Settings, ChevronRight, Megaphone, Wand2,
+  ArrowRightLeft, CalendarDays, FileBarChart, FolderOpen, Settings, ChevronRight, Megaphone, Wand2, Plug2,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useStore } from '@/lib/store'
@@ -20,6 +20,7 @@ const navItems = [
   { label: 'Calendar', href: '/calendar', icon: CalendarDays, exact: false },
   { label: 'Reports', href: '/reports', icon: FileBarChart, exact: false },
   { label: 'Documents', href: '/documents', icon: FolderOpen, exact: false },
+  { label: 'Integrations', href: '/settings/integrations', icon: Plug2, exact: false },
   { label: 'Settings', href: '/settings', icon: Settings, exact: true },
   { label: 'Demo Creator', href: '/settings/demos', icon: Wand2, exact: false },
 ]
