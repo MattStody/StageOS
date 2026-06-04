@@ -10,7 +10,7 @@ import { Modal } from '@/components/ui/Modal'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel, budgetUsedPct, variance } from '@/lib/utils'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon } from 'lucide-react'
+import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon, Sparkles } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -99,7 +99,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
             <p className="text-sm text-stone-500">{prod.venue} · {formatDate(prod.openingDate)} — {formatDate(prod.closingDate)}</p>
           </div>
         </div>
-        <div className="flex gap-2 mt-1">
+        <div className="flex flex-wrap gap-2 mt-1">
           {[
             { label: 'Budget', href: `/budget?prod=${id}` },
             { label: 'Revenue', href: `/revenue?prod=${id}` },
@@ -111,6 +111,13 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
               {label}
             </Link>
           ))}
+          <Link
+            href={`/reports/ai-brief?prod=${id}`}
+            className="px-3 py-1.5 text-xs border border-stone-900 rounded text-white bg-stone-900 hover:bg-stone-800 transition-colors flex items-center gap-1.5"
+          >
+            <Sparkles size={11} />
+            Weekly Brief
+          </Link>
         </div>
       </div>
 

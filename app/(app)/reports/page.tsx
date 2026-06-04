@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel, budgetUsedPct, variancePct } from '@/lib/utils'
-import { FileBarChart, Download, AlertTriangle, CheckCircle } from 'lucide-react'
+import { FileBarChart, Download, AlertTriangle, CheckCircle, Sparkles } from 'lucide-react'
+import Link from 'next/link'
 
 export default function ReportsPage() {
   const { productions, budgetLines, revenueWeeks, contracts, cashFlowRows, deadlines } = useStore()
@@ -84,6 +85,17 @@ export default function ReportsPage() {
               <p className="text-sm text-stone-500 mb-6 max-w-sm mx-auto">
                 Select a report type and generate a producer-ready summary from your live production data.
               </p>
+              {/* AI Brief highlight */}
+              <Link href={`/reports/ai-brief?prod=${selectedProd}`} className="block mb-4 max-w-xs mx-auto">
+                <div className="flex items-start gap-3 p-4 rounded-lg border-2 border-stone-900 bg-stone-900 text-white cursor-pointer hover:bg-stone-800 transition-colors">
+                  <Sparkles size={18} className="text-stone-300 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold">AI Weekly Producer Brief</p>
+                    <p className="text-xs text-stone-400 mt-0.5">Executive-ready briefing generated from your live production data — with decisions, narrative, and email copy</p>
+                  </div>
+                </div>
+              </Link>
+
               <div className="grid grid-cols-1 gap-2 mb-6 text-left max-w-xs mx-auto">
                 {([
                   ['weekly', 'Weekly Producer Report', 'Full operational overview with risks and actions'],
