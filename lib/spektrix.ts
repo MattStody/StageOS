@@ -59,6 +59,174 @@ export interface SpektrixCredentials {
   apiKey: string
 }
 
+// ── Seat map types ──────────────────────────────────────────────────────────
+
+export type SeatStatus = 'sold' | 'available' | 'held' | 'comp'
+
+export interface Seat {
+  row: string
+  num: number
+  status: SeatStatus
+}
+
+export interface SectionMap {
+  id: string
+  label: string
+  rows: string[]
+  seatsPerRow: number
+  seats: Seat[]
+  sold: number
+  available: number
+  held: number
+  comps: number
+}
+
+export interface TicketMapData {
+  totalCapacity: number
+  sold: number
+  available: number
+  held: number
+  comps: number
+  grossRevenue: number
+  avgTicketPrice: number
+  sections: SectionMap[]
+}
+
+export interface SectionConfig {
+  id: string
+  label: string
+  rowLetters: string[]
+  seatsPerRow: number
+  avgPrice: number
+  holdPct?: number
+  compPct?: number
+}
+
+// ── Venue section configs ──────────────────────────────────────────────────
+
+const AZ = (n: number, start = 0) =>
+  Array.from({ length: n }, (_, i) => String.fromCharCode(65 + start + i))
+const DOUBLE = (n: number, start = 0) =>
+  Array.from({ length: n }, (_, i) => {
+    const c = String.fromCharCode(65 + start + i)
+    return c + c
+  })
+
+export function getVenueSections(productionId: string): SectionConfig[] {
+  if (productionId === 'prod-1') {
+    // Broadway house ~1,060 seats
+    return [
+      { id: 'orchestra', label: 'Orchestra', rowLetters: AZ(18), seatsPerRow: 32, avgPrice: 195, holdPct: 0.04, compPct: 0.02 },
+      { id: 'mezz', label: 'Mezzanine', rowLetters: DOUBLE(7), seatsPerRow: 38, avgPrice: 149, holdPct: 0.03, compPct: 0.02 },
+      { id: 'balcony', label: 'Balcony', rowLetters: AZ(6, 7), seatsPerRow: 40, avgPrice: 99, holdPct: 0.02, compPct: 0.01 },
+    ]
+  }
+  if (productionId === 'prod-2') {
+    // BAM Harvey ~550 seats
+    return [
+      { id: 'orchestra', label: 'Orchestra', rowLetters: AZ(13), seatsPerRow: 26, avgPrice: 125, holdPct: 0.06, compPct: 0.05 },
+      { id: 'balcony', label: 'Balcony', rowLetters: DOUBLE(7), seatsPerRow: 30, avgPrice: 89, holdPct: 0.04, compPct: 0.03 },
+    ]
+  }
+  // prod-3: Concert arena
+  return [
+    { id: 'floor', label: 'Floor', rowLetters: Array.from({ length: 12 }, (_, i) => String(i + 1)), seatsPerRow: 44, avgPrice: 165, holdPct: 0.04, compPct: 0.02 },
+    { id: 'lower', label: 'Lower Bowl', rowLetters: AZ(15), seatsPerRow: 52, avgPrice: 120, holdPct: 0.03, compPct: 0.01 },
+    { id: 'upper', label: 'Upper Bowl', rowLetters: AZ(10, 15), seatsPerRow: 60, avgPrice: 79, holdPct: 0.02, compPct: 0.01 },
+  ]
+}
+
+// ── Deterministic seat map generator ──────────────────────────────────────
+
+function lcg(seed: number) {
+  let s = seed >>> 0
+  return () => {
+    s = (Math.imul(1664525, s) + 1013904223) >>> 0
+    return s / 0x100000000
+  }
+}
+
+function hashStr(str: string): number {
+  let h = 0
+  for (let i = 0; i < str.length; i++) {
+    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0
+  }
+  return h >>> 0
+}
+
+export function generateTicketMap(
+  perfId: string,
+  targetSoldPct: number,
+  sections: SectionConfig[],
+): TicketMapData {
+  const rand = lcg(hashStr(perfId))
+
+  let totalCapacity = 0
+  let totalSold = 0
+  let totalHeld = 0
+  let totalComps = 0
+  let totalRevenue = 0
+
+  const sectionMaps: SectionMap[] = sections.map((cfg) => {
+    const capacity = cfg.rowLetters.length * cfg.seatsPerRow
+    totalCapacity += capacity
+
+    const sectionPct = Math.min(1, Math.max(0, targetSoldPct + (rand() - 0.5) * 0.14))
+    const sectionSold = Math.round(capacity * sectionPct)
+    const sectionHeld = Math.round(sectionSold * (cfg.holdPct ?? 0.04))
+    const sectionComps = Math.round(sectionSold * (cfg.compPct ?? 0.02))
+    const sectionPaid = Math.max(0, sectionSold - sectionHeld - sectionComps)
+
+    totalSold += sectionSold
+    totalHeld += sectionHeld
+    totalComps += sectionComps
+    totalRevenue += sectionPaid * cfg.avgPrice * (0.92 + rand() * 0.16)
+
+    // Shuffle seat indices deterministically then assign statuses
+    const seatStatuses: SeatStatus[] = Array(capacity).fill('available')
+    const indices = Array.from({ length: capacity }, (_, i) => i)
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]]
+    }
+    for (let i = 0; i < sectionSold; i++) seatStatuses[indices[i]] = 'sold'
+    for (let i = 0; i < sectionHeld; i++) seatStatuses[indices[i]] = 'held'
+    for (let i = sectionHeld; i < sectionHeld + sectionComps; i++) seatStatuses[indices[i]] = 'comp'
+
+    const seats: Seat[] = []
+    let idx = 0
+    for (const row of cfg.rowLetters) {
+      for (let n = 1; n <= cfg.seatsPerRow; n++) {
+        seats.push({ row, num: n, status: seatStatuses[idx++] })
+      }
+    }
+
+    return {
+      id: cfg.id,
+      label: cfg.label,
+      rows: cfg.rowLetters,
+      seatsPerRow: cfg.seatsPerRow,
+      seats,
+      sold: sectionSold,
+      available: capacity - sectionSold,
+      held: sectionHeld,
+      comps: sectionComps,
+    }
+  })
+
+  const paid = totalSold - totalHeld - totalComps
+  return {
+    totalCapacity,
+    sold: totalSold,
+    available: totalCapacity - totalSold,
+    held: totalHeld,
+    comps: totalComps,
+    grossRevenue: Math.round(totalRevenue),
+    avgTicketPrice: paid > 0 ? Math.round((totalRevenue / paid) * 100) / 100 : 0,
+    sections: sectionMaps,
+  }
+}
+
 // ── Mock data ───────────────────────────────────────────────────────────────
 
 const MOCK_EVENTS: SpektrixEvent[] = [
@@ -98,24 +266,8 @@ function generateMockInstancesWithSales(eventId: string): SpektrixInstanceWithSa
 
       const instanceId = `inst-${eventId}-${perfIndex}`
       results.push({
-        instance: {
-          id: instanceId,
-          eventId,
-          start: d.toISOString().slice(0, 19),
-          end: end.toISOString().slice(0, 19),
-          isOnSale: true,
-          capacity,
-        },
-        sales: {
-          instanceId,
-          totalTicketsSold: sold,
-          totalCapacity: capacity,
-          grossRevenue: gross,
-          netRevenue: net,
-          totalComps: comps,
-          totalDiscounts: Math.round(discounts * 100) / 100,
-          averageTicketPrice: Math.round(atp * 100) / 100,
-        },
+        instance: { id: instanceId, eventId, start: d.toISOString().slice(0, 19), end: end.toISOString().slice(0, 19), isOnSale: true, capacity },
+        sales: { instanceId, totalTicketsSold: sold, totalCapacity: capacity, grossRevenue: gross, netRevenue: net, totalComps: comps, totalDiscounts: Math.round(discounts * 100) / 100, averageTicketPrice: Math.round(atp * 100) / 100 },
       })
       perfIndex++
     }
@@ -131,11 +283,7 @@ function generateMockInstancesWithSales(eventId: string): SpektrixInstanceWithSa
 //   const stringToSign = `GET\n\n\n${date}\n${path}`
 //   const signature = await hmacSha1Base64(creds.apiKey, stringToSign)
 //   const res = await fetch(`${baseUrl}${path}`, {
-//     headers: {
-//       Authorization: `SpektrixAPI3 ${creds.apiUser}:${signature}`,
-//       Date: date,
-//       Accept: 'application/json',
-//     },
+//     headers: { Authorization: `SpektrixAPI3 ${creds.apiUser}:${signature}`, Date: date, Accept: 'application/json' },
 //   })
 //   if (!res.ok) throw new Error(`Spektrix ${res.status}: ${res.statusText}`)
 //   return res.json() as Promise<T>
@@ -146,11 +294,7 @@ function delay(ms: number) {
 }
 
 export async function fetchSpektrixEvents(creds: SpektrixCredentials): Promise<SpektrixEvent[]> {
-  if (SPEKTRIX_MOCK) {
-    await delay(700)
-    return MOCK_EVENTS
-  }
-  // return spektrixFetch<SpektrixEvent[]>(creds, '/events')
+  if (SPEKTRIX_MOCK) { await delay(700); return MOCK_EVENTS }
   return []
 }
 
@@ -165,32 +309,14 @@ export async function fetchInstancesWithSales(
     const all = generateMockInstancesWithSales(eventId)
     const from = new Date(fromDate).getTime()
     const to = new Date(toDate).getTime() + 86400000
-    return all.filter((r) => {
-      const t = new Date(r.instance.start).getTime()
-      return t >= from && t <= to
-    })
+    return all.filter((r) => { const t = new Date(r.instance.start).getTime(); return t >= from && t <= to })
   }
-  // Real implementation:
-  // const instances = await spektrixFetch<SpektrixInstance[]>(creds, `/events/${eventId}/instances`)
-  // const filtered = instances.filter((inst) => {
-  //   const t = new Date(inst.start).getTime()
-  //   return t >= new Date(fromDate).getTime() && t <= new Date(toDate).getTime() + 86400000
-  // })
-  // const summaries = await Promise.all(
-  //   filtered.map((inst) => spektrixFetch<SpektrixSalesSummary>(creds, `/instances/${inst.id}/salesSummary`))
-  // )
-  // return filtered.map((inst, i) => ({ instance: inst, sales: summaries[i] }))
   return []
 }
 
 export async function testSpektrixConnection(creds: SpektrixCredentials): Promise<{ ok: boolean; message: string }> {
-  if (SPEKTRIX_MOCK) {
-    await delay(900)
-    return { ok: true, message: 'Mock connection successful — 3 events available' }
-  }
+  if (SPEKTRIX_MOCK) { await delay(900); return { ok: true, message: 'Mock connection successful — 3 events available' } }
   try {
-    // const events = await spektrixFetch<SpektrixEvent[]>(creds, '/events')
-    // return { ok: true, message: `Connected — ${events.length} events found` }
     return { ok: false, message: 'Real API not yet enabled — set SPEKTRIX_MOCK = false' }
   } catch (e) {
     return { ok: false, message: e instanceof Error ? e.message : 'Connection failed' }
@@ -201,30 +327,15 @@ export async function testSpektrixConnection(creds: SpektrixCredentials): Promis
 
 export function aggregateByWeek(instances: SpektrixInstanceWithSales[]): SpektrixWeekSummary[] {
   const map = new Map<string, SpektrixWeekSummary>()
-
   for (const { instance, sales } of instances) {
     const d = new Date(instance.start)
-    const dayOfWeek = d.getDay()          // 0=Sun … 6=Sat
-    const daysToSat = dayOfWeek === 6 ? 0 : 6 - dayOfWeek
+    const daysToSat = d.getDay() === 6 ? 0 : 6 - d.getDay()
     const sat = new Date(d)
     sat.setDate(d.getDate() + daysToSat)
     const weekEnding = sat.toISOString().slice(0, 10)
-
     if (!map.has(weekEnding)) {
-      map.set(weekEnding, {
-        weekEnding,
-        performances: 0,
-        ticketsSold: 0,
-        totalSeats: 0,
-        grossRevenue: 0,
-        netRevenue: 0,
-        comps: 0,
-        discounts: 0,
-        avgTicketPrice: 0,
-        capacityPct: 0,
-      })
+      map.set(weekEnding, { weekEnding, performances: 0, ticketsSold: 0, totalSeats: 0, grossRevenue: 0, netRevenue: 0, comps: 0, discounts: 0, avgTicketPrice: 0, capacityPct: 0 })
     }
-
     const row = map.get(weekEnding)!
     row.performances++
     row.ticketsSold += sales.totalTicketsSold
@@ -234,9 +345,7 @@ export function aggregateByWeek(instances: SpektrixInstanceWithSales[]): Spektri
     row.comps += sales.totalComps
     row.discounts += sales.totalDiscounts
   }
-
   const rows = Array.from(map.values()).sort((a, b) => a.weekEnding.localeCompare(b.weekEnding))
-
   for (const row of rows) {
     row.grossRevenue = Math.round(row.grossRevenue * 100) / 100
     row.netRevenue = Math.round(row.netRevenue * 100) / 100
@@ -244,12 +353,9 @@ export function aggregateByWeek(instances: SpektrixInstanceWithSales[]): Spektri
     row.avgTicketPrice = row.ticketsSold > 0 ? Math.round((row.grossRevenue / row.ticketsSold) * 100) / 100 : 0
     row.capacityPct = row.totalSeats > 0 ? Math.round((row.ticketsSold / row.totalSeats) * 1000) / 10 : 0
   }
-
   return rows
 }
 
-// Builds RevenueWeek rows with deterministic IDs — re-syncing the same event
-// to the same production updates existing rows rather than creating duplicates.
 export function buildRevenueWeeksFromSpektrix(productionId: string, weeks: SpektrixWeekSummary[]): RevenueWeek[] {
   return weeks.map((w) => ({
     id: `spx-${productionId}-${w.weekEnding}`,

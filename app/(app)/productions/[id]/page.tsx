@@ -10,10 +10,13 @@ import { Modal } from '@/components/ui/Modal'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel, budgetUsedPct } from '@/lib/utils'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon, Sparkles, Theater, Plus, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon, Sparkles, Theater, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Ticket } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuth } from '@/contexts/AuthContext'
 import type { PerformanceDate, PerformanceStatus } from '@/lib/types'
+import { generateTicketMap, getVenueSections } from '@/lib/spektrix'
+import type { TicketMapData } from '@/lib/spektrix'
+import { SeatMap } from '@/components/ui/SeatMap'
 
 const PERF_STATUS_LABELS: Record<PerformanceStatus, string> = {
   scheduled: 'Scheduled',
@@ -55,6 +58,8 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
   const [editingPerf, setEditingPerf] = useState<PerformanceDate | null>(null)
   const [perfForm, setPerfForm] = useState<Omit<PerformanceDate, 'id'>>(blankPerf(id))
   const [showAllPerfs, setShowAllPerfs] = useState(false)
+  const [ticketPerf, setTicketPerf] = useState<PerformanceDate | null>(null)
+  const [ticketMapData, setTicketMapData] = useState<TicketMapData | null>(null)
 
   const prod = productions.find((p) => p.id === id)
   if (!prod) return notFound()
@@ -85,6 +90,16 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
   const completedCount = perfs.filter((p) => p.status === 'completed').length
   const cancelledCount = perfs.filter((p) => p.status === 'cancelled').length
   const displayPerfs = showAllPerfs ? perfs : perfs.slice(0, 8)
+
+  function openTicketMap(p: PerformanceDate) {
+    const sections = getVenueSections(id)
+    const basePct = prod
+      ? Math.min(0.98, Math.max(0.25, (prod.currentGross / Math.max(prod.projectedGross, 1)) * (p.status === 'scheduled' ? 0.55 : 1.05)))
+      : 0.72
+    const targetPct = p.status === 'cancelled' ? 0.18 : p.status === 'postponed' ? 0.28 : basePct
+    setTicketMapData(generateTicketMap(p.id, targetPct, sections))
+    setTicketPerf(p)
+  }
 
   function openAddPerf() {
     setEditingPerf(null)
@@ -266,6 +281,18 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
         </Card>
       </div>
 
+      {/* Ticket map modal */}
+      <Modal
+        open={!!ticketPerf}
+        onClose={() => { setTicketPerf(null); setTicketMapData(null) }}
+        title={ticketPerf ? `${formatDate(ticketPerf.date)} · ${fmt12(ticketPerf.time)}${ticketPerf.notes ? ` — ${ticketPerf.notes}` : ''}` : ''}
+        className="max-w-3xl"
+      >
+        {ticketMapData && prod && (
+          <SeatMap data={ticketMapData} productionColor={prod.color} />
+        )}
+      </Modal>
+
       {/* Performance modal */}
       <Modal open={perfModalOpen} onClose={() => setPerfModalOpen(false)} title={editingPerf ? 'Edit Performance' : 'Add Performance'} className="max-w-md">
         <div className="space-y-3">
@@ -411,7 +438,11 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                     {displayPerfs.map((p) => {
                       const d = new Date(p.date + 'T12:00:00')
                       return (
-                        <tr key={p.id} className="border-b border-stone-100 hover:bg-stone-50/50 group">
+                        <tr
+                          key={p.id}
+                          className="border-b border-stone-100 hover:bg-stone-50/50 group cursor-pointer"
+                          onClick={() => openTicketMap(p)}
+                        >
                           <td className="px-5 py-2.5 text-stone-800 font-medium text-sm">{formatDate(p.date)}</td>
                           <td className="px-4 py-2.5 text-stone-500 text-xs">{DAY_NAMES[d.getDay()]}</td>
                           <td className="px-4 py-2.5 text-stone-600 text-sm">{fmt12(p.time)}</td>
@@ -421,14 +452,17 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                             </span>
                           </td>
                           <td className="px-4 py-2.5 text-xs text-stone-400 max-w-xs truncate">{p.notes || '—'}</td>
-                          {isAdmin && (
-                            <td className="px-4 py-2.5">
-                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                                <button onClick={() => openEditPerf(p)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>
-                                <button onClick={() => deletePerformanceDate(p.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>
-                              </div>
-                            </td>
-                          )}
+                          <td className="px-4 py-2.5">
+                            <div className="flex gap-1 items-center justify-end">
+                              <Ticket size={11} className="text-stone-300 group-hover:text-stone-500 transition-colors" />
+                              {isAdmin && (
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                  <button onClick={() => openEditPerf(p)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>
+                                  <button onClick={() => deletePerformanceDate(p.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>
+                                </div>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       )
                     })}
