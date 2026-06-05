@@ -17,6 +17,7 @@ import {
   testSpektrixConnection,
   aggregateByWeek,
   buildRevenueWeeksFromSpektrix,
+  buildProductionProjections,
 } from '@/lib/spektrix'
 import type { SpektrixEvent, SpektrixWeekSummary, SpektrixCredentials } from '@/lib/spektrix'
 import type { ProductionStatus } from '@/lib/types'
@@ -75,7 +76,14 @@ function StepIndicator({ current }: { current: WizardStep }) {
 }
 
 export default function IntegrationsPage() {
-  const { productions, addRevenueWeek, updateRevenueWeek, addProduction, spektrixBaseUrl, setSpektrixBaseUrl } = useStore()
+  const {
+    productions,
+    addRevenueWeek, updateRevenueWeek,
+    addProduction, updateProduction,
+    addBudgetLine,
+    addCashFlowRow,
+    spektrixBaseUrl, setSpektrixBaseUrl,
+  } = useStore()
 
   // Connection fields
   const [clientName, setClientName] = useState('')
@@ -105,7 +113,7 @@ export default function IntegrationsPage() {
   const [newProdColor, setNewProdColor] = useState(PROD_COLORS[0])
 
   // Import results
-  const [importResult, setImportResult] = useState<{ created: number; updated: number } | null>(null)
+  const [importResult, setImportResult] = useState<{ created: number; updated: number; projectionsGenerated: boolean } | null>(null)
 
   // History
   const [syncHistory, setSyncHistory] = useState<SyncRecord[]>([])
@@ -204,8 +212,28 @@ export default function IntegrationsPage() {
       }
     }
 
+    // For newly created productions (totalBudget === 0), generate full projections
     const prod = useStore.getState().productions.find((p) => p.id === selectedProductionId)
-    setImportResult({ created, updated })
+    let projectionsGenerated = false
+    if (prod && prod.totalBudget === 0) {
+      const { budgetLines, cashFlowRows, productionUpdates } = buildProductionProjections(selectedProductionId, weekSummaries)
+      const existingBudgetLines = useStore.getState().budgetLines
+      for (const bl of budgetLines) {
+        if (!existingBudgetLines.find((b) => b.id === bl.id)) addBudgetLine(bl)
+      }
+      const existingCashFlowRows = useStore.getState().cashFlowRows
+      for (const cf of cashFlowRows) {
+        if (!existingCashFlowRows.find((c) => c.id === cf.id)) addCashFlowRow(cf)
+      }
+      updateProduction({ ...prod, ...productionUpdates })
+      projectionsGenerated = true
+    } else if (prod) {
+      // For existing productions, update gross figures from actual Spektrix data
+      const totalGross = weekSummaries.reduce((s, w) => s + w.grossRevenue, 0)
+      updateProduction({ ...prod, currentGross: Math.round(totalGross) })
+    }
+
+    setImportResult({ created, updated, projectionsGenerated })
 
     setSyncHistory((prev) => [
       {
@@ -676,12 +704,16 @@ export default function IntegrationsPage() {
             )}
 
             {/* Step: importing */}
-            {step === 'importing' && (
-              <div className="flex flex-col items-center justify-center py-10 gap-3">
-                <Loader2 size={24} className="animate-spin text-stone-400" />
-                <p className="text-sm text-stone-500">Writing revenue weeks to StageOS…</p>
-              </div>
-            )}
+            {step === 'importing' && (() => {
+              const isNew = useStore.getState().productions.find((p) => p.id === selectedProductionId)?.totalBudget === 0
+              return (
+                <div className="flex flex-col items-center justify-center py-10 gap-3">
+                  <Loader2 size={24} className="animate-spin text-stone-400" />
+                  <p className="text-sm text-stone-500">Writing revenue weeks to StageOS…</p>
+                  {isNew && <p className="text-xs text-stone-400">Generating budget &amp; cash flow projections…</p>}
+                </div>
+              )
+            })()}
 
             {/* Step: complete */}
             {step === 'complete' && (() => {
@@ -697,12 +729,20 @@ export default function IntegrationsPage() {
                       {weekSummaries.length} weeks from <strong>{selectedEvent?.name}</strong> imported into <strong>{prod?.name}</strong>
                     </p>
                     {importResult && (
-                      <p className="text-xs text-stone-400 mt-0.5">
-                        {importResult.created > 0 && `${importResult.created} new week${importResult.created !== 1 ? 's' : ''} created`}
-                        {importResult.created > 0 && importResult.updated > 0 && ' · '}
-                        {importResult.updated > 0 && `${importResult.updated} updated`}
-                        {' · '}{fmt(totalGross)} gross · {fmtPct(avgCapacity)} avg capacity
-                      </p>
+                      <>
+                        <p className="text-xs text-stone-400 mt-0.5">
+                          {importResult.created > 0 && `${importResult.created} new week${importResult.created !== 1 ? 's' : ''} created`}
+                          {importResult.created > 0 && importResult.updated > 0 && ' · '}
+                          {importResult.updated > 0 && `${importResult.updated} updated`}
+                          {' · '}{fmt(totalGross)} gross · {fmtPct(avgCapacity)} avg capacity
+                        </p>
+                        {importResult.projectionsGenerated && (
+                          <p className="text-xs text-emerald-700 mt-1 flex items-center justify-center gap-1">
+                            <CheckCircle2 size={11} />
+                            Budget lines &amp; cash flow projections generated from ticket revenue
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                   <div className="flex gap-3">

@@ -1,7 +1,7 @@
 // Spektrix API v3 — types match real API response shapes exactly.
 // Toggle SPEKTRIX_MOCK = false and supply real credentials to go live.
 
-import type { RevenueWeek } from './types'
+import type { RevenueWeek, BudgetLine, CashFlowRow, Production } from './types'
 
 export const SPEKTRIX_MOCK = true
 
@@ -371,4 +371,116 @@ export function buildRevenueWeeksFromSpektrix(productionId: string, weeks: Spekt
     netRevenue: w.netRevenue,
     totalSeats: w.totalSeats,
   }))
+}
+
+// ── Projection builder ──────────────────────────────────────────────────────
+// Generates budget lines and cash-flow rows for a freshly created production.
+// All figures are estimates derived from Spektrix ticket revenue.
+
+interface BudgetTemplate {
+  category: string
+  lineItem: string
+  ratio?: number      // fraction of totalBudget
+  grossRatio?: number // fraction of totalGross (royalties, fees)
+}
+
+const BUDGET_TEMPLATE: BudgetTemplate[] = [
+  { category: 'General Management', lineItem: 'GM Fee',                   ratio: 0.030 },
+  { category: 'General Management', lineItem: 'Office & Admin',           ratio: 0.008 },
+  { category: 'Cast',               lineItem: 'Principal Salaries',       ratio: 0.120 },
+  { category: 'Cast',               lineItem: 'Supporting Cast',          ratio: 0.070 },
+  { category: 'Creative Team',      lineItem: 'Director Fee',             ratio: 0.035 },
+  { category: 'Creative Team',      lineItem: 'Design Team',              ratio: 0.025 },
+  { category: 'Production Staff',   lineItem: 'Production Manager',       ratio: 0.015 },
+  { category: 'Stage Management',   lineItem: 'Stage Management Team',    ratio: 0.020 },
+  { category: 'Set',                lineItem: 'Scenic Design & Build',    ratio: 0.070 },
+  { category: 'Costumes',           lineItem: 'Costume Design & Build',   ratio: 0.040 },
+  { category: 'Lighting',           lineItem: 'Lighting Design & Equipment', ratio: 0.035 },
+  { category: 'Sound',              lineItem: 'Sound Design & Equipment', ratio: 0.030 },
+  { category: 'Venue Rental',       lineItem: 'Theatre/Venue Rental',     ratio: 0.120 },
+  { category: 'Marketing & Advertising', lineItem: 'Marketing & Advertising', ratio: 0.090 },
+  { category: 'Press',              lineItem: 'Press Representative',     ratio: 0.010 },
+  { category: 'Royalties',          lineItem: 'Author/Composer Royalties', grossRatio: 0.030 },
+  { category: 'Legal',              lineItem: 'Legal Fees',               ratio: 0.015 },
+  { category: 'Insurance',          lineItem: 'Production Insurance',     ratio: 0.010 },
+  { category: 'Ticketing Fees',     lineItem: 'Box Office & Service Fees', grossRatio: 0.020 },
+  { category: 'Travel & Housing',   lineItem: 'Cast & Crew Travel',       ratio: 0.020 },
+  { category: 'Contingency',        lineItem: 'Contingency Reserve',      ratio: 0.030 },
+]
+
+export function buildProductionProjections(
+  productionId: string,
+  weeks: SpektrixWeekSummary[],
+): {
+  budgetLines: BudgetLine[]
+  cashFlowRows: CashFlowRow[]
+  productionUpdates: Pick<Production, 'projectedGross' | 'currentGross' | 'totalBudget' | 'totalActual' | 'cashOnHand'>
+} {
+  const totalGross = weeks.reduce((s, w) => s + w.grossRevenue, 0)
+  const numWeeks = Math.max(weeks.length, 1)
+
+  // Budget estimated at 75% of total gross — typical commercial theatre expense ratio
+  const totalBudget = Math.round(totalGross * 0.75)
+
+  const budgetLines: BudgetLine[] = BUDGET_TEMPLATE.map((t, i) => {
+    const budgeted = t.grossRatio
+      ? Math.round(totalGross * t.grossRatio)
+      : Math.round(totalBudget * (t.ratio ?? 0))
+    return {
+      id: `spx-bl-${productionId}-${i}`,
+      productionId,
+      category: t.category,
+      lineItem: t.lineItem,
+      budgeted,
+      committed: Math.round(budgeted * 0.88),
+      actual: 0,
+      notes: 'Projected from Spektrix import',
+    }
+  })
+
+  // Weekly fixed cost bases (spread evenly)
+  const weeklyPayroll  = Math.round(totalBudget * 0.265 / numWeeks)
+  const weeklyVenue    = Math.round(totalBudget * 0.120 / numWeeks)
+
+  let runningCash = Math.round(totalBudget * 0.18) // assumed opening cash position
+
+  const cashFlowRows: CashFlowRow[] = weeks.map((w, i) => {
+    const startingCash  = runningCash
+    const ticketRevenue = w.grossRevenue
+    const royalties     = Math.round(w.grossRevenue * 0.030)
+    // Marketing spend front-loaded: high early, tapers over the run
+    const mktgFraction  = i < numWeeks / 3 ? 0.018 : i < (numWeeks * 2) / 3 ? 0.011 : 0.005
+    const marketing     = Math.round(w.grossRevenue * mktgFraction)
+    const vendorPayments = Math.round(w.grossRevenue * 0.005)
+    const otherOutflows  = Math.round(w.grossRevenue * 0.008)
+    const closingCash   = startingCash + ticketRevenue - weeklyPayroll - weeklyVenue - marketing - royalties - vendorPayments - otherOutflows
+    runningCash = closingCash
+    return {
+      id: `spx-cf-${productionId}-${w.weekEnding}`,
+      productionId,
+      weekOf: w.weekEnding,
+      startingCash,
+      ticketRevenue,
+      otherInflows: 0,
+      payroll: weeklyPayroll,
+      venueCosts: weeklyVenue,
+      marketing,
+      royalties,
+      vendorPayments,
+      otherOutflows,
+      closingCash,
+    }
+  })
+
+  return {
+    budgetLines,
+    cashFlowRows,
+    productionUpdates: {
+      projectedGross: Math.round(totalGross * 1.05),
+      currentGross: Math.round(totalGross),
+      totalBudget,
+      totalActual: 0,
+      cashOnHand: Math.max(0, runningCash),
+    },
+  }
 }
