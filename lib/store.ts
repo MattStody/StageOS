@@ -75,6 +75,9 @@ interface StageOpsState {
   updatePerformanceDate: (perf: PerformanceDate) => void
   deletePerformanceDate: (id: string) => void
 
+  spektrixBaseUrl: string
+  setSpektrixBaseUrl: (url: string) => void
+
   loadScenario: (data: ScenarioData) => void
   resetToDefaults: () => void
 }
@@ -94,6 +97,7 @@ export const useStore = create<StageOpsState>()(
       customEvents: CUSTOM_EVENTS,
       obligations: OBLIGATIONS,
       performanceDates: PERFORMANCE_DATES,
+      spektrixBaseUrl: '',
 
       addBudgetLine: (line) => set((s) => ({ budgetLines: [...s.budgetLines, line] })),
       updateBudgetLine: (line) => set((s) => ({ budgetLines: s.budgetLines.map((l) => (l.id === line.id ? line : l)) })),
@@ -137,6 +141,8 @@ export const useStore = create<StageOpsState>()(
       addPerformanceDate: (perf) => set((s) => ({ performanceDates: [...s.performanceDates, perf] })),
       updatePerformanceDate: (perf) => set((s) => ({ performanceDates: s.performanceDates.map((p) => (p.id === perf.id ? perf : p)) })),
       deletePerformanceDate: (id) => set((s) => ({ performanceDates: s.performanceDates.filter((p) => p.id !== id) })),
+
+      setSpektrixBaseUrl: (url) => set(() => ({ spektrixBaseUrl: url })),
 
       loadScenario: (data) => set(() => ({
         productions: data.productions,

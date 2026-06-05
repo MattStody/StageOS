@@ -10,7 +10,7 @@ import { Modal } from '@/components/ui/Modal'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel, budgetUsedPct } from '@/lib/utils'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon, Sparkles, Theater, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Ticket } from 'lucide-react'
+import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon, Sparkles, Theater, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Ticket, ExternalLink, AlertCircle } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuth } from '@/contexts/AuthContext'
 import type { PerformanceDate, PerformanceStatus } from '@/lib/types'
@@ -43,13 +43,14 @@ function fmt12(time: string) {
 }
 
 function blankPerf(productionId: string): Omit<PerformanceDate, 'id'> {
-  return { productionId, date: '', time: '20:00', notes: '', status: 'scheduled' }
+  return { productionId, date: '', time: '20:00', notes: '', status: 'scheduled', spektrixInstanceId: '' }
 }
 
 export default function ProductionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { productions, budgetLines, revenueWeeks, contracts, deadlines, cashFlowRows, updateProduction,
-    performanceDates, addPerformanceDate, updatePerformanceDate, deletePerformanceDate } = useStore()
+    performanceDates, addPerformanceDate, updatePerformanceDate, deletePerformanceDate,
+    spektrixBaseUrl } = useStore()
   const { isAdmin } = useAuth()
 
   const [editImageOpen, setEditImageOpen] = useState(false)
@@ -60,6 +61,8 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
   const [showAllPerfs, setShowAllPerfs] = useState(false)
   const [ticketPerf, setTicketPerf] = useState<PerformanceDate | null>(null)
   const [ticketMapData, setTicketMapData] = useState<TicketMapData | null>(null)
+  const [ticketTab, setTicketTab] = useState<'live' | 'analytics'>('live')
+  const [iframeBlocked, setIframeBlocked] = useState(false)
 
   const prod = productions.find((p) => p.id === id)
   if (!prod) return notFound()
@@ -99,6 +102,9 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
     const targetPct = p.status === 'cancelled' ? 0.18 : p.status === 'postponed' ? 0.28 : basePct
     setTicketMapData(generateTicketMap(p.id, targetPct, sections))
     setTicketPerf(p)
+    setIframeBlocked(false)
+    // Default to live map if both URL and instance ID are present, otherwise analytics
+    setTicketTab(spektrixBaseUrl && p.spektrixInstanceId ? 'live' : 'analytics')
   }
 
   function openAddPerf() {
@@ -286,11 +292,112 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
         open={!!ticketPerf}
         onClose={() => { setTicketPerf(null); setTicketMapData(null) }}
         title={ticketPerf ? `${formatDate(ticketPerf.date)} · ${fmt12(ticketPerf.time)}${ticketPerf.notes ? ` — ${ticketPerf.notes}` : ''}` : ''}
-        className="max-w-3xl"
+        className="max-w-4xl"
       >
-        {ticketMapData && prod && (
-          <SeatMap data={ticketMapData} productionColor={prod.color} />
-        )}
+        {ticketPerf && ticketMapData && prod && (() => {
+          const liveUrl = spektrixBaseUrl && ticketPerf.spektrixInstanceId
+            ? `${spektrixBaseUrl}/ChooseSeats/${ticketPerf.spektrixInstanceId}`
+            : null
+          const hasLive = !!liveUrl
+
+          return (
+            <div>
+              {/* Tab bar */}
+              <div className="flex gap-1 border-b border-stone-100 mb-5 -mt-1">
+                {hasLive && (
+                  <button
+                    onClick={() => setTicketTab('live')}
+                    className={`px-4 py-2 text-xs font-medium transition-colors border-b-2 -mb-px ${
+                      ticketTab === 'live' ? 'border-stone-900 text-stone-900' : 'border-transparent text-stone-500 hover:text-stone-700'
+                    }`}
+                  >
+                    Live Seat Map
+                    <span className="ml-1.5 text-[10px] px-1 py-0.5 rounded bg-emerald-100 text-emerald-700">Spektrix</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setTicketTab('analytics')}
+                  className={`px-4 py-2 text-xs font-medium transition-colors border-b-2 -mb-px ${
+                    ticketTab === 'analytics' ? 'border-stone-900 text-stone-900' : 'border-transparent text-stone-500 hover:text-stone-700'
+                  }`}
+                >
+                  Analytics View
+                </button>
+                {liveUrl && (
+                  <a
+                    href={liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-auto flex items-center gap-1 text-xs text-stone-400 hover:text-stone-700 py-2 px-2"
+                  >
+                    Open in Spektrix <ExternalLink size={11} />
+                  </a>
+                )}
+              </div>
+
+              {/* Live Spektrix iframe */}
+              {ticketTab === 'live' && liveUrl && (
+                <div>
+                  {!iframeBlocked ? (
+                    <div className="relative">
+                      <div className="h-[580px] rounded-lg overflow-hidden border border-stone-200 bg-stone-50">
+                        <iframe
+                          src={liveUrl}
+                          className="w-full h-full"
+                          title="Spektrix Seat Map"
+                          onError={() => setIframeBlocked(true)}
+                          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                        />
+                      </div>
+                      <p className="text-[10px] text-stone-400 mt-1.5 text-right">
+                        Powered by Spektrix · instance {ticketPerf.spektrixInstanceId}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="h-64 flex flex-col items-center justify-center gap-3 rounded-lg border border-stone-200 bg-stone-50">
+                      <AlertCircle size={24} className="text-amber-500" />
+                      <p className="text-sm font-medium text-stone-700">Seat map blocked by browser security policy</p>
+                      <p className="text-xs text-stone-400 text-center max-w-sm">
+                        Spektrix may restrict embedding via X-Frame-Options. Open the map directly in Spektrix instead.
+                      </p>
+                      <a
+                        href={liveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 px-4 py-2 bg-stone-900 text-white text-xs rounded hover:bg-stone-700 transition-colors"
+                      >
+                        Open in Spektrix <ExternalLink size={12} />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* No instance ID configured */}
+              {ticketTab === 'live' && !liveUrl && (
+                <div className="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-6 text-center">
+                  <Ticket size={22} className="mx-auto text-stone-300 mb-2" />
+                  <p className="text-sm font-medium text-stone-700 mb-1">No Spektrix instance linked</p>
+                  <p className="text-xs text-stone-400 mb-3">
+                    {!spektrixBaseUrl
+                      ? 'Set your Spektrix purchasing URL in Settings → Integrations, then add the instance ID to this performance.'
+                      : 'Edit this performance to add its Spektrix instance ID (the number from the ChooseSeats URL).'}
+                  </p>
+                  {!spektrixBaseUrl && (
+                    <Link href="/settings/integrations" className="text-xs text-stone-600 underline">
+                      Go to Integrations →
+                    </Link>
+                  )}
+                </div>
+              )}
+
+              {/* Analytics view */}
+              {ticketTab === 'analytics' && (
+                <SeatMap data={ticketMapData} productionColor={prod.color} />
+              )}
+            </div>
+          )
+        })()}
       </Modal>
 
       {/* Performance modal */}
@@ -337,6 +444,29 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
               placeholder="Opening night, matinee, press night…"
               className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
             />
+          </div>
+          <div className="pt-1 border-t border-stone-100">
+            <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">
+              Spektrix Instance ID
+              <span className="ml-1 text-stone-400 font-normal normal-case tracking-normal">optional</span>
+            </label>
+            <input
+              value={perfForm.spektrixInstanceId ?? ''}
+              onChange={(e) => setPerfForm({ ...perfForm, spektrixInstanceId: e.target.value })}
+              placeholder="e.g. 46001"
+              className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+            />
+            {spektrixBaseUrl && perfForm.spektrixInstanceId && (
+              <p className="text-[10px] text-stone-400 mt-1 font-mono truncate">
+                → {spektrixBaseUrl}/ChooseSeats/{perfForm.spektrixInstanceId}
+              </p>
+            )}
+            {!spektrixBaseUrl && (
+              <p className="text-[10px] text-stone-400 mt-1">
+                Set your purchasing base URL in{' '}
+                <Link href="/settings/integrations" className="underline">Settings → Integrations</Link>
+              </p>
+            )}
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="secondary" onClick={() => setPerfModalOpen(false)}>Cancel</Button>
@@ -453,7 +583,12 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                           </td>
                           <td className="px-4 py-2.5 text-xs text-stone-400 max-w-xs truncate">{p.notes || '—'}</td>
                           <td className="px-4 py-2.5">
-                            <div className="flex gap-1 items-center justify-end">
+                            <div className="flex gap-1.5 items-center justify-end">
+                              {p.spektrixInstanceId && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
+                                  Spx
+                                </span>
+                              )}
                               <Ticket size={11} className="text-stone-300 group-hover:text-stone-500 transition-colors" />
                               {isAdmin && (
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>

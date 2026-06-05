@@ -73,12 +73,13 @@ function StepIndicator({ current }: { current: WizardStep }) {
 }
 
 export default function IntegrationsPage() {
-  const { productions, revenueWeeks, addRevenueWeek, updateRevenueWeek } = useStore()
+  const { productions, revenueWeeks, addRevenueWeek, updateRevenueWeek, spektrixBaseUrl, setSpektrixBaseUrl } = useStore()
 
   // Connection fields
   const [clientName, setClientName] = useState('')
   const [apiUser, setApiUser] = useState('')
   const [apiKey, setApiKey] = useState('')
+  const [baseUrlDraft, setBaseUrlDraft] = useState(spektrixBaseUrl)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
 
@@ -258,6 +259,37 @@ export default function IntegrationsPage() {
               />
             </div>
           </div>
+          {/* Purchasing base URL */}
+          <div className="pt-1 border-t border-stone-100">
+            <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">
+              Purchasing Base URL
+            </label>
+            <p className="text-xs text-stone-400 mb-2">
+              Your Spektrix purchasing site (e.g. <code className="font-mono bg-stone-100 px-1 rounded">https://purchasing.yourtheatre.org</code>).
+              Used to embed live seat maps per performance.
+            </p>
+            <div className="flex gap-2">
+              <input
+                value={baseUrlDraft}
+                onChange={(e) => setBaseUrlDraft(e.target.value)}
+                placeholder="https://purchasing.yourtheatre.org"
+                className="flex-1 px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setSpektrixBaseUrl(baseUrlDraft.trim().replace(/\/$/, ''))}
+              >
+                Save
+              </Button>
+            </div>
+            {spektrixBaseUrl && (
+              <p className="text-xs text-emerald-700 mt-1.5 flex items-center gap-1">
+                <CheckCircle2 size={11} /> Saved — live seat maps enabled for linked performances
+              </p>
+            )}
+          </div>
+
           <div className="flex items-center gap-3">
             <Button variant="secondary" size="sm" onClick={handleTestConnection} disabled={testing}>
               {testing ? <Loader2 size={13} className="animate-spin" /> : <Plug2 size={13} />}

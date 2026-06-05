@@ -155,6 +155,7 @@ export interface PerformanceDate {
   time: string
   notes: string
   status: PerformanceStatus
+  spektrixInstanceId?: string
 }
 
 // ── Contract Obligations ────────────────────────────────────────────────────
