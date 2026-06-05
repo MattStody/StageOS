@@ -144,6 +144,19 @@ export interface Document {
   type: string
 }
 
+// ── Performance Schedule ────────────────────────────────────────────────────
+
+export type PerformanceStatus = 'scheduled' | 'completed' | 'cancelled' | 'postponed'
+
+export interface PerformanceDate {
+  id: string
+  productionId: string
+  date: string
+  time: string
+  notes: string
+  status: PerformanceStatus
+}
+
 // ── Contract Obligations ────────────────────────────────────────────────────
 
 export type ObligationType =

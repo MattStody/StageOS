@@ -1,4 +1,4 @@
-import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation } from './types'
+import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate } from './types'
 
 export const PRODUCTIONS: Production[] = [
   {
@@ -519,4 +519,58 @@ export const OBLIGATIONS: ContractObligation[] = [
     source: 'ai_extracted', notes: 'Documentary premiere Feb 20 — contract must precede', syncedToCalendar: true, syncedToCashFlow: false,
     confidence: 'high', createdAt: '2025-10-01T09:00:00Z',
   },
+]
+
+export const PERFORMANCE_DATES: PerformanceDate[] = [
+  // A Winter's Dream — St. James Theatre (Nov 15 2025 – Jan 5 2026)
+  { id: 'perf-1-1',  productionId: 'prod-1', date: '2025-11-15', time: '20:00', status: 'completed', notes: 'Opening Night' },
+  { id: 'perf-1-2',  productionId: 'prod-1', date: '2025-11-16', time: '14:00', status: 'completed', notes: 'Matinee' },
+  { id: 'perf-1-3',  productionId: 'prod-1', date: '2025-11-18', time: '19:00', status: 'completed', notes: '' },
+  { id: 'perf-1-4',  productionId: 'prod-1', date: '2025-11-19', time: '19:00', status: 'completed', notes: '' },
+  { id: 'perf-1-5',  productionId: 'prod-1', date: '2025-11-20', time: '19:00', status: 'completed', notes: '' },
+  { id: 'perf-1-6',  productionId: 'prod-1', date: '2025-11-21', time: '20:00', status: 'completed', notes: '' },
+  { id: 'perf-1-7',  productionId: 'prod-1', date: '2025-11-22', time: '14:00', status: 'completed', notes: 'Matinee' },
+  { id: 'perf-1-8',  productionId: 'prod-1', date: '2025-11-22', time: '20:00', status: 'completed', notes: '' },
+  { id: 'perf-1-9',  productionId: 'prod-1', date: '2025-11-23', time: '15:00', status: 'completed', notes: 'Sunday Matinee' },
+  { id: 'perf-1-10', productionId: 'prod-1', date: '2025-12-24', time: '14:00', status: 'completed', notes: 'Christmas Eve Matinee — sold out' },
+  { id: 'perf-1-11', productionId: 'prod-1', date: '2025-12-26', time: '19:00', status: 'completed', notes: '' },
+  { id: 'perf-1-12', productionId: 'prod-1', date: '2025-12-27', time: '14:00', status: 'completed', notes: 'Matinee' },
+  { id: 'perf-1-13', productionId: 'prod-1', date: '2025-12-31', time: '19:00', status: 'completed', notes: 'New Year\'s Eve — gala pricing' },
+  { id: 'perf-1-14', productionId: 'prod-1', date: '2026-01-02', time: '19:00', status: 'completed', notes: '' },
+  { id: 'perf-1-15', productionId: 'prod-1', date: '2026-01-03', time: '14:00', status: 'cancelled',  notes: 'Cancelled — cast illness' },
+  { id: 'perf-1-16', productionId: 'prod-1', date: '2026-01-04', time: '15:00', status: 'completed', notes: 'Penultimate performance' },
+  { id: 'perf-1-17', productionId: 'prod-1', date: '2026-01-05', time: '15:00', status: 'completed', notes: 'Closing Performance' },
+
+  // The Silence Between — BAM Harvey Theater (Feb 14 2026 – Mar 8 2026)
+  { id: 'perf-2-1',  productionId: 'prod-2', date: '2026-02-14', time: '19:30', status: 'completed', notes: 'World Premiere — Valentine\'s Day opening' },
+  { id: 'perf-2-2',  productionId: 'prod-2', date: '2026-02-15', time: '15:00', status: 'completed', notes: 'Sunday Matinee' },
+  { id: 'perf-2-3',  productionId: 'prod-2', date: '2026-02-18', time: '19:30', status: 'completed', notes: '' },
+  { id: 'perf-2-4',  productionId: 'prod-2', date: '2026-02-20', time: '19:30', status: 'completed', notes: '' },
+  { id: 'perf-2-5',  productionId: 'prod-2', date: '2026-02-21', time: '14:00', status: 'completed', notes: 'Matinee' },
+  { id: 'perf-2-6',  productionId: 'prod-2', date: '2026-02-22', time: '15:00', status: 'completed', notes: '' },
+  { id: 'perf-2-7',  productionId: 'prod-2', date: '2026-02-25', time: '19:30', status: 'completed', notes: 'Press Night' },
+  { id: 'perf-2-8',  productionId: 'prod-2', date: '2026-02-28', time: '14:00', status: 'completed', notes: 'Matinee' },
+  { id: 'perf-2-9',  productionId: 'prod-2', date: '2026-03-01', time: '15:00', status: 'completed', notes: '' },
+  { id: 'perf-2-10', productionId: 'prod-2', date: '2026-03-04', time: '19:30', status: 'postponed', notes: 'Rescheduled from Mar 3 — venue conflict' },
+  { id: 'perf-2-11', productionId: 'prod-2', date: '2026-03-06', time: '19:30', status: 'completed', notes: '' },
+  { id: 'perf-2-12', productionId: 'prod-2', date: '2026-03-07', time: '14:00', status: 'completed', notes: 'Matinee' },
+  { id: 'perf-2-13', productionId: 'prod-2', date: '2026-03-08', time: '15:00', status: 'completed', notes: 'Closing Night' },
+
+  // Echoes: The Concert — National Tour (Sep 2025 – Apr 2026)
+  { id: 'perf-3-1',  productionId: 'prod-3', date: '2025-09-05', time: '20:00', status: 'completed', notes: 'Tour Opener — Madison Square Garden' },
+  { id: 'perf-3-2',  productionId: 'prod-3', date: '2025-09-06', time: '20:00', status: 'completed', notes: 'MSG Night 2' },
+  { id: 'perf-3-3',  productionId: 'prod-3', date: '2025-09-12', time: '20:00', status: 'completed', notes: 'United Center, Chicago' },
+  { id: 'perf-3-4',  productionId: 'prod-3', date: '2025-09-14', time: '19:00', status: 'completed', notes: 'Chicago Night 2' },
+  { id: 'perf-3-5',  productionId: 'prod-3', date: '2025-10-03', time: '20:00', status: 'completed', notes: 'The Forum, Los Angeles' },
+  { id: 'perf-3-6',  productionId: 'prod-3', date: '2025-10-04', time: '20:00', status: 'completed', notes: 'LA Night 2' },
+  { id: 'perf-3-7',  productionId: 'prod-3', date: '2025-10-10', time: '20:00', status: 'completed', notes: 'Chase Center, San Francisco' },
+  { id: 'perf-3-8',  productionId: 'prod-3', date: '2025-11-07', time: '20:00', status: 'completed', notes: 'TD Garden, Boston' },
+  { id: 'perf-3-9',  productionId: 'prod-3', date: '2025-12-05', time: '20:00', status: 'cancelled',  notes: 'Cancelled — production delay (rescheduled Dec 12)' },
+  { id: 'perf-3-10', productionId: 'prod-3', date: '2025-12-12', time: '20:00', status: 'completed', notes: 'Spectrum Center, Charlotte' },
+  { id: 'perf-3-11', productionId: 'prod-3', date: '2026-01-16', time: '20:00', status: 'completed', notes: 'American Airlines Arena, Miami' },
+  { id: 'perf-3-12', productionId: 'prod-3', date: '2026-02-06', time: '20:00', status: 'completed', notes: 'Smoothie King Center, New Orleans' },
+  { id: 'perf-3-13', productionId: 'prod-3', date: '2026-03-06', time: '20:00', status: 'completed', notes: 'Ball Arena, Denver' },
+  { id: 'perf-3-14', productionId: 'prod-3', date: '2026-04-10', time: '20:00', status: 'completed', notes: 'KeyBank Center, Buffalo' },
+  { id: 'perf-3-15', productionId: 'prod-3', date: '2026-04-18', time: '20:00', status: 'completed', notes: 'PPG Paints Arena, Pittsburgh' },
+  { id: 'perf-3-16', productionId: 'prod-3', date: '2026-04-20', time: '20:00', status: 'completed', notes: 'Tour Closing — Barclays Center, Brooklyn' },
 ]

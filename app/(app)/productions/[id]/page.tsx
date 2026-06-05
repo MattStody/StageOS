@@ -7,20 +7,54 @@ import { Badge } from '@/components/ui/Badge'
 import { RiskAlert } from '@/components/ui/RiskAlert'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
-import { fmt, fmtPct, formatDate, daysUntil, statusLabel, budgetUsedPct, variance } from '@/lib/utils'
+import { fmt, fmtPct, formatDate, daysUntil, statusLabel, budgetUsedPct } from '@/lib/utils'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon, Sparkles } from 'lucide-react'
+import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon, Sparkles, Theater, Plus, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuth } from '@/contexts/AuthContext'
+import type { PerformanceDate, PerformanceStatus } from '@/lib/types'
+
+const PERF_STATUS_LABELS: Record<PerformanceStatus, string> = {
+  scheduled: 'Scheduled',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+  postponed: 'Postponed',
+}
+
+const PERF_STATUS_COLORS: Record<PerformanceStatus, string> = {
+  scheduled: 'text-blue-700 bg-blue-50 border-blue-200',
+  completed: 'text-green-700 bg-green-50 border-green-200',
+  cancelled: 'text-red-700 bg-red-50 border-red-200',
+  postponed: 'text-amber-700 bg-amber-50 border-amber-200',
+}
+
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+function fmt12(time: string) {
+  if (!time) return ''
+  const [h, m] = time.split(':').map(Number)
+  const ampm = h >= 12 ? 'pm' : 'am'
+  const h12 = h % 12 || 12
+  return `${h12}:${String(m).padStart(2, '0')}${ampm}`
+}
+
+function blankPerf(productionId: string): Omit<PerformanceDate, 'id'> {
+  return { productionId, date: '', time: '20:00', notes: '', status: 'scheduled' }
+}
 
 export default function ProductionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
-  const { productions, budgetLines, revenueWeeks, contracts, deadlines, cashFlowRows, updateProduction } = useStore()
+  const { productions, budgetLines, revenueWeeks, contracts, deadlines, cashFlowRows, updateProduction,
+    performanceDates, addPerformanceDate, updatePerformanceDate, deletePerformanceDate } = useStore()
   const { isAdmin } = useAuth()
 
   const [editImageOpen, setEditImageOpen] = useState(false)
   const [imageDraft, setImageDraft] = useState('')
+  const [perfModalOpen, setPerfModalOpen] = useState(false)
+  const [editingPerf, setEditingPerf] = useState<PerformanceDate | null>(null)
+  const [perfForm, setPerfForm] = useState<Omit<PerformanceDate, 'id'>>(blankPerf(id))
+  const [showAllPerfs, setShowAllPerfs] = useState(false)
 
   const prod = productions.find((p) => p.id === id)
   if (!prod) return notFound()
@@ -42,6 +76,34 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
     .filter((d) => d.status !== 'completed' && daysUntil(d.date) >= 0)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 4)
+
+  // Performance schedule
+  const perfs = performanceDates
+    .filter((p) => p.productionId === id)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
+  const scheduledCount = perfs.filter((p) => p.status === 'scheduled').length
+  const completedCount = perfs.filter((p) => p.status === 'completed').length
+  const cancelledCount = perfs.filter((p) => p.status === 'cancelled').length
+  const displayPerfs = showAllPerfs ? perfs : perfs.slice(0, 8)
+
+  function openAddPerf() {
+    setEditingPerf(null)
+    setPerfForm(blankPerf(id))
+    setPerfModalOpen(true)
+  }
+  function openEditPerf(p: PerformanceDate) {
+    setEditingPerf(p)
+    setPerfForm({ ...p })
+    setPerfModalOpen(true)
+  }
+  function savePerf() {
+    if (editingPerf) {
+      updatePerformanceDate({ ...perfForm, id: editingPerf.id })
+    } else {
+      addPerformanceDate({ ...perfForm, id: `perf-${id}-${Date.now()}` })
+    }
+    setPerfModalOpen(false)
+  }
 
   // Risk alerts
   const risks: string[] = []
@@ -204,6 +266,58 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
         </Card>
       </div>
 
+      {/* Performance modal */}
+      <Modal open={perfModalOpen} onClose={() => setPerfModalOpen(false)} title={editingPerf ? 'Edit Performance' : 'Add Performance'} className="max-w-md">
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Date</label>
+              <input
+                type="date"
+                value={perfForm.date}
+                onChange={(e) => setPerfForm({ ...perfForm, date: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Time</label>
+              <input
+                type="time"
+                value={perfForm.time}
+                onChange={(e) => setPerfForm({ ...perfForm, time: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Status</label>
+            <select
+              value={perfForm.status}
+              onChange={(e) => setPerfForm({ ...perfForm, status: e.target.value as PerformanceStatus })}
+              className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+            >
+              <option value="scheduled">Scheduled</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="postponed">Postponed</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Notes</label>
+            <input
+              value={perfForm.notes}
+              onChange={(e) => setPerfForm({ ...perfForm, notes: e.target.value })}
+              placeholder="Opening night, matinee, press night…"
+              className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="secondary" onClick={() => setPerfModalOpen(false)}>Cancel</Button>
+            <Button onClick={savePerf} disabled={!perfForm.date}>{editingPerf ? 'Save Changes' : 'Add Performance'}</Button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Image edit modal */}
       <Modal open={editImageOpen} onClose={() => setEditImageOpen(false)} title="Production Image">
         <div className="space-y-4">
@@ -247,6 +361,92 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
       </Modal>
+
+      {/* Performance Schedule */}
+      <Card className="mb-5">
+        <CardHeader className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Theater size={14} className="text-stone-400" />
+            <CardTitle>Performance Schedule</CardTitle>
+            <div className="flex gap-1.5 ml-2">
+              {scheduledCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded border font-medium text-blue-700 bg-blue-50 border-blue-200">{scheduledCount} upcoming</span>
+              )}
+              {completedCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded border font-medium text-green-700 bg-green-50 border-green-200">{completedCount} completed</span>
+              )}
+              {cancelledCount > 0 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded border font-medium text-red-700 bg-red-50 border-red-200">{cancelledCount} cancelled</span>
+              )}
+            </div>
+          </div>
+          {isAdmin && (
+            <Button size="sm" variant="secondary" onClick={openAddPerf}>
+              <Plus size={12} /> Add Performance
+            </Button>
+          )}
+        </CardHeader>
+        <CardBody className="p-0">
+          {perfs.length === 0 ? (
+            <div className="px-6 py-8 text-center">
+              <Theater size={24} className="mx-auto text-stone-300 mb-2" />
+              <p className="text-sm text-stone-500 mb-3">No performances scheduled yet</p>
+              {isAdmin && <Button size="sm" onClick={openAddPerf}><Plus size={12} /> Add Performance</Button>}
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[480px] text-sm">
+                  <thead>
+                    <tr className="border-b border-stone-100 bg-stone-50">
+                      <th className="text-left px-5 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Date</th>
+                      <th className="text-left px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Day</th>
+                      <th className="text-left px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Time</th>
+                      <th className="text-left px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Status</th>
+                      <th className="text-left px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Notes</th>
+                      {isAdmin && <th className="px-4 py-2 w-16" />}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayPerfs.map((p) => {
+                      const d = new Date(p.date + 'T12:00:00')
+                      return (
+                        <tr key={p.id} className="border-b border-stone-100 hover:bg-stone-50/50 group">
+                          <td className="px-5 py-2.5 text-stone-800 font-medium text-sm">{formatDate(p.date)}</td>
+                          <td className="px-4 py-2.5 text-stone-500 text-xs">{DAY_NAMES[d.getDay()]}</td>
+                          <td className="px-4 py-2.5 text-stone-600 text-sm">{fmt12(p.time)}</td>
+                          <td className="px-4 py-2.5">
+                            <span className={`inline-flex px-2 py-0.5 rounded text-xs border font-medium ${PERF_STATUS_COLORS[p.status]}`}>
+                              {PERF_STATUS_LABELS[p.status]}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-xs text-stone-400 max-w-xs truncate">{p.notes || '—'}</td>
+                          {isAdmin && (
+                            <td className="px-4 py-2.5">
+                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
+                                <button onClick={() => openEditPerf(p)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>
+                                <button onClick={() => deletePerformanceDate(p.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {perfs.length > 8 && (
+                <button
+                  onClick={() => setShowAllPerfs(!showAllPerfs)}
+                  className="w-full py-2.5 text-xs text-stone-500 hover:text-stone-800 hover:bg-stone-50 flex items-center justify-center gap-1.5 transition-colors border-t border-stone-100"
+                >
+                  {showAllPerfs ? <><ChevronUp size={12} /> Show less</> : <><ChevronDown size={12} /> Show all {perfs.length} performances</>}
+                </button>
+              )}
+            </>
+          )}
+        </CardBody>
+      </Card>
 
       {/* Contracts + Deadlines */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
