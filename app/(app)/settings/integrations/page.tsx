@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/Button'
 import { fmt, fmtPct, formatDate } from '@/lib/utils'
 import {
   CheckCircle2, AlertCircle, Loader2, ChevronRight, ArrowLeft,
-  Plug2, RefreshCw, Database, CalendarDays, Eye, Download,
+  Plug2, RefreshCw, Database, CalendarDays, Eye, Download, Plus, ArrowRight,
 } from 'lucide-react'
+import Link from 'next/link'
 import {
   SPEKTRIX_MOCK,
   fetchSpektrixEvents,
@@ -18,8 +19,9 @@ import {
   buildRevenueWeeksFromSpektrix,
 } from '@/lib/spektrix'
 import type { SpektrixEvent, SpektrixWeekSummary, SpektrixCredentials } from '@/lib/spektrix'
+import type { ProductionStatus } from '@/lib/types'
 
-type WizardStep = 'idle' | 'pick_event' | 'pick_production' | 'date_range' | 'fetching' | 'preview' | 'importing' | 'complete'
+type WizardStep = 'idle' | 'pick_event' | 'pick_production' | 'create_production' | 'date_range' | 'fetching' | 'preview' | 'importing' | 'complete'
 
 interface SyncRecord {
   id: string
@@ -28,21 +30,25 @@ interface SyncRecord {
   productionName: string
   weeksImported: number
   rowsCreated: number
+  rowsUpdated: number
 }
 
-const STEP_LABELS: Record<Exclude<WizardStep, 'idle' | 'fetching' | 'importing' | 'complete'>, string> = {
+const STEP_LABELS: Record<Exclude<WizardStep, 'idle' | 'fetching' | 'importing' | 'complete' | 'create_production'>, string> = {
   pick_event: 'Select Event',
   pick_production: 'Map Production',
   date_range: 'Date Range',
   preview: 'Preview & Import',
 }
 
-const WIZARD_STEPS: Exclude<WizardStep, 'idle' | 'fetching' | 'importing' | 'complete'>[] = [
+const WIZARD_STEPS: Exclude<WizardStep, 'idle' | 'fetching' | 'importing' | 'complete' | 'create_production'>[] = [
   'pick_event', 'pick_production', 'date_range', 'preview',
 ]
 
+const PROD_COLORS = ['#6366f1', '#0891b2', '#059669', '#d97706', '#dc2626', '#9333ea', '#0f172a', '#be185d']
+
 function StepIndicator({ current }: { current: WizardStep }) {
-  const activeIndex = WIZARD_STEPS.indexOf(current as typeof WIZARD_STEPS[number])
+  const displayStep = current === 'create_production' ? 'pick_production' : current
+  const activeIndex = WIZARD_STEPS.indexOf(displayStep as typeof WIZARD_STEPS[number])
   return (
     <div className="flex items-center gap-0 mb-6">
       {WIZARD_STEPS.map((step, i) => {
@@ -51,11 +57,7 @@ function StepIndicator({ current }: { current: WizardStep }) {
         return (
           <div key={step} className="flex items-center">
             <div className="flex items-center gap-2">
-              <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${
-                  done ? 'bg-emerald-600 text-white' : active ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-400'
-                }`}
-              >
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-colors ${done ? 'bg-emerald-600 text-white' : active ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-400'}`}>
                 {done ? <CheckCircle2 size={12} /> : i + 1}
               </div>
               <span className={`text-xs ${active ? 'text-stone-800 font-medium' : done ? 'text-stone-500' : 'text-stone-400'}`}>
@@ -73,7 +75,7 @@ function StepIndicator({ current }: { current: WizardStep }) {
 }
 
 export default function IntegrationsPage() {
-  const { productions, revenueWeeks, addRevenueWeek, updateRevenueWeek, spektrixBaseUrl, setSpektrixBaseUrl } = useStore()
+  const { productions, addRevenueWeek, updateRevenueWeek, addProduction, spektrixBaseUrl, setSpektrixBaseUrl } = useStore()
 
   // Connection fields
   const [clientName, setClientName] = useState('')
@@ -93,13 +95,25 @@ export default function IntegrationsPage() {
   const [toDate, setToDate] = useState('2026-06-04')
   const [weekSummaries, setWeekSummaries] = useState<SpektrixWeekSummary[]>([])
 
+  // New production form
+  const [newProdName, setNewProdName] = useState('')
+  const [newProdSubtitle, setNewProdSubtitle] = useState('')
+  const [newProdVenue, setNewProdVenue] = useState('')
+  const [newProdStatus, setNewProdStatus] = useState<ProductionStatus>('in_performance')
+  const [newProdOpen, setNewProdOpen] = useState('')
+  const [newProdClose, setNewProdClose] = useState('')
+  const [newProdColor, setNewProdColor] = useState(PROD_COLORS[0])
+
+  // Import results
+  const [importResult, setImportResult] = useState<{ created: number; updated: number } | null>(null)
+
   // History
   const [syncHistory, setSyncHistory] = useState<SyncRecord[]>([])
 
   const creds: SpektrixCredentials = { clientName, apiUser, apiKey }
 
   const selectedEvent = events.find((e) => e.id === selectedEventId)
-  const selectedProduction = productions.find((p) => p.id === selectedProductionId)
+  const selectedProduction = useStore.getState().productions.find((p) => p.id === selectedProductionId)
 
   const totalGross = weekSummaries.reduce((s, w) => s + w.grossRevenue, 0)
   const totalTickets = weekSummaries.reduce((s, w) => s + w.ticketsSold, 0)
@@ -123,6 +137,7 @@ export default function IntegrationsPage() {
     setSelectedEventId('')
     setSelectedProductionId('')
     setWeekSummaries([])
+    setImportResult(null)
     const evts = await fetchSpektrixEvents(creds)
     setEvents(evts)
     setLoadingEvents(false)
@@ -138,6 +153,27 @@ export default function IntegrationsPage() {
     setStep('date_range')
   }
 
+  function handleCreateProduction() {
+    const id = `prod-spx-${Date.now()}`
+    addProduction({
+      id,
+      name: newProdName.trim(),
+      subtitle: newProdSubtitle.trim(),
+      status: newProdStatus,
+      venue: newProdVenue.trim(),
+      openingDate: newProdOpen,
+      closingDate: newProdClose,
+      totalBudget: 0,
+      totalActual: 0,
+      cashOnHand: 0,
+      projectedGross: 0,
+      currentGross: 0,
+      color: newProdColor,
+    })
+    setSelectedProductionId(id)
+    setStep('date_range')
+  }
+
   async function handleFetchPreview() {
     setStep('fetching')
     const instances = await fetchInstancesWithSales(creds, selectedEventId, fromDate, toDate)
@@ -147,17 +183,18 @@ export default function IntegrationsPage() {
   }
 
   async function handleImport() {
-    if (!selectedProduction || weekSummaries.length === 0) return
+    if (!selectedProductionId || weekSummaries.length === 0) return
     setStep('importing')
-
     await new Promise<void>((r) => setTimeout(r, 600))
 
-    const newRows = buildRevenueWeeksFromSpektrix(selectedProduction.id, weekSummaries)
+    const newRows = buildRevenueWeeksFromSpektrix(selectedProductionId, weekSummaries)
     let created = 0
     let updated = 0
 
     for (const row of newRows) {
-      const exists = revenueWeeks.find((w) => w.id === row.id)
+      // Read fresh state each iteration to avoid stale closure
+      const freshWeeks = useStore.getState().revenueWeeks
+      const exists = freshWeeks.find((w) => w.id === row.id)
       if (exists) {
         updateRevenueWeek(row)
         updated++
@@ -167,20 +204,23 @@ export default function IntegrationsPage() {
       }
     }
 
+    const prod = useStore.getState().productions.find((p) => p.id === selectedProductionId)
+    setImportResult({ created, updated })
+
     setSyncHistory((prev) => [
       {
         id: `sync-${Date.now()}`,
         timestamp: new Date().toISOString(),
         eventName: selectedEvent?.name ?? selectedEventId,
-        productionName: selectedProduction.name,
+        productionName: prod?.name ?? selectedProductionId,
         weeksImported: weekSummaries.length,
         rowsCreated: created,
+        rowsUpdated: updated,
       },
       ...prev,
     ])
 
     setStep('complete')
-    void updated
   }
 
   function resetWizard() {
@@ -188,6 +228,14 @@ export default function IntegrationsPage() {
     setSelectedEventId('')
     setSelectedProductionId('')
     setWeekSummaries([])
+    setImportResult(null)
+    setNewProdName('')
+    setNewProdSubtitle('')
+    setNewProdVenue('')
+    setNewProdStatus('in_performance')
+    setNewProdOpen('')
+    setNewProdClose('')
+    setNewProdColor(PROD_COLORS[0])
   }
 
   return (
@@ -259,6 +307,7 @@ export default function IntegrationsPage() {
               />
             </div>
           </div>
+
           {/* Purchasing base URL */}
           <div className="pt-1 border-t border-stone-100">
             <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">
@@ -275,11 +324,7 @@ export default function IntegrationsPage() {
                 placeholder="https://purchasing.yourtheatre.org"
                 className="flex-1 px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
               />
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setSpektrixBaseUrl(baseUrlDraft.trim().replace(/\/$/, ''))}
-              >
+              <Button variant="secondary" size="sm" onClick={() => setSpektrixBaseUrl(baseUrlDraft.trim().replace(/\/$/, ''))}>
                 Save
               </Button>
             </div>
@@ -317,16 +362,13 @@ export default function IntegrationsPage() {
         <Card className="mb-6 max-w-3xl">
           <CardHeader className="flex items-center justify-between">
             <CardTitle>
-              {step === 'complete' ? 'Sync Complete' : step === 'importing' ? 'Importing…' : step === 'fetching' ? 'Fetching data…' : 'Sync Wizard'}
+              {step === 'complete' ? 'Sync Complete' : step === 'importing' ? 'Importing…' : step === 'fetching' ? 'Fetching data…' : step === 'create_production' ? 'New Production' : 'Sync Wizard'}
             </CardTitle>
             {step !== 'importing' && step !== 'fetching' && (
-              <button onClick={resetWizard} className="text-xs text-stone-400 hover:text-stone-600">
-                Cancel
-              </button>
+              <button onClick={resetWizard} className="text-xs text-stone-400 hover:text-stone-600">Cancel</button>
             )}
           </CardHeader>
           <CardBody>
-            {/* Step indicator */}
             {!['fetching', 'importing', 'complete'].includes(step) && (
               <StepIndicator current={step} />
             )}
@@ -363,18 +405,15 @@ export default function IntegrationsPage() {
             {/* Step: pick_production */}
             {step === 'pick_production' && (
               <div>
-                <button
-                  onClick={() => setStep('pick_event')}
-                  className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 mb-4"
-                >
+                <button onClick={() => setStep('pick_event')} className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 mb-4">
                   <ArrowLeft size={12} /> Back
                 </button>
                 <div className="mb-4 p-3 bg-stone-50 rounded border border-stone-200">
                   <p className="text-xs text-stone-500">Spektrix event</p>
                   <p className="text-sm font-medium text-stone-800 mt-0.5">{selectedEvent?.name}</p>
                 </div>
-                <p className="text-sm text-stone-600 mb-4">Map this event to a StageOS production. Revenue weeks will be written to that production.</p>
-                <div className="space-y-2">
+                <p className="text-sm text-stone-600 mb-3">Map this event to a StageOS production, or create a new one.</p>
+                <div className="space-y-2 mb-3">
                   {productions.map((p) => (
                     <button
                       key={p.id}
@@ -392,80 +431,170 @@ export default function IntegrationsPage() {
                     </button>
                   ))}
                 </div>
+                <button
+                  onClick={() => {
+                    // Pre-fill name from Spektrix event
+                    setNewProdName(selectedEvent?.name ?? '')
+                    setStep('create_production')
+                  }}
+                  className="w-full flex items-center justify-between p-3 rounded border border-dashed border-stone-300 hover:border-stone-500 hover:bg-stone-50 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-full border-2 border-stone-300 flex items-center justify-center">
+                      <Plus size={11} className="text-stone-400" />
+                    </div>
+                    <p className="text-sm font-medium text-stone-600">Create a new production</p>
+                  </div>
+                  <ChevronRight size={15} className="text-stone-400 shrink-0" />
+                </button>
+              </div>
+            )}
+
+            {/* Step: create_production */}
+            {step === 'create_production' && (
+              <div>
+                <button onClick={() => setStep('pick_production')} className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 mb-4">
+                  <ArrowLeft size={12} /> Back
+                </button>
+                <p className="text-sm text-stone-600 mb-4">Create a new StageOS production to receive this Spektrix data.</p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">Production Name *</label>
+                    <input
+                      value={newProdName}
+                      onChange={(e) => setNewProdName(e.target.value)}
+                      placeholder="e.g. Hamilton — National Tour"
+                      className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">Subtitle</label>
+                    <input
+                      value={newProdSubtitle}
+                      onChange={(e) => setNewProdSubtitle(e.target.value)}
+                      placeholder="e.g. Broadway musical"
+                      className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">Venue</label>
+                    <input
+                      value={newProdVenue}
+                      onChange={(e) => setNewProdVenue(e.target.value)}
+                      placeholder="e.g. Richard Rodgers Theatre"
+                      className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">Status</label>
+                      <select
+                        value={newProdStatus}
+                        onChange={(e) => setNewProdStatus(e.target.value as ProductionStatus)}
+                        className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+                      >
+                        <option value="pre_production">Pre-Production</option>
+                        <option value="in_rehearsal">In Rehearsal</option>
+                        <option value="in_performance">In Performance</option>
+                        <option value="closing">Closing</option>
+                        <option value="closed">Closed</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">Opening Date</label>
+                      <input
+                        type="date"
+                        value={newProdOpen}
+                        onChange={(e) => setNewProdOpen(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">Closing Date</label>
+                      <input
+                        type="date"
+                        value={newProdClose}
+                        onChange={(e) => setNewProdClose(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-2">Colour</label>
+                    <div className="flex gap-2">
+                      {PROD_COLORS.map((c) => (
+                        <button
+                          key={c}
+                          onClick={() => setNewProdColor(c)}
+                          className={`w-7 h-7 rounded-full transition-all ${newProdColor === c ? 'ring-2 ring-offset-2 ring-stone-700 scale-110' : 'hover:scale-105'}`}
+                          style={{ backgroundColor: c }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button variant="secondary" onClick={() => setStep('pick_production')}>Cancel</Button>
+                    <Button onClick={handleCreateProduction} disabled={!newProdName.trim()}>
+                      Create &amp; Continue
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
 
             {/* Step: date_range */}
-            {step === 'date_range' && (
-              <div>
-                <button
-                  onClick={() => setStep('pick_production')}
-                  className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 mb-4"
-                >
-                  <ArrowLeft size={12} /> Back
-                </button>
-                <div className="mb-4 p-3 bg-stone-50 rounded border border-stone-200 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-stone-500">Importing</p>
-                    <p className="text-sm font-medium text-stone-800 mt-0.5">{selectedEvent?.name}</p>
-                  </div>
-                  <ChevronRight size={13} className="text-stone-300" />
-                  <div>
-                    <p className="text-xs text-stone-500">Into production</p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: selectedProduction?.color }} />
-                      <p className="text-sm font-medium text-stone-800">{selectedProduction?.name}</p>
+            {step === 'date_range' && (() => {
+              const prod = useStore.getState().productions.find((p) => p.id === selectedProductionId)
+              return (
+                <div>
+                  <button onClick={() => setStep('pick_production')} className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 mb-4">
+                    <ArrowLeft size={12} /> Back
+                  </button>
+                  <div className="mb-4 p-3 bg-stone-50 rounded border border-stone-200 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-stone-500">Importing</p>
+                      <p className="text-sm font-medium text-stone-800 mt-0.5">{selectedEvent?.name}</p>
+                    </div>
+                    <ChevronRight size={13} className="text-stone-300" />
+                    <div>
+                      <p className="text-xs text-stone-500">Into production</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: prod?.color }} />
+                        <p className="text-sm font-medium text-stone-800">{prod?.name}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <p className="text-sm text-stone-600 mb-4">Select the date range of performances to import.</p>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">From</label>
-                    <input
-                      type="date"
-                      value={fromDate}
-                      onChange={(e) => setFromDate(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
-                    />
+                  <p className="text-sm text-stone-600 mb-4">Select the date range of performances to import.</p>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">From</label>
+                      <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">To</label>
+                      <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">To</label>
-                    <input
-                      type="date"
-                      value={toDate}
-                      onChange={(e) => setToDate(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
-                    />
+                  <div className="flex gap-2 mb-6">
+                    {[{ label: 'Last 4 wks', days: 28 }, { label: 'Last 8 wks', days: 56 }, { label: 'Last 12 wks', days: 84 }, { label: 'All available', days: 0 }].map(({ label, days }) => (
+                      <button
+                        key={label}
+                        onClick={() => {
+                          const to = new Date('2026-06-04')
+                          const from = days > 0 ? new Date(to.getTime() - days * 86400000) : new Date('2026-01-07')
+                          setFromDate(from.toISOString().slice(0, 10))
+                          setToDate(to.toISOString().slice(0, 10))
+                        }}
+                        className="px-3 py-1.5 text-xs rounded border border-stone-200 hover:border-stone-400 hover:bg-stone-50 transition-colors"
+                      >
+                        {label}
+                      </button>
+                    ))}
                   </div>
+                  <Button onClick={handleFetchPreview}><Eye size={14} /> Fetch Preview</Button>
                 </div>
-                <div className="flex gap-2 mb-6">
-                  {[
-                    { label: 'Last 4 wks', days: 28 },
-                    { label: 'Last 8 wks', days: 56 },
-                    { label: 'Last 12 wks', days: 84 },
-                    { label: 'All available', days: 0 },
-                  ].map(({ label, days }) => (
-                    <button
-                      key={label}
-                      onClick={() => {
-                        const to = new Date('2026-06-04')
-                        const from = days > 0 ? new Date(to.getTime() - days * 86400000) : new Date('2026-01-07')
-                        setFromDate(from.toISOString().slice(0, 10))
-                        setToDate(to.toISOString().slice(0, 10))
-                      }}
-                      className="px-3 py-1.5 text-xs rounded border border-stone-200 hover:border-stone-400 hover:bg-stone-50 transition-colors"
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <Button onClick={handleFetchPreview}>
-                  <Eye size={14} />
-                  Fetch Preview
-                </Button>
-              </div>
-            )}
+              )
+            })()}
 
             {/* Step: fetching */}
             {step === 'fetching' && (
@@ -479,10 +608,7 @@ export default function IntegrationsPage() {
             {/* Step: preview */}
             {step === 'preview' && (
               <div>
-                <button
-                  onClick={() => setStep('date_range')}
-                  className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 mb-4"
-                >
+                <button onClick={() => setStep('date_range')} className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-800 mb-4">
                   <ArrowLeft size={12} /> Back
                 </button>
                 <div className="grid grid-cols-4 gap-3 mb-5">
@@ -532,12 +658,8 @@ export default function IntegrationsPage() {
                           <td className="px-3 py-2 text-stone-700">{totalTickets.toLocaleString()}</td>
                           <td className="px-3 py-2 text-stone-700">{fmtPct(avgCapacity)}</td>
                           <td className="px-3 py-2 text-stone-800">{fmt(totalGross)}</td>
-                          <td className="px-3 py-2 text-stone-700">
-                            {totalTickets > 0 ? fmt(totalGross / totalTickets) : '—'}
-                          </td>
-                          <td className="px-3 py-2 text-stone-700">
-                            {fmt(weekSummaries.reduce((s, w) => s + w.netRevenue, 0))}
-                          </td>
+                          <td className="px-3 py-2 text-stone-700">{totalTickets > 0 ? fmt(totalGross / totalTickets) : '—'}</td>
+                          <td className="px-3 py-2 text-stone-700">{fmt(weekSummaries.reduce((s, w) => s + w.netRevenue, 0))}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -548,9 +670,7 @@ export default function IntegrationsPage() {
                     <Download size={14} />
                     Import {weekSummaries.length} Week{weekSummaries.length !== 1 ? 's' : ''} to StageOS
                   </Button>
-                  <p className="text-xs text-stone-400">
-                    Existing rows with matching week dates will be updated, not duplicated.
-                  </p>
+                  <p className="text-xs text-stone-400">Existing rows with matching week dates will be updated, not duplicated.</p>
                 </div>
               </div>
             )}
@@ -564,32 +684,40 @@ export default function IntegrationsPage() {
             )}
 
             {/* Step: complete */}
-            {step === 'complete' && (
-              <div className="flex flex-col items-center justify-center py-8 gap-4">
-                <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
-                  <CheckCircle2 size={22} className="text-emerald-600" />
+            {step === 'complete' && (() => {
+              const prod = useStore.getState().productions.find((p) => p.id === selectedProductionId)
+              return (
+                <div className="flex flex-col items-center justify-center py-8 gap-4">
+                  <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                    <CheckCircle2 size={22} className="text-emerald-600" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-stone-800">Import complete</p>
+                    <p className="text-xs text-stone-500 mt-1">
+                      {weekSummaries.length} weeks from <strong>{selectedEvent?.name}</strong> imported into <strong>{prod?.name}</strong>
+                    </p>
+                    {importResult && (
+                      <p className="text-xs text-stone-400 mt-0.5">
+                        {importResult.created > 0 && `${importResult.created} new week${importResult.created !== 1 ? 's' : ''} created`}
+                        {importResult.created > 0 && importResult.updated > 0 && ' · '}
+                        {importResult.updated > 0 && `${importResult.updated} updated`}
+                        {' · '}{fmt(totalGross)} gross · {fmtPct(avgCapacity)} avg capacity
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-3">
+                    <Button variant="secondary" onClick={resetWizard}>Done</Button>
+                    <Link
+                      href={`/revenue?prod=${selectedProductionId}`}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-stone-900 text-white text-sm rounded hover:bg-stone-700 transition-colors"
+                    >
+                      View Revenue Data <ArrowRight size={13} />
+                    </Link>
+                    <Button onClick={startSync}><RefreshCw size={13} /> Sync Another</Button>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="text-sm font-medium text-stone-800">Import complete</p>
-                  <p className="text-xs text-stone-500 mt-1">
-                    {weekSummaries.length} weeks of data from <strong>{selectedEvent?.name}</strong> imported into{' '}
-                    <strong>{selectedProduction?.name}</strong>
-                  </p>
-                  <p className="text-xs text-stone-400 mt-0.5">
-                    {fmt(totalGross)} gross revenue · {totalTickets.toLocaleString()} tickets · {fmtPct(avgCapacity)} avg capacity
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <Button variant="secondary" onClick={resetWizard}>
-                    Done
-                  </Button>
-                  <Button onClick={startSync}>
-                    <RefreshCw size={13} />
-                    Sync Another Event
-                  </Button>
-                </div>
-              </div>
-            )}
+              )
+            })()}
           </CardBody>
         </Card>
       )}
@@ -610,20 +738,20 @@ export default function IntegrationsPage() {
             </div>
           ) : (
             <div className="divide-y divide-stone-100">
-              <div className="grid grid-cols-5 px-4 py-2 bg-stone-50 text-xs font-medium text-stone-500 uppercase tracking-wider">
+              <div className="grid grid-cols-6 px-4 py-2 bg-stone-50 text-xs font-medium text-stone-500 uppercase tracking-wider">
                 <span>Date</span>
-                <span>Spektrix Event</span>
+                <span className="col-span-2">Spektrix Event</span>
                 <span>Production</span>
-                <span className="text-right">Weeks</span>
-                <span className="text-right">Rows</span>
+                <span className="text-right">Created</span>
+                <span className="text-right">Updated</span>
               </div>
               {syncHistory.map((record) => (
-                <div key={record.id} className="grid grid-cols-5 px-4 py-3 text-sm">
+                <div key={record.id} className="grid grid-cols-6 px-4 py-3 text-sm items-center">
                   <span className="text-stone-500 text-xs">{formatDate(record.timestamp.slice(0, 10))}</span>
-                  <span className="text-stone-700 truncate pr-2">{record.eventName}</span>
+                  <span className="col-span-2 text-stone-700 truncate pr-2">{record.eventName}</span>
                   <span className="text-stone-600 truncate pr-2">{record.productionName}</span>
-                  <span className="text-stone-700 text-right font-medium">{record.weeksImported}</span>
-                  <span className="text-stone-500 text-right">{record.rowsCreated} new</span>
+                  <span className="text-emerald-700 text-right font-medium">{record.rowsCreated} new</span>
+                  <span className="text-stone-400 text-right">{record.rowsUpdated ?? 0} upd</span>
                 </div>
               ))}
             </div>
