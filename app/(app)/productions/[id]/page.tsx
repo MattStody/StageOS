@@ -285,7 +285,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
         open={!!ticketPerf}
         onClose={() => { setTicketPerf(null); setTicketMapData(null) }}
         title={ticketPerf ? `${formatDate(ticketPerf.date)} · ${fmt12(ticketPerf.time)}${ticketPerf.notes ? ` — ${ticketPerf.notes}` : ''}` : ''}
-        className="max-w-4xl"
+        className="max-w-[95vw] w-full"
       >
         {ticketPerf && ticketMapData && prod && (() => {
           const liveUrl = spektrixBaseUrl && ticketPerf.spektrixInstanceId
@@ -333,7 +333,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                 <div>
                   {!iframeBlocked ? (
                     <div className="relative">
-                      <div className="h-[580px] rounded-lg overflow-hidden border border-stone-200 bg-stone-50">
+                      <div className="h-[calc(85vh-140px)] rounded-lg overflow-hidden border border-stone-200 bg-stone-50">
                         <iframe
                           src={liveUrl}
                           className="w-full h-full"

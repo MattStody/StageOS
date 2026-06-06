@@ -15,7 +15,7 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-      <div className={cn('relative bg-white rounded-lg border border-stone-200 shadow-xl w-full max-w-xl mx-4 max-h-[90vh] overflow-y-auto', className)}>
+      <div className={cn('relative bg-white rounded-lg border border-stone-200 shadow-xl w-full max-w-xl mx-4 max-h-[92vh] overflow-y-auto', className)}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
           <h2 className="text-base font-semibold text-stone-800">{title}</h2>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-600 transition-colors cursor-pointer">
