@@ -5,7 +5,6 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
-import { RiskAlert } from '@/components/ui/RiskAlert'
 import { fmt, formatDate, daysUntil, statusLabel } from '@/lib/utils'
 import { Plus, Trash2, Pencil, FileText, AlertTriangle, File, Shield } from 'lucide-react'
 import Link from 'next/link'
@@ -50,10 +49,6 @@ export default function ContractsPage() {
     return true
   })
 
-  const risks = filtered.filter(
-    (c) => c.status !== 'signed' && c.status !== 'expired' && daysUntil(c.dueDate) < 0
-  )
-
   function openAdd() {
     setEditing(null)
     setForm(blank(selectedProd !== 'all' ? selectedProd : productions[0]?.id || ''))
@@ -87,15 +82,6 @@ export default function ContractsPage() {
         subtitle="Manage all production agreements"
         actions={isAdmin ? <Button onClick={openAdd} size="sm"><Plus size={13} /> Add Contract</Button> : undefined}
       />
-
-      {/* Risk alerts */}
-      {risks.length > 0 && (
-        <div className="mb-5 space-y-2">
-          {risks.map((c) => (
-            <RiskAlert key={c.id} message={`${c.partyName} — ${statusLabel(c.status)} contract past due date (${formatDate(c.dueDate)})`} />
-          ))}
-        </div>
-      )}
 
       {/* Status summary */}
       <div className="flex gap-2 mb-5 flex-wrap">

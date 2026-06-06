@@ -4,7 +4,6 @@ import { useStore } from '@/lib/store'
 import { StatCard } from '@/components/ui/StatCard'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-import { RiskAlert } from '@/components/ui/RiskAlert'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel, budgetUsedPct } from '@/lib/utils'
@@ -126,13 +125,14 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
     setPerfModalOpen(false)
   }
 
-  // Risk alerts
-  const risks: string[] = []
-  if (unsigned > 0) risks.push(`${unsigned} unsigned contract${unsigned > 1 ? 's' : ''} require attention`)
-  if (overdueDeadlines.length > 0) risks.push(`${overdueDeadlines.length} overdue deadline${overdueDeadlines.length > 1 ? 's' : ''}`)
-  const highVar = lines.filter((l) => l.budgeted > 0 && Math.abs((l.actual - l.budgeted) / l.budgeted) > 0.1 && l.actual > 0)
-  if (highVar.length > 0) risks.push(`${highVar.length} budget line${highVar.length > 1 ? 's' : ''} with >10% variance`)
-  if (lastCash < 0) risks.push('Projected cash balance is negative')
+  // Map a performance date to its revenue week (week-ending Saturday)
+  function weekForPerf(perfDate: string) {
+    const d = new Date(perfDate + 'T12:00:00')
+    const daysToSat = d.getDay() === 6 ? 0 : 6 - d.getDay()
+    const sat = new Date(d)
+    sat.setDate(d.getDate() + daysToSat)
+    return weeks.find((w) => w.weekEnding === sat.toISOString().slice(0, 10))
+  }
 
   // Chart data
   let cumulative = 0
@@ -203,13 +203,6 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
           </Link>
         </div>
       </div>
-
-      {/* Risk alerts */}
-      {risks.length > 0 && (
-        <div className="mb-6 space-y-2">
-          {risks.map((r, i) => <RiskAlert key={i} message={r} />)}
-        </div>
-      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
@@ -553,13 +546,15 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[480px] text-sm">
+                <table className="w-full min-w-[640px] text-sm">
                   <thead>
                     <tr className="border-b border-stone-100 bg-stone-50">
                       <th className="text-left px-5 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Date</th>
                       <th className="text-left px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Day</th>
                       <th className="text-left px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Time</th>
                       <th className="text-left px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Status</th>
+                      <th className="text-right px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Sold</th>
+                      <th className="text-right px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Avg ATP</th>
                       <th className="text-left px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Notes</th>
                       {isAdmin && <th className="px-4 py-2 w-16" />}
                     </tr>
@@ -567,6 +562,10 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                   <tbody>
                     {displayPerfs.map((p) => {
                       const d = new Date(p.date + 'T12:00:00')
+                      const wk = weekForPerf(p.date)
+                      const perfsInWeek = wk ? perfs.filter((pp) => weekForPerf(pp.date)?.weekEnding === wk.weekEnding && pp.status !== 'cancelled').length : 0
+                      const soldPct = wk && perfsInWeek > 0 ? wk.capacityPct : null
+                      const atp = wk && perfsInWeek > 0 ? wk.avgTicketPrice : null
                       return (
                         <tr
                           key={p.id}
@@ -580,6 +579,18 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                             <span className={`inline-flex px-2 py-0.5 rounded text-xs border font-medium ${PERF_STATUS_COLORS[p.status]}`}>
                               {PERF_STATUS_LABELS[p.status]}
                             </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-right">
+                            {soldPct !== null ? (
+                              <span className={`text-xs font-medium ${soldPct >= 85 ? 'text-emerald-700' : soldPct >= 65 ? 'text-stone-700' : 'text-amber-700'}`}>
+                                {soldPct.toFixed(0)}%
+                              </span>
+                            ) : (
+                              <span className="text-xs text-stone-300">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 text-right text-xs text-stone-600">
+                            {atp !== null ? `$${atp.toFixed(0)}` : <span className="text-stone-300">—</span>}
                           </td>
                           <td className="px-4 py-2.5 text-xs text-stone-400 max-w-xs truncate">{p.notes || '—'}</td>
                           <td className="px-4 py-2.5">
