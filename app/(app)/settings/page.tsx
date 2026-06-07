@@ -1,7 +1,9 @@
 'use client'
+import Link from 'next/link'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { ArrowRight, CheckCircle2 } from 'lucide-react'
 
 export default function SettingsPage() {
   return (
@@ -77,12 +79,24 @@ export default function SettingsPage() {
 
         <Card>
           <CardHeader><CardTitle>Integrations</CardTitle></CardHeader>
-          <CardBody className="space-y-3">
-            <p className="text-xs text-stone-500 mb-3">Future integrations — coming soon</p>
-            {['Spektrix', 'Tessitura', 'QuickBooks', 'Xero', 'Gusto', 'DocuSign', 'Google Drive', 'Slack'].map((name) => (
-              <div key={name} className="flex items-center justify-between py-2 border-b border-stone-100 last:border-0">
-                <span className="text-sm text-stone-700">{name}</span>
-                <span className="text-xs text-stone-400 px-2 py-0.5 bg-stone-100 rounded">Coming Soon</span>
+          <CardBody className="space-y-2">
+            <Link
+              href="/settings/integrations"
+              className="flex items-center justify-between py-2.5 px-3 -mx-3 rounded-lg hover:bg-stone-50 transition-colors group"
+            >
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-stone-800">Spektrix</p>
+                  <p className="text-[11px] text-stone-400">Box office & ticketing data</p>
+                </div>
+              </div>
+              <ArrowRight size={13} className="text-stone-300 group-hover:text-stone-500 transition-colors" />
+            </Link>
+            {['Tessitura', 'QuickBooks', 'Xero', 'Gusto', 'DocuSign', 'Google Drive', 'Slack'].map((name) => (
+              <div key={name} className="flex items-center justify-between py-2 px-3 -mx-3">
+                <span className="text-sm text-stone-500">{name}</span>
+                <span className="text-[11px] text-stone-300 px-2 py-0.5 bg-stone-50 border border-stone-100 rounded">Coming soon</span>
               </div>
             ))}
           </CardBody>
