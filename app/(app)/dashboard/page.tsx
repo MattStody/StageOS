@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel } from '@/lib/utils'
 import Link from 'next/link'
-import { ArrowRight, Shield, ChevronRight } from 'lucide-react'
+import { ArrowRight, Shield, ChevronRight, CheckCircle2, Copy, Check } from 'lucide-react'
 import type { Production, RevenueWeek } from '@/lib/types'
 
 // ── Config ───────────────────────────────────────────────────────────────────
@@ -46,6 +46,8 @@ interface AttentionItem {
   detail: string
   actionLabel: string
   actionHref: string
+  resolveLabel?: string
+  resolveAction?: () => void
 }
 
 // ── Sales Pulse helpers ───────────────────────────────────────────────────────
@@ -82,12 +84,21 @@ function SparkBar({ weeks }: { weeks: RevenueWeek[] }) {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { productions, contracts, deadlines, budgetLines, obligations, revenueWeeks } = useStore()
+  const { productions, contracts, deadlines, budgetLines, obligations, revenueWeeks, cashFlowRows,
+    updateObligation, updateContract, updateDeadline } = useStore()
   const { isDemo, config } = useDemo()
   const firstName = (isDemo && config?.user ? config.user : 'Leon Kay').split(' ')[0]
 
   const [attentionFilter, setAttentionFilter] = useState<AttentionFilter>('all')
   const [showAll, setShowAll] = useState(false)
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+  const [snapOpen, setSnapOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  function resolveItem(item: AttentionItem) {
+    item.resolveAction?.()
+    setDismissed(prev => new Set([...prev, item.id]))
+  }
 
   // ── KPI aggregates ───────────────────────────────────────────────────────
   const totalGross  = productions.reduce((s, p) => s + p.currentGross, 0)
@@ -99,6 +110,22 @@ export default function DashboardPage() {
   const highVarianceLines = budgetLines.filter(
     (l) => l.budgeted > 0 && Math.abs((l.actual - l.budgeted) / l.budgeted) > 0.1 && l.actual > 0,
   )
+
+  // ── Cash runway per production ───────────────────────────────────────────
+  const runwayByProd = productions
+    .filter(p => p.status !== 'closed')
+    .map(p => {
+      const rows = cashFlowRows.filter(r => r.productionId === p.id)
+        .sort((a, b) => a.weekOf.localeCompare(b.weekOf))
+      if (rows.length === 0) return null
+      const out  = rows.reduce((s, r) => s + r.payroll + r.venueCosts + r.marketing + r.royalties + r.vendorPayments + r.otherOutflows, 0)
+      const ins  = rows.reduce((s, r) => s + r.ticketRevenue + r.otherInflows, 0)
+      const burn = (out - ins) / rows.length
+      const last = rows[rows.length - 1].closingCash
+      return burn > 0 ? Math.round(last / burn) : null
+    })
+    .filter((r): r is number => r !== null)
+  const minRunway = runwayByProd.length > 0 ? Math.min(...runwayByProd) : null
 
   // ── Sales Pulse ──────────────────────────────────────────────────────────
   const activeProds = productions.filter((p) => p.status !== 'closed')
@@ -123,7 +150,28 @@ export default function DashboardPage() {
         pacing = pctCaptured - pctElapsed > 0.05 ? 'ahead' : pctCaptured - pctElapsed < -0.10 ? 'behind' : 'on-pace'
       }
     }
-    return { prod: p, sparkWeeks, lastWeek, capTrend, pacing }
+
+    // Break-even
+    const avgATPsp      = allWeeks.length > 0 ? allWeeks.reduce((s, w) => s + w.avgTicketPrice, 0) / allWeeks.length : 0
+    const avgPerfsSp    = allWeeks.length > 0 ? allWeeks.reduce((s, w) => s + w.performances, 0) / allWeeks.length : 8
+    const seatsSp       = allWeeks.length > 0 ? Math.max(...allWeeks.map(w => w.totalSeats)) : 0
+    const weeksRemSp    = p.closingDate
+      ? Math.max(0, Math.ceil((new Date(p.closingDate + 'T12:00:00').getTime() - Date.now()) / (7 * 86_400_000)))
+      : 0
+    const grossNeededSp = Math.max(0, (p.totalBudget || 0) - cumGross)
+    const breakEvenCap  = weeksRemSp > 0 && avgATPsp > 0 && seatsSp > 0
+      ? (grossNeededSp / (weeksRemSp * avgPerfsSp * seatsSp * avgATPsp)) * 100
+      : null
+
+    // Runway
+    const prodRows   = cashFlowRows.filter(r => r.productionId === p.id).sort((a, b) => a.weekOf.localeCompare(b.weekOf))
+    const outSp      = prodRows.reduce((s, r) => s + r.payroll + r.venueCosts + r.marketing + r.royalties + r.vendorPayments + r.otherOutflows, 0)
+    const inSp       = prodRows.reduce((s, r) => s + r.ticketRevenue + r.otherInflows, 0)
+    const burnSp     = prodRows.length > 0 ? (outSp - inSp) / prodRows.length : 0
+    const lastCashSp = prodRows.length ? prodRows[prodRows.length - 1].closingCash : p.cashOnHand
+    const runway     = burnSp > 0 ? Math.round(lastCashSp / burnSp) : null
+
+    return { prod: p, sparkWeeks, lastWeek, capTrend, pacing, breakEvenCap, runway }
   })
 
   // ── Build attention items ────────────────────────────────────────────────
@@ -146,6 +194,8 @@ export default function DashboardPage() {
       detail: daysUntil(o.dueDate) < 0 ? `${daysOver} days overdue` : `Due ${formatDate(o.dueDate)}`,
       actionLabel: 'Review contract',
       actionHref: `/contracts/${o.contractId}`,
+      resolveLabel: 'Mark in progress',
+      resolveAction: () => updateObligation({ ...o, status: 'in_progress' }),
     })
   }
 
@@ -169,6 +219,7 @@ export default function DashboardPage() {
       detail: 'Deadlines past due',
       actionLabel: 'View deadlines',
       actionHref: '/calendar',
+      resolveLabel: 'Acknowledge',
     })
   }
 
@@ -187,6 +238,7 @@ export default function DashboardPage() {
       detail: 'Budget review needed',
       actionLabel: 'Review budget',
       actionHref: '/budget',
+      resolveLabel: 'Acknowledge',
     })
   }
 
@@ -208,6 +260,8 @@ export default function DashboardPage() {
       detail: `${Math.abs(daysUntil(o.dueDate))} days overdue`,
       actionLabel: 'Review contract',
       actionHref: `/contracts/${o.contractId}`,
+      resolveLabel: 'Mark in progress',
+      resolveAction: () => updateObligation({ ...o, status: 'in_progress' }),
     })
   }
 
@@ -229,6 +283,7 @@ export default function DashboardPage() {
       detail: `${fmtPct((p.cashOnHand / p.totalBudget) * 100)} of budget in cash`,
       actionLabel: 'Review cash flow',
       actionHref: '/cashflow',
+      resolveLabel: 'Acknowledge',
     })
   }
 
@@ -250,21 +305,24 @@ export default function DashboardPage() {
       detail: `${overdueContracts.length} awaiting signature`,
       actionLabel: 'View contracts',
       actionHref: '/contracts',
+      resolveLabel: 'Acknowledge',
     })
   }
 
   allItems.sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
 
+  const undismissed = allItems.filter(i => !dismissed.has(i.id))
+
   // Filtered + paginated items
-  const filteredItems = attentionFilter === 'all' ? allItems : allItems.filter((i) => i.category === attentionFilter)
+  const filteredItems = attentionFilter === 'all' ? undismissed : undismissed.filter((i) => i.category === attentionFilter)
   const visibleItems = showAll ? filteredItems : filteredItems.slice(0, 5)
   const hiddenCount = filteredItems.length - visibleItems.length
 
   // Summary counts
-  const criticalCount  = allItems.filter((i) => i.priority === 'critical').length
-  const highCount      = allItems.filter((i) => i.priority === 'high').length
-  const mediumCount    = allItems.filter((i) => i.priority === 'medium').length
-  const affectedProds  = new Set(allItems.map((i) => i.production).filter((p) => p !== 'All productions')).size
+  const criticalCount  = undismissed.filter((i) => i.priority === 'critical').length
+  const highCount      = undismissed.filter((i) => i.priority === 'high').length
+  const mediumCount    = undismissed.filter((i) => i.priority === 'medium').length
+  const affectedProds  = new Set(undismissed.map((i) => i.production).filter((p) => p !== 'All productions')).size
 
   // ── Upcoming deadlines ───────────────────────────────────────────────────
   const upcomingDeadlines = deadlines
@@ -298,11 +356,54 @@ export default function DashboardPage() {
     })
     .slice(0, 5)
 
+  // ── Weekly snapshot text ────────────────────────────────────────────────
+  const snapshotDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  const snapshotText = [
+    `WEEKLY SNAPSHOT — ${snapshotDate}`,
+    '═'.repeat(40),
+    '',
+    `ACTIVE PRODUCTIONS (${activeProds.length})`,
+    '',
+    ...salesPulse.flatMap(({ prod: p, lastWeek, breakEvenCap, runway }) => {
+      const weeksRem = p.closingDate
+        ? Math.max(0, Math.ceil((new Date(p.closingDate + 'T12:00:00').getTime() - Date.now()) / (7 * 86_400_000)))
+        : null
+      const pctCaptured = p.projectedGross > 0 ? Math.round((p.currentGross / p.projectedGross) * 100) : null
+      const beLabel = breakEvenCap === null ? '—' : breakEvenCap <= 0 ? '✓ In profit' : `${Math.ceil(breakEvenCap)}% avg capacity`
+      return [
+        `${p.name.toUpperCase()}`,
+        `  Gross to date:  ${fmt(p.currentGross)}${pctCaptured !== null ? `  (${pctCaptured}% of projected ${fmt(p.projectedGross)})` : ''}`,
+        lastWeek ? `  Last week:      ${fmt(lastWeek.grossRevenue)} gross  |  ${lastWeek.capacityPct.toFixed(0)}% capacity` : '  Last week:      No data',
+        `  Cash on hand:   ${fmt(p.cashOnHand)}${runway ? `  |  ${runway}-wk runway` : ''}`,
+        weeksRem !== null ? `  Break-even:     ${beLabel}${weeksRem > 0 ? ` over ${weeksRem} remaining wk${weeksRem !== 1 ? 's' : ''}` : ''}` : '',
+        '',
+      ].filter(Boolean)
+    }),
+    '',
+    `ITEMS NEEDING ATTENTION (${undismissed.length})`,
+    '',
+    ...undismissed
+      .filter(i => i.priority === 'critical' || i.priority === 'high')
+      .map(i => `  [${i.priority.toUpperCase()}]  ${i.issue} — ${i.production} — ${i.detail}`),
+    undismissed.filter(i => i.priority !== 'critical' && i.priority !== 'high').length > 0
+      ? `  + ${undismissed.filter(i => i.priority !== 'critical' && i.priority !== 'high').length} medium/low priority items`
+      : '',
+  ].filter(l => l !== undefined).join('\n')
+
   return (
     <div>
       <PageHeader
         title={`Hello, ${firstName}`}
-        subtitle={`${activeCount} active production${activeCount !== 1 ? 's' : ''} · ${allItems.length} item${allItems.length !== 1 ? 's' : ''} need${allItems.length === 1 ? 's' : ''} attention today`}
+        subtitle={`${activeCount} active production${activeCount !== 1 ? 's' : ''} · ${undismissed.length} item${undismissed.length !== 1 ? 's' : ''} need${undismissed.length === 1 ? 's' : ''} attention today`}
+        actions={
+          <button
+            onClick={() => setSnapOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-stone-200 text-xs font-medium text-stone-600 bg-white hover:bg-stone-50 hover:border-stone-300 transition-colors"
+          >
+            <Copy size={12} />
+            Weekly Snapshot
+          </button>
+        }
       />
 
       {/* ── KPI cards ─────────────────────────────────────────────────────── */}
@@ -321,10 +422,17 @@ export default function DashboardPage() {
           alert={highVarianceLines.length > 0}
         />
         <StatCard
-          label="Total Spent"
-          value={fmt(totalActual)}
-          sub={`${fmtPct((totalBudget > 0 ? totalActual / totalBudget : 0) * 100)} of budget`}
-          trend="neutral"
+          label="Cash Runway"
+          value={minRunway !== null ? `${minRunway} wks` : '—'}
+          sub={minRunway !== null
+            ? minRunway <= 4
+              ? 'critical — review cash flow'
+              : minRunway <= 8
+                ? 'watch closely'
+                : 'healthy buffer'
+            : 'no burn data yet'}
+          trend={minRunway !== null ? (minRunway <= 4 ? 'down' : minRunway <= 8 ? 'neutral' : 'up') : 'neutral'}
+          alert={minRunway !== null && minRunway <= 4}
         />
         <StatCard
           label="Cash on Hand"
@@ -346,7 +454,7 @@ export default function DashboardPage() {
               <table className="w-full min-w-[600px] text-sm">
                 <thead className="bg-stone-50 border-b border-stone-100">
                   <tr>
-                    {['Production', 'Last Week Gross', 'Capacity', '6-wk Trend', 'Pacing'].map((h) => (
+                    {['Production', 'Last Week Gross', 'Capacity', '6-wk Trend', 'Break-even', 'Runway', 'Pacing'].map((h) => (
                       <th key={h} className="px-5 py-2.5 text-left text-xs font-medium text-stone-500 uppercase tracking-wider whitespace-nowrap">
                         {h}
                       </th>
@@ -354,8 +462,21 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {salesPulse.map(({ prod: p, sparkWeeks, lastWeek, capTrend, pacing }) => {
+                  {salesPulse.map(({ prod: p, sparkWeeks, lastWeek, capTrend, pacing, breakEvenCap, runway }) => {
                     const pacingCfg = PACING_CFG[pacing]
+                    const beLabel = breakEvenCap === null ? '—'
+                      : breakEvenCap <= 0 ? '✓ Profit'
+                      : breakEvenCap > 110 ? 'SRO+ needed'
+                      : `${Math.ceil(breakEvenCap)}% avg`
+                    const beCls = breakEvenCap === null ? 'text-stone-300'
+                      : breakEvenCap <= 0 ? 'text-emerald-600 font-medium'
+                      : breakEvenCap > 90 ? 'text-red-600 font-medium'
+                      : breakEvenCap > 75 ? 'text-amber-600 font-medium'
+                      : 'text-stone-700'
+                    const runwayCls = runway === null ? 'text-stone-300'
+                      : runway <= 4 ? 'text-red-600 font-medium'
+                      : runway <= 8 ? 'text-amber-600 font-medium'
+                      : 'text-stone-700'
                     return (
                       <tr key={p.id} className="hover:bg-stone-50/60 transition-colors">
                         <td className="px-5 py-3.5">
@@ -386,6 +507,12 @@ export default function DashboardPage() {
                         </td>
                         <td className="px-5 py-3.5">
                           <SparkBar weeks={sparkWeeks} />
+                        </td>
+                        <td className="px-5 py-3.5 text-xs">
+                          <span className={beCls}>{beLabel}</span>
+                        </td>
+                        <td className="px-5 py-3.5 text-xs">
+                          <span className={runwayCls}>{runway !== null ? `${runway} wks` : '—'}</span>
                         </td>
                         <td className="px-5 py-3.5">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium ${pacingCfg.cls}`}>
@@ -473,7 +600,7 @@ export default function DashboardPage() {
                   <table className="w-full text-sm">
                     <thead className="bg-stone-50 border-b border-stone-100">
                       <tr>
-                        {['Priority', 'Issue', 'Production', 'Status / Detail', 'Action'].map((h) => (
+                        {['Priority', 'Issue', 'Production', 'Status / Detail', 'Action', ''].map((h) => (
                           <th key={h} className="px-4 py-2.5 text-left text-xs font-medium text-stone-500 uppercase tracking-wider whitespace-nowrap">
                             {h}
                           </th>
@@ -506,6 +633,18 @@ export default function DashboardPage() {
                                 {item.actionLabel}
                                 <ArrowRight size={11} className="group-hover:translate-x-0.5 transition-transform" />
                               </Link>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap align-top pt-3">
+                              {item.resolveLabel && (
+                                <button
+                                  onClick={() => resolveItem(item)}
+                                  className="inline-flex items-center gap-1 text-xs text-stone-400 hover:text-emerald-600 transition-colors group"
+                                  title={item.resolveLabel}
+                                >
+                                  <CheckCircle2 size={14} className="group-hover:scale-110 transition-transform" />
+                                  <span className="hidden sm:inline">{item.resolveLabel}</span>
+                                </button>
+                              )}
                             </td>
                           </tr>
                         )
@@ -634,6 +773,48 @@ export default function DashboardPage() {
           )
         })}
       </div>
+
+      {/* ── Weekly Snapshot modal ────────────────────────────────────────── */}
+      {snapOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+          onClick={(e) => { if (e.target === e.currentTarget) setSnapOpen(false) }}
+        >
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
+              <div>
+                <h2 className="text-base font-semibold text-stone-900">Weekly Snapshot</h2>
+                <p className="text-xs text-stone-500 mt-0.5">Copy and paste into email or investor update</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(snapshotText)
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded border text-xs font-medium transition-colors ${
+                    copied
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                      : 'border-stone-200 bg-white text-stone-600 hover:bg-stone-50 hover:border-stone-300'
+                  }`}
+                >
+                  {copied ? <><Check size={12} /> Copied!</> : <><Copy size={12} /> Copy to clipboard</>}
+                </button>
+                <button
+                  onClick={() => setSnapOpen(false)}
+                  className="text-xs text-stone-400 hover:text-stone-700 px-2 py-1 rounded hover:bg-stone-100 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <pre className="flex-1 overflow-y-auto px-6 py-4 text-xs text-stone-700 font-mono leading-relaxed whitespace-pre-wrap">
+              {snapshotText}
+            </pre>
+          </div>
+        </div>
+      )}
 
       {/* ── Lower modules ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
