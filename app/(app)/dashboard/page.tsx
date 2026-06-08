@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/Badge'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel } from '@/lib/utils'
 import Link from 'next/link'
 import { ArrowRight, Shield, ChevronRight } from 'lucide-react'
-import type { Production } from '@/lib/types'
+import type { Production, RevenueWeek } from '@/lib/types'
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -48,10 +48,41 @@ interface AttentionItem {
   actionHref: string
 }
 
+// ── Sales Pulse helpers ───────────────────────────────────────────────────────
+
+type PacingStatus = 'ahead' | 'on-pace' | 'behind' | 'unknown'
+
+const PACING_CFG: Record<PacingStatus, { label: string; cls: string }> = {
+  'ahead':   { label: 'Ahead of pace', cls: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+  'on-pace': { label: 'On pace',       cls: 'text-stone-600 bg-stone-50 border-stone-200' },
+  'behind':  { label: 'Behind pace',  cls: 'text-red-700 bg-red-50 border-red-200' },
+  'unknown': { label: '—',            cls: 'text-stone-300 bg-stone-50 border-stone-100' },
+}
+
+function SparkBar({ weeks }: { weeks: RevenueWeek[] }) {
+  if (weeks.length === 0) return <span className="text-[11px] text-stone-300 italic">No data yet</span>
+  return (
+    <div className="flex items-end gap-px" style={{ height: '20px' }}>
+      {weeks.map((w, i) => {
+        const h  = Math.round((Math.min(Math.max(w.capacityPct, 4), 110) / 110) * 20)
+        const bg = w.capacityPct >= 85 ? '#10b981' : w.capacityPct >= 65 ? '#f59e0b' : '#ef4444'
+        return (
+          <div
+            key={i}
+            title={`Wk ${w.weekEnding}: ${w.capacityPct.toFixed(0)}% cap · ${fmt(w.grossRevenue)}`}
+            className="w-3 rounded-[2px]"
+            style={{ height: `${h}px`, backgroundColor: bg }}
+          />
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { productions, contracts, deadlines, budgetLines, obligations } = useStore()
+  const { productions, contracts, deadlines, budgetLines, obligations, revenueWeeks } = useStore()
   const { isDemo, config } = useDemo()
   const firstName = (isDemo && config?.user ? config.user : 'Leon Kay').split(' ')[0]
 
@@ -68,6 +99,32 @@ export default function DashboardPage() {
   const highVarianceLines = budgetLines.filter(
     (l) => l.budgeted > 0 && Math.abs((l.actual - l.budgeted) / l.budgeted) > 0.1 && l.actual > 0,
   )
+
+  // ── Sales Pulse ──────────────────────────────────────────────────────────
+  const activeProds = productions.filter((p) => p.status !== 'closed')
+  const salesPulse = activeProds.map((p) => {
+    const allWeeks = revenueWeeks
+      .filter((w) => w.productionId === p.id)
+      .sort((a, b) => new Date(a.weekEnding).getTime() - new Date(b.weekEnding).getTime())
+    const sparkWeeks = allWeeks.slice(-6)
+    const lastWeek   = allWeeks[allWeeks.length - 1] ?? null
+    const prevWeek   = allWeeks[allWeeks.length - 2] ?? null
+    const capTrend   = lastWeek && prevWeek ? lastWeek.capacityPct - prevWeek.capacityPct : null
+    const cumGross   = allWeeks.reduce((s, w) => s + w.grossRevenue, 0) || p.currentGross
+
+    let pacing: PacingStatus = 'unknown'
+    if (p.openingDate && p.closingDate && p.projectedGross > 0 && cumGross > 0) {
+      const open  = new Date(p.openingDate + 'T12:00:00').getTime()
+      const close = new Date(p.closingDate + 'T12:00:00').getTime()
+      const now   = Date.now()
+      if (now > open && close > open) {
+        const pctElapsed  = Math.min(1, Math.max(0, (now - open) / (close - open)))
+        const pctCaptured = Math.min(cumGross / p.projectedGross, 2)
+        pacing = pctCaptured - pctElapsed > 0.05 ? 'ahead' : pctCaptured - pctElapsed < -0.10 ? 'behind' : 'on-pace'
+      }
+    }
+    return { prod: p, sparkWeeks, lastWeek, capTrend, pacing }
+  })
 
   // ── Build attention items ────────────────────────────────────────────────
   const allItems: AttentionItem[] = []
@@ -276,6 +333,74 @@ export default function DashboardPage() {
           trend="neutral"
         />
       </div>
+
+      {/* ── Sales Pulse ──────────────────────────────────────────────────── */}
+      {activeProds.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Sales Pulse</CardTitle>
+            <p className="text-xs text-stone-500 mt-0.5">Weekly ticket performance across active productions.</p>
+          </CardHeader>
+          <CardBody className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px] text-sm">
+                <thead className="bg-stone-50 border-b border-stone-100">
+                  <tr>
+                    {['Production', 'Last Week Gross', 'Capacity', '6-wk Trend', 'Pacing'].map((h) => (
+                      <th key={h} className="px-5 py-2.5 text-left text-xs font-medium text-stone-500 uppercase tracking-wider whitespace-nowrap">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-100">
+                  {salesPulse.map(({ prod: p, sparkWeeks, lastWeek, capTrend, pacing }) => {
+                    const pacingCfg = PACING_CFG[pacing]
+                    return (
+                      <tr key={p.id} className="hover:bg-stone-50/60 transition-colors">
+                        <td className="px-5 py-3.5">
+                          <Link href={`/productions/${p.id}`} className="flex items-center gap-2 group w-fit">
+                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+                            <span className="font-medium text-stone-800 group-hover:text-stone-500 transition-colors">{p.name}</span>
+                          </Link>
+                          <p className="text-xs text-stone-400 mt-0.5 pl-3.5">{statusLabel(p.status)}</p>
+                        </td>
+                        <td className="px-5 py-3.5 font-medium text-stone-800">
+                          {lastWeek ? fmt(lastWeek.grossRevenue) : <span className="text-stone-300">—</span>}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          {lastWeek ? (
+                            <div className="flex items-center gap-1">
+                              <span className={`font-medium tabular-nums ${lastWeek.capacityPct >= 85 ? 'text-emerald-700' : lastWeek.capacityPct >= 65 ? 'text-amber-600' : 'text-red-600'}`}>
+                                {lastWeek.capacityPct.toFixed(0)}%
+                              </span>
+                              {capTrend !== null && Math.abs(capTrend) >= 1 && (
+                                <span className={`text-[11px] font-bold ${capTrend > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+                                  {capTrend > 0 ? '▲' : '▼'}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-stone-300">—</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <SparkBar weeks={sparkWeeks} />
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium ${pacingCfg.cls}`}>
+                            {pacingCfg.label}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* ── Needs Attention Today ─────────────────────────────────────────── */}
       {allItems.length > 0 && (
