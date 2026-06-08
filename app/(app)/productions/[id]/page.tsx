@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
-import { fmt, fmtPct, formatDate, daysUntil, statusLabel, budgetUsedPct } from '@/lib/utils'
+import { fmt, fmtPct, formatDate, formatDateShort, daysUntil, statusLabel, budgetUsedPct } from '@/lib/utils'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon, Sparkles, Theater, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Ticket, ExternalLink, AlertCircle } from 'lucide-react'
@@ -147,6 +147,28 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
 
   const budgetPct = budgetUsedPct(totalActual, totalBudgeted)
 
+  // ── Break-even ────────────────────────────────────────────────────────────
+  const weeksRemaining = prod.closingDate
+    ? Math.max(0, Math.ceil((new Date(prod.closingDate + 'T12:00:00').getTime() - Date.now()) / (7 * 86_400_000)))
+    : 0
+  const avgATPprod      = weeks.length > 0 ? weeks.reduce((s, w) => s + w.avgTicketPrice, 0) / weeks.length : 0
+  const avgPerfsPerWeek = weeks.length > 0 ? weeks.reduce((s, w) => s + w.performances, 0) / weeks.length : 8
+  const seatsHouse      = weeks.length > 0 ? Math.max(...weeks.map(w => w.totalSeats)) : 0
+  const grossNeeded     = Math.max(0, totalBudgeted - (cumGross || prod.currentGross))
+  const breakEvenCap    = weeksRemaining > 0 && avgATPprod > 0 && seatsHouse > 0
+    ? (grossNeeded / (weeksRemaining * avgPerfsPerWeek * seatsHouse * avgATPprod)) * 100
+    : null
+  const breakEvenLabel  = breakEvenCap === null ? '—'
+    : breakEvenCap <= 0 ? '✓ In profit'
+    : breakEvenCap > 110 ? 'SRO+ needed'
+    : `${Math.ceil(breakEvenCap)}% avg`
+
+  // ── Cash runway ───────────────────────────────────────────────────────────
+  const totalOutflows = cashRows.reduce((s, r) => s + r.payroll + r.venueCosts + r.marketing + r.royalties + r.vendorPayments + r.otherOutflows, 0)
+  const totalInflows  = cashRows.reduce((s, r) => s + r.ticketRevenue + r.otherInflows, 0)
+  const weeklyBurn    = cashRows.length > 0 ? (totalOutflows - totalInflows) / cashRows.length : 0
+  const runway        = weeklyBurn > 0 ? Math.round(lastCash / weeklyBurn) : null
+
   return (
     <div>
       {/* Hero image */}
@@ -205,10 +227,11 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
         <StatCard label="Gross Revenue" value={fmt(cumGross || prod.currentGross)} sub={`of ${fmt(prod.projectedGross)} projected`} trend="up" />
         <StatCard label="Budget Used" value={fmtPct(budgetPct)} sub={`${fmt(totalActual)} of ${fmt(totalBudgeted)}`} alert={budgetPct > 90} />
-        <StatCard label="Cash on Hand" value={fmt(lastCash)} sub="current balance" />
+        <StatCard label="Cash on Hand" value={fmt(lastCash)} sub={runway ? `${runway} wk runway` : 'current balance'} />
+        <StatCard label="Break-even" value={breakEvenLabel} sub={weeksRemaining > 0 ? `${weeksRemaining} wks remaining` : 'run complete'} alert={breakEvenCap !== null && breakEvenCap > 90} />
         <StatCard label="Contracts" value={`${prodContracts.filter(c=>c.status==='signed').length}/${prodContracts.length}`} sub={unsigned > 0 ? `${unsigned} unsigned` : 'All signed'} alert={unsigned > 0} />
         <StatCard label="Deadlines" value={`${upcomingDeadlines.length}`} sub={overdueDeadlines.length > 0 ? `${overdueDeadlines.length} overdue` : 'upcoming'} alert={overdueDeadlines.length > 0} />
       </div>
@@ -223,20 +246,37 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
           </CardHeader>
           <CardBody>
             {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id={`grad-${id}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={prod.color} stopOpacity={0.15} />
-                      <stop offset="100%" stopColor={prod.color} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v) => fmt(Number(v))} contentStyle={{ fontSize: 12, border: '1px solid #e7e5e4', borderRadius: 6 }} />
-                  <Area type="monotone" dataKey="weekly" stroke={prod.color} strokeWidth={1.5} fill={`url(#grad-${id})`} name="Weekly Gross" />
-                </AreaChart>
-              </ResponsiveContainer>
+              <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id={`grad-${id}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={prod.color} stopOpacity={0.15} />
+                        <stop offset="100%" stopColor={prod.color} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(v) => fmt(Number(v))} contentStyle={{ fontSize: 12, border: '1px solid #e7e5e4', borderRadius: 6 }} />
+                    <Area type="monotone" dataKey="weekly" stroke={prod.color} strokeWidth={1.5} fill={`url(#grad-${id})`} name="Weekly Gross" />
+                  </AreaChart>
+                </ResponsiveContainer>
+                {weeks.length >= 2 && (() => {
+                  const last  = weeks[weeks.length - 1]
+                  const prev  = weeks[weeks.length - 2]
+                  const wow   = ((last.grossRevenue - prev.grossRevenue) / prev.grossRevenue) * 100
+                  const sorted = [...weeks].sort((a, b) => b.grossRevenue - a.grossRevenue)
+                  const rank  = sorted.findIndex(w => w.weekEnding === last.weekEnding) + 1
+                  const peak  = sorted[0]
+                  return (
+                    <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-stone-500 border-t border-stone-100 mt-3 pt-3">
+                      <span>Last wk: <span className={`font-medium ${wow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{wow >= 0 ? '↑' : '↓'} {Math.abs(wow).toFixed(0)}% wk/wk</span></span>
+                      <span>Rank: <span className="font-medium text-stone-700">#{rank} of {weeks.length} weeks</span></span>
+                      <span>Peak: <span className="font-medium text-stone-700">{fmt(peak.grossRevenue)}</span> ({formatDateShort(peak.weekEnding)})</span>
+                    </div>
+                  )
+                })()}
+              </>
             ) : (
               <div className="h-48 flex items-center justify-center text-sm text-stone-400">No revenue data yet</div>
             )}
