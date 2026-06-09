@@ -216,18 +216,7 @@ export default function ProductionsPage() {
           )
         })}
 
-        {/* Create new card (admin only) */}
-        {isAdmin && (
-          <button onClick={openCreate} className="group block">
-            <div
-              className="border-2 border-dashed border-stone-200 rounded-lg overflow-hidden hover:border-stone-400 transition-colors flex flex-col items-center justify-center text-stone-400 hover:text-stone-600"
-              style={{ aspectRatio: '5/4' }}
-            >
-              <Plus size={24} className="mb-2 group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-medium">New Production</span>
-            </div>
-          </button>
-        )}
+        {/* Create new card (admin only) — removed; use "New Production" button in header */}
       </div>
 
       {/* Create production modal */}

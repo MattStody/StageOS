@@ -9,8 +9,16 @@ import { Modal } from '@/components/ui/Modal'
 import { fmt, fmtPct, formatDate, formatDateShort, daysUntil, statusLabel, budgetUsedPct } from '@/lib/utils'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon, Sparkles, Theater, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Ticket, ExternalLink, AlertCircle } from 'lucide-react'
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon, Sparkles, Theater, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Ticket, ExternalLink, AlertCircle, Info } from 'lucide-react'
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ComposedChart, Line, ReferenceLine } from 'recharts'
+import {
+  computeCoreForecast,
+  computeAllScenarios,
+  computeChartData,
+  generateInsights,
+  type ScenarioConfig,
+  type RiskLevel,
+} from '@/lib/forecasting'
 import { useAuth } from '@/contexts/AuthContext'
 import type { PerformanceDate, PerformanceStatus } from '@/lib/types'
 import { generateTicketMap, getVenueSections } from '@/lib/spektrix'
@@ -52,12 +60,37 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
     spektrixBaseUrl } = useStore()
   const { isAdmin } = useAuth()
 
+  type FcScenarioType = 'base' | 'downside' | 'upside' | 'marketing_push' | 'labour_increase' | 'early_close' | 'extension'
+  const FC_SCENARIOS: { type: FcScenarioType; label: string }[] = [
+    { type: 'base', label: 'Base' },
+    { type: 'downside', label: 'Downside' },
+    { type: 'upside', label: 'Upside' },
+    { type: 'marketing_push', label: 'Mktg Push' },
+    { type: 'labour_increase', label: 'Labour +' },
+    { type: 'early_close', label: 'Early Close' },
+    { type: 'extension', label: 'Extension' },
+  ]
+  const FC_RISK_COLOR: Record<RiskLevel, string> = {
+    healthy: 'text-emerald-600', watch: 'text-amber-600', at_risk: 'text-orange-600', critical: 'text-red-600',
+  }
+  const FC_RISK_BG: Record<RiskLevel, string> = {
+    healthy: 'bg-emerald-50 border-emerald-200', watch: 'bg-amber-50 border-amber-200',
+    at_risk: 'bg-orange-50 border-orange-200', critical: 'bg-red-50 border-red-200',
+  }
+  const FC_RISK_LABEL: Record<RiskLevel, string> = { healthy: 'Healthy', watch: 'Watch', at_risk: 'At Risk', critical: 'Critical' }
+
   const [editImageOpen, setEditImageOpen] = useState(false)
   const [imageDraft, setImageDraft] = useState('')
   const [perfModalOpen, setPerfModalOpen] = useState(false)
   const [editingPerf, setEditingPerf] = useState<PerformanceDate | null>(null)
   const [perfForm, setPerfForm] = useState<Omit<PerformanceDate, 'id'>>(blankPerf(id))
   const [showAllPerfs, setShowAllPerfs] = useState(false)
+  const [activeScenario, setActiveScenario] = useState<FcScenarioType>('base')
+  const [fcCfg, setFcCfg] = useState<ScenarioConfig>({
+    downsidePct: 10, upsidePct: 10, extraMarketing: 20000, marketingLiftPct: 8,
+    labourIncreasePct: 10, earlyCloseWeeks: 2, extensionWeeks: 4,
+    extensionCapacityPct: 70, extensionATP: 0, extensionExtraWeeklyCost: 0,
+  })
   const [ticketPerf, setTicketPerf] = useState<PerformanceDate | null>(null)
   const [ticketMapData, setTicketMapData] = useState<TicketMapData | null>(null)
   const [ticketTab, setTicketTab] = useState<'live' | 'analytics'>('live')
@@ -169,6 +202,17 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
   const weeklyBurn    = cashRows.length > 0 ? (totalOutflows - totalInflows) / cashRows.length : 0
   const runway        = weeklyBurn > 0 ? Math.round(lastCash / weeklyBurn) : null
 
+  // ── Inline forecaster ────────────────────────────────────────────────────
+  function setFcField<K extends keyof ScenarioConfig>(key: K, val: ScenarioConfig[K]) {
+    setFcCfg(prev => ({ ...prev, [key]: val }))
+  }
+  const fc            = computeCoreForecast(prod, weeks, cashRows, lines)
+  const fcScenarios   = computeAllScenarios(fc, fcCfg)
+  const fcInsights    = generateInsights(fc, fcScenarios)
+  const fcActive      = fcScenarios.find(s => s.type === activeScenario)!
+  const fcBase        = fcScenarios.find(s => s.type === 'base')!
+  const fcChartData   = computeChartData(fc, weeks, fcActive?.projectedFinalGross)
+
   return (
     <div>
       {/* Hero image */}
@@ -236,89 +280,242 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
         <StatCard label="Deadlines" value={`${upcomingDeadlines.length}`} sub={overdueDeadlines.length > 0 ? `${overdueDeadlines.length} overdue` : 'upcoming'} alert={overdueDeadlines.length > 0} />
       </div>
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
-        {/* Revenue chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex items-center gap-2">
+      {/* Revenue chart — full width */}
+      <Card className="mb-6">
+        <CardHeader className="flex items-center gap-2">
+          <TrendingUp size={14} className="text-stone-400" />
+          <CardTitle>Weekly Gross Revenue</CardTitle>
+        </CardHeader>
+        <CardBody>
+          {chartData.length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={chartData}>
+                  <defs>
+                    <linearGradient id={`grad-${id}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={prod.color} stopOpacity={0.15} />
+                      <stop offset="100%" stopColor={prod.color} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip formatter={(v) => fmt(Number(v))} contentStyle={{ fontSize: 12, border: '1px solid #e7e5e4', borderRadius: 6 }} />
+                  <Area type="monotone" dataKey="weekly" stroke={prod.color} strokeWidth={1.5} fill={`url(#grad-${id})`} name="Weekly Gross" />
+                </AreaChart>
+              </ResponsiveContainer>
+              {weeks.length >= 2 && (() => {
+                const last  = weeks[weeks.length - 1]
+                const prev  = weeks[weeks.length - 2]
+                const wow   = ((last.grossRevenue - prev.grossRevenue) / prev.grossRevenue) * 100
+                const sorted = [...weeks].sort((a, b) => b.grossRevenue - a.grossRevenue)
+                const rank  = sorted.findIndex(w => w.weekEnding === last.weekEnding) + 1
+                const peak  = sorted[0]
+                return (
+                  <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-stone-500 border-t border-stone-100 mt-3 pt-3">
+                    <span>Last wk: <span className={`font-medium ${wow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{wow >= 0 ? '↑' : '↓'} {Math.abs(wow).toFixed(0)}% wk/wk</span></span>
+                    <span>Rank: <span className="font-medium text-stone-700">#{rank} of {weeks.length} weeks</span></span>
+                    <span>Peak: <span className="font-medium text-stone-700">{fmt(peak.grossRevenue)}</span> ({formatDateShort(peak.weekEnding)})</span>
+                  </div>
+                )
+              })()}
+            </>
+          ) : (
+            <div className="h-48 flex items-center justify-center text-sm text-stone-400">No revenue data yet</div>
+          )}
+        </CardBody>
+      </Card>
+
+      {/* ── Inline Forecaster ─────────────────────────────────────────────── */}
+      <Card className="mb-6">
+        <CardHeader className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
             <TrendingUp size={14} className="text-stone-400" />
-            <CardTitle>Weekly Gross Revenue</CardTitle>
-          </CardHeader>
-          <CardBody>
-            {chartData.length > 0 ? (
-              <>
+            <CardTitle>Revenue Forecast</CardTitle>
+            <span className={`text-xs font-medium px-2 py-0.5 rounded border ${FC_RISK_BG[fc.overallRisk]} ${FC_RISK_COLOR[fc.overallRisk]}`}>
+              {FC_RISK_LABEL[fc.overallRisk]}
+            </span>
+          </div>
+          <Link
+            href={`/productions/${id}/forecasting`}
+            className="inline-flex items-center gap-1 text-xs font-medium text-stone-500 hover:text-stone-800 transition-colors"
+          >
+            Full analysis <ArrowRight size={11} />
+          </Link>
+        </CardHeader>
+        <CardBody className="pt-0">
+          {/* Insight bar */}
+          <div className={`rounded-lg border px-4 py-3 mb-4 ${FC_RISK_BG[fc.overallRisk]}`}>
+            <div className="flex items-start gap-2.5">
+              <Info size={14} className={`${FC_RISK_COLOR[fc.overallRisk]} shrink-0 mt-0.5`} />
+              <div className="space-y-0.5">
+                {fcInsights.slice(0, 2).map((insight, i) => (
+                  <p key={i} className={`text-sm ${i === 0 ? 'font-medium' : ''} ${FC_RISK_COLOR[fc.overallRisk]}`}>{insight}</p>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Chart + controls */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            {/* Trajectory chart */}
+            <div className="lg:col-span-2">
+              {fcChartData.length === 0 ? (
+                <div className="h-44 flex items-center justify-center text-sm text-stone-400 rounded-lg border border-dashed border-stone-200">
+                  Projections appear once performance data is entered
+                </div>
+              ) : (
                 <ResponsiveContainer width="100%" height={200}>
-                  <AreaChart data={chartData}>
+                  <ComposedChart data={fcChartData} margin={{ right: 50 }}>
                     <defs>
-                      <linearGradient id={`grad-${id}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={prod.color} stopOpacity={0.15} />
+                      <linearGradient id={`fc-actual-${id}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={prod.color} stopOpacity={0.2} />
+                        <stop offset="100%" stopColor={prod.color} stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id={`fc-proj-${id}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={prod.color} stopOpacity={0.07} />
                         <stop offset="100%" stopColor={prod.color} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(v) => fmt(Number(v))} contentStyle={{ fontSize: 12, border: '1px solid #e7e5e4', borderRadius: 6 }} />
-                    <Area type="monotone" dataKey="weekly" stroke={prod.color} strokeWidth={1.5} fill={`url(#grad-${id})`} name="Weekly Gross" />
-                  </AreaChart>
+                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                    <YAxis tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} width={46} />
+                    <Tooltip formatter={(v, name) => [fmt(Number(v)), name]} contentStyle={{ fontSize: 12, border: '1px solid #e7e5e4', borderRadius: 6 }} />
+                    {fc.breakevenGross > 0 && (
+                      <ReferenceLine y={fc.breakevenGross} stroke="#ef4444" strokeDasharray="4 3" strokeWidth={1}
+                        label={{ value: 'Breakeven', fill: '#ef4444', fontSize: 10, position: 'insideTopRight' }} />
+                    )}
+                    {prod.projectedGross > 0 && (
+                      <ReferenceLine y={prod.projectedGross} stroke="#a8a29e" strokeDasharray="4 3" strokeWidth={1}
+                        label={{ value: 'Target', fill: '#a8a29e', fontSize: 10, position: 'insideTopRight' }} />
+                    )}
+                    <Area type="monotone" dataKey="actual" stroke={prod.color} strokeWidth={2}
+                      fill={`url(#fc-actual-${id})`} name="Actual" connectNulls={false} dot={false} />
+                    <Line type="monotone" dataKey="projected" stroke={prod.color} strokeWidth={1.5}
+                      strokeDasharray="5 4" name="Projected" dot={false} connectNulls={false} />
+                  </ComposedChart>
                 </ResponsiveContainer>
-                {weeks.length >= 2 && (() => {
-                  const last  = weeks[weeks.length - 1]
-                  const prev  = weeks[weeks.length - 2]
-                  const wow   = ((last.grossRevenue - prev.grossRevenue) / prev.grossRevenue) * 100
-                  const sorted = [...weeks].sort((a, b) => b.grossRevenue - a.grossRevenue)
-                  const rank  = sorted.findIndex(w => w.weekEnding === last.weekEnding) + 1
-                  const peak  = sorted[0]
-                  return (
-                    <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-stone-500 border-t border-stone-100 mt-3 pt-3">
-                      <span>Last wk: <span className={`font-medium ${wow >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>{wow >= 0 ? '↑' : '↓'} {Math.abs(wow).toFixed(0)}% wk/wk</span></span>
-                      <span>Rank: <span className="font-medium text-stone-700">#{rank} of {weeks.length} weeks</span></span>
-                      <span>Peak: <span className="font-medium text-stone-700">{fmt(peak.grossRevenue)}</span> ({formatDateShort(peak.weekEnding)})</span>
-                    </div>
-                  )
-                })()}
-              </>
-            ) : (
-              <div className="h-48 flex items-center justify-center text-sm text-stone-400">No revenue data yet</div>
-            )}
-          </CardBody>
-        </Card>
-
-        {/* Budget breakdown */}
-        <Card>
-          <CardHeader className="flex items-center gap-2">
-            <DollarSign size={14} className="text-stone-400" />
-            <CardTitle>Budget by Category</CardTitle>
-          </CardHeader>
-          <CardBody className="p-0">
-            <div className="divide-y divide-stone-50">
-              {Object.entries(
-                lines.reduce((acc, l) => {
-                  acc[l.category] = (acc[l.category] || 0) + l.actual
-                  return acc
-                }, {} as Record<string, number>)
-              )
-                .filter(([, v]) => v > 0)
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 6)
-                .map(([cat, actual]) => {
-                  const budgeted = lines.filter((l) => l.category === cat).reduce((s, l) => s + l.budgeted, 0)
-                  const pct = budgeted > 0 ? (actual / budgeted) * 100 : 0
-                  return (
-                    <div key={cat} className="px-5 py-2.5">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-stone-600 truncate">{cat}</span>
-                        <span className="text-stone-500 ml-2 shrink-0">{fmtPct(pct)}</span>
-                      </div>
-                      <div className="h-0.5 bg-stone-100 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: pct > 100 ? '#ef4444' : prod.color }} />
-                      </div>
-                    </div>
-                  )
-                })}
+              )}
             </div>
-          </CardBody>
-        </Card>
-      </div>
+
+            {/* Scenario engine */}
+            <div className="space-y-3">
+              <p className="text-xs font-medium text-stone-500 uppercase tracking-wider">Scenario</p>
+              <div className="flex flex-wrap gap-1.5">
+                {FC_SCENARIOS.map(({ type, label }) => (
+                  <button
+                    key={type}
+                    onClick={() => setActiveScenario(type)}
+                    className={`text-xs px-2 py-1 rounded border transition-colors ${
+                      activeScenario === type
+                        ? 'bg-stone-800 text-white border-stone-800'
+                        : 'border-stone-200 text-stone-600 hover:border-stone-400'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Scenario controls */}
+              <div className="space-y-2 pt-1">
+                {activeScenario === 'base' && (
+                  <p className="text-xs text-stone-400 leading-relaxed">Projects current pace through remainder of run.</p>
+                )}
+                {activeScenario === 'downside' && (
+                  <label className="block text-xs text-stone-500">Sales decline
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <input type="number" min={1} max={50} value={fcCfg.downsidePct} onChange={e => setFcField('downsidePct', Number(e.target.value))}
+                        className="w-20 px-2 py-1.5 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
+                      <span className="text-xs text-stone-400">%</span>
+                    </div>
+                  </label>
+                )}
+                {activeScenario === 'upside' && (
+                  <label className="block text-xs text-stone-500">Sales improvement
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <input type="number" min={1} max={100} value={fcCfg.upsidePct} onChange={e => setFcField('upsidePct', Number(e.target.value))}
+                        className="w-20 px-2 py-1.5 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
+                      <span className="text-xs text-stone-400">%</span>
+                    </div>
+                  </label>
+                )}
+                {activeScenario === 'marketing_push' && (
+                  <div className="space-y-2">
+                    <label className="block text-xs text-stone-500">Extra marketing
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="text-xs text-stone-400">$</span>
+                        <input type="number" min={0} step={1000} value={fcCfg.extraMarketing} onChange={e => setFcField('extraMarketing', Number(e.target.value))}
+                          className="w-24 px-2 py-1.5 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
+                      </div>
+                    </label>
+                    <label className="block text-xs text-stone-500">Revenue lift
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <input type="number" min={0} max={50} value={fcCfg.marketingLiftPct} onChange={e => setFcField('marketingLiftPct', Number(e.target.value))}
+                          className="w-20 px-2 py-1.5 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
+                        <span className="text-xs text-stone-400">%</span>
+                      </div>
+                    </label>
+                  </div>
+                )}
+                {activeScenario === 'labour_increase' && (
+                  <label className="block text-xs text-stone-500">Labour increase
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <input type="number" min={0} max={100} value={fcCfg.labourIncreasePct} onChange={e => setFcField('labourIncreasePct', Number(e.target.value))}
+                        className="w-20 px-2 py-1.5 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
+                      <span className="text-xs text-stone-400">%</span>
+                    </div>
+                  </label>
+                )}
+                {activeScenario === 'early_close' && (
+                  <label className="block text-xs text-stone-500">Weeks to cut
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <input type="number" min={1} max={Math.max(1, fc.weeksRemaining)} value={fcCfg.earlyCloseWeeks} onChange={e => setFcField('earlyCloseWeeks', Number(e.target.value))}
+                        className="w-20 px-2 py-1.5 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
+                      <span className="text-xs text-stone-400">wks</span>
+                    </div>
+                  </label>
+                )}
+                {activeScenario === 'extension' && (
+                  <div className="space-y-2">
+                    <label className="block text-xs text-stone-500">Extension weeks
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <input type="number" min={1} max={26} value={fcCfg.extensionWeeks} onChange={e => setFcField('extensionWeeks', Number(e.target.value))}
+                          className="w-20 px-2 py-1.5 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
+                        <span className="text-xs text-stone-400">wks</span>
+                      </div>
+                    </label>
+                    <label className="block text-xs text-stone-500">Expected capacity
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <input type="number" min={10} max={100} value={fcCfg.extensionCapacityPct} onChange={e => setFcField('extensionCapacityPct', Number(e.target.value))}
+                          className="w-20 px-2 py-1.5 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
+                        <span className="text-xs text-stone-400">%</span>
+                      </div>
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {/* Scenario result */}
+              {activeScenario !== 'base' && fcActive && (
+                <div className={`p-3 rounded border text-xs space-y-1 ${FC_RISK_BG[fcActive.risk]}`}>
+                  <p className={`font-medium ${FC_RISK_COLOR[fcActive.risk]}`}>{fcActive.label}</p>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-stone-600 pt-0.5">
+                    <span>Final gross</span>
+                    <span className="font-medium text-stone-800">{fmt(fcActive.projectedFinalGross)}</span>
+                    <span>vs Base</span>
+                    <span className={`font-medium ${fcActive.projectedFinalGross >= fcBase.projectedFinalGross ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {fcActive.projectedFinalGross >= fcBase.projectedFinalGross ? '+' : ''}{fmt(fcActive.projectedFinalGross - fcBase.projectedFinalGross)}
+                    </span>
+                    <span>Breakeven gap</span>
+                    <span className={`font-medium ${fcActive.breakevenGap >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {fcActive.breakevenGap >= 0 ? '+' : ''}{fmt(fcActive.breakevenGap)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardBody>
+      </Card>
 
       {/* Ticket map modal */}
       <Modal
@@ -668,8 +865,48 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
         </CardBody>
       </Card>
 
-      {/* Contracts + Deadlines */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {/* Budget by Category + Contracts + Deadlines */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Budget by category */}
+        <Card>
+          <CardHeader className="flex items-center gap-2">
+            <DollarSign size={14} className="text-stone-400" />
+            <CardTitle>Budget by Category</CardTitle>
+          </CardHeader>
+          <CardBody className="p-0">
+            {lines.length === 0 ? (
+              <p className="px-5 py-4 text-sm text-stone-400">No budget lines yet.</p>
+            ) : (
+              <div className="divide-y divide-stone-50">
+                {Object.entries(
+                  lines.reduce((acc, l) => {
+                    acc[l.category] = (acc[l.category] || 0) + l.actual
+                    return acc
+                  }, {} as Record<string, number>)
+                )
+                  .filter(([, v]) => v > 0)
+                  .sort(([, a], [, b]) => b - a)
+                  .slice(0, 8)
+                  .map(([cat, actual]) => {
+                    const budgeted = lines.filter((l) => l.category === cat).reduce((s, l) => s + l.budgeted, 0)
+                    const pct = budgeted > 0 ? (actual / budgeted) * 100 : 0
+                    return (
+                      <div key={cat} className="px-5 py-2.5">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-stone-600 truncate">{cat}</span>
+                          <span className="text-stone-500 ml-2 shrink-0">{fmtPct(pct)}</span>
+                        </div>
+                        <div className="h-0.5 bg-stone-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: pct > 100 ? '#ef4444' : prod.color }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
         <Card>
           <CardHeader className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -707,7 +944,6 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
           <CardBody className="p-0">
             <div className="divide-y divide-stone-100">
               {[...overdueDeadlines, ...upcomingDeadlines].slice(0, 6).map((d) => {
-                const days = daysUntil(d.date)
                 return (
                   <div key={d.id} className="flex items-center justify-between px-6 py-3">
                     <div>
