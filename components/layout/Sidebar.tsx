@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -9,20 +10,47 @@ import { cn } from '@/lib/cn'
 import { useStore } from '@/lib/store'
 import { useDemo } from '@/contexts/DemoContext'
 
-const navItems = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: false },
-  { label: 'Productions', href: '/productions', icon: Film, exact: false },
-  { label: 'Budget', href: '/budget', icon: DollarSign, exact: false },
-  { label: 'Revenue', href: '/revenue', icon: TrendingUp, exact: false },
-  { label: 'Contracts', href: '/contracts', icon: FileText, exact: false },
-  { label: 'Cash Flow', href: '/cashflow', icon: ArrowRightLeft, exact: false },
-  { label: 'Marketing', href: '/marketing', icon: Megaphone, exact: false },
-  { label: 'What If', href: '/whatif', icon: FlaskConical, exact: false },
-  { label: 'Calendar', href: '/calendar', icon: CalendarDays, exact: false },
-  { label: 'Reports', href: '/reports', icon: FileBarChart, exact: false },
-  { label: 'Documents', href: '/documents', icon: FolderOpen, exact: false },
-  { label: 'Settings', href: '/settings', icon: Settings, exact: true },
-  { label: 'Demo Creator', href: '/settings/demos', icon: Wand2, exact: false },
+type NavItem = { label: string; href: string; icon: React.ElementType; exact: boolean }
+type NavGroup = { heading?: string; items: NavItem[] }
+
+const navGroups: NavGroup[] = [
+  {
+    items: [
+      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: false },
+    ],
+  },
+  {
+    heading: 'Production',
+    items: [
+      { label: 'Productions', href: '/productions', icon: Film, exact: false },
+      { label: 'Calendar', href: '/calendar', icon: CalendarDays, exact: false },
+      { label: 'Contracts', href: '/contracts', icon: FileText, exact: false },
+    ],
+  },
+  {
+    heading: 'Finance',
+    items: [
+      { label: 'Budget', href: '/budget', icon: DollarSign, exact: false },
+      { label: 'Revenue', href: '/revenue', icon: TrendingUp, exact: false },
+      { label: 'Cash Flow', href: '/cashflow', icon: ArrowRightLeft, exact: false },
+    ],
+  },
+  {
+    heading: 'Strategy',
+    items: [
+      { label: 'Marketing', href: '/marketing', icon: Megaphone, exact: false },
+      { label: 'What If', href: '/whatif', icon: FlaskConical, exact: false },
+    ],
+  },
+  {
+    heading: 'Workspace',
+    items: [
+      { label: 'Reports', href: '/reports', icon: FileBarChart, exact: false },
+      { label: 'Documents', href: '/documents', icon: FolderOpen, exact: false },
+      { label: 'Settings', href: '/settings', icon: Settings, exact: true },
+      { label: 'Demo Creator', href: '/settings/demos', icon: Wand2, exact: false },
+    ],
+  },
 ]
 
 export function Sidebar() {
@@ -77,24 +105,39 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {navItems.filter(({ href }) => !(isDemo && href === '/settings/demos')).map(({ label, href, icon: Icon, exact }) => {
-          const active = pathname === href || (!exact && pathname.startsWith(href + '/'))
+      <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
+        {navGroups.map((group, gi) => {
+          const items = group.items.filter(({ href }) => !(isDemo && href === '/settings/demos'))
+          if (!items.length) return null
           return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors',
-                active
-                  ? 'text-white'
-                  : 'text-white/70 hover:text-white hover:bg-white/10',
+            <div key={gi}>
+              {group.heading && (
+                <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/30">
+                  {group.heading}
+                </p>
               )}
-              style={active ? { backgroundColor: accentColor ?? '#292524' } : undefined}
-            >
-              <Icon size={15} />
-              {label}
-            </Link>
+              <div className="space-y-0.5">
+                {items.map(({ label, href, icon: Icon, exact }) => {
+                  const active = pathname === href || (!exact && pathname.startsWith(href + '/'))
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors',
+                        active
+                          ? 'text-white'
+                          : 'text-white/70 hover:text-white hover:bg-white/10',
+                      )}
+                      style={active ? { backgroundColor: accentColor ?? '#292524' } : undefined}
+                    >
+                      <Icon size={15} />
+                      {label}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
           )
         })}
       </nav>
