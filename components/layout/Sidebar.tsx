@@ -23,7 +23,6 @@ const navItems = [
   { label: 'Documents', href: '/documents', icon: FolderOpen, exact: false },
   { label: 'Settings', href: '/settings', icon: Settings, exact: true },
   { label: 'Demo Creator', href: '/settings/demos', icon: Wand2, exact: false },
-  { label: 'CSV Import', href: '/settings/import', icon: Upload, exact: false },
 ]
 
 export function Sidebar() {
