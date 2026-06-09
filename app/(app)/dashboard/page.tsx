@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/Badge'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel } from '@/lib/utils'
 import Link from 'next/link'
 import { ArrowRight, Shield, ChevronRight, CheckCircle2, Copy, Check } from 'lucide-react'
-import type { Production, RevenueWeek } from '@/lib/types'
+import type { Production } from '@/lib/types'
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -61,25 +61,6 @@ const PACING_CFG: Record<PacingStatus, { label: string; cls: string }> = {
   'unknown': { label: '—',            cls: 'text-stone-300 bg-stone-50 border-stone-100' },
 }
 
-function SparkBar({ weeks }: { weeks: RevenueWeek[] }) {
-  if (weeks.length === 0) return <span className="text-[11px] text-stone-300 italic">No data yet</span>
-  return (
-    <div className="flex items-end gap-px" style={{ height: '20px' }}>
-      {weeks.map((w, i) => {
-        const h  = Math.round((Math.min(Math.max(w.capacityPct, 4), 110) / 110) * 20)
-        const bg = w.capacityPct >= 85 ? '#10b981' : w.capacityPct >= 65 ? '#f59e0b' : '#ef4444'
-        return (
-          <div
-            key={i}
-            title={`Wk ${w.weekEnding}: ${w.capacityPct.toFixed(0)}% cap · ${fmt(w.grossRevenue)}`}
-            className="w-3 rounded-[2px]"
-            style={{ height: `${h}px`, backgroundColor: bg }}
-          />
-        )
-      })}
-    </div>
-  )
-}
 
 // ── Component ────────────────────────────────────────────────────────────────
 
@@ -130,24 +111,27 @@ export default function DashboardPage() {
   // ── Sales Pulse ──────────────────────────────────────────────────────────
   const activeProds = productions.filter((p) => p.status !== 'closed')
   const salesPulse = activeProds.map((p) => {
-    const allWeeks = revenueWeeks
+    const allWeeks    = revenueWeeks
       .filter((w) => w.productionId === p.id)
       .sort((a, b) => new Date(a.weekEnding).getTime() - new Date(b.weekEnding).getTime())
-    const sparkWeeks = allWeeks.slice(-6)
-    const lastWeek   = allWeeks[allWeeks.length - 1] ?? null
-    const prevWeek   = allWeeks[allWeeks.length - 2] ?? null
-    const capTrend   = lastWeek && prevWeek ? lastWeek.capacityPct - prevWeek.capacityPct : null
-    const cumGross   = allWeeks.reduce((s, w) => s + w.grossRevenue, 0) || p.currentGross
+    const lastWeek    = allWeeks[allWeeks.length - 1] ?? null
+    const cumGross    = allWeeks.reduce((s, w) => s + w.grossRevenue, 0) || p.currentGross
+    const totalTickets = allWeeks.reduce((s, w) => s + w.ticketsSold, 0)
 
+    // Rate-based pacing: compare actual weekly revenue run-rate vs needed rate to hit projected gross
     let pacing: PacingStatus = 'unknown'
-    if (p.openingDate && p.closingDate && p.projectedGross > 0 && cumGross > 0) {
-      const open  = new Date(p.openingDate + 'T12:00:00').getTime()
-      const close = new Date(p.closingDate + 'T12:00:00').getTime()
-      const now   = Date.now()
-      if (now > open && close > open) {
-        const pctElapsed  = Math.min(1, Math.max(0, (now - open) / (close - open)))
-        const pctCaptured = Math.min(cumGross / p.projectedGross, 2)
-        pacing = pctCaptured - pctElapsed > 0.05 ? 'ahead' : pctCaptured - pctElapsed < -0.10 ? 'behind' : 'on-pace'
+    if (p.closingDate && p.projectedGross > 0) {
+      const closeTs    = new Date(p.closingDate + 'T12:00:00').getTime()
+      const weeksLeft  = Math.max(0, (closeTs - Date.now()) / (7 * 86_400_000))
+      const grossLeft  = Math.max(0, p.projectedGross - cumGross)
+      const rateNeeded = weeksLeft > 0 ? grossLeft / weeksLeft : 0
+      const recentWks  = allWeeks.filter((w) => w.grossRevenue > 0).slice(-4)
+      const actualRate = recentWks.length > 0
+        ? recentWks.reduce((s, w) => s + w.grossRevenue, 0) / recentWks.length
+        : 0
+      if (actualRate > 0 && rateNeeded > 0) {
+        const ratio = actualRate / rateNeeded
+        pacing = ratio > 1.05 ? 'ahead' : ratio < 0.90 ? 'behind' : 'on-pace'
       }
     }
 
@@ -171,7 +155,7 @@ export default function DashboardPage() {
     const lastCashSp = prodRows.length ? prodRows[prodRows.length - 1].closingCash : p.cashOnHand
     const runway     = burnSp > 0 ? Math.round(lastCashSp / burnSp) : null
 
-    return { prod: p, sparkWeeks, lastWeek, capTrend, pacing, breakEvenCap, runway }
+    return { prod: p, totalTickets, lastWeek, pacing, breakEvenCap, runway }
   })
 
   // ── Build attention items ────────────────────────────────────────────────
@@ -446,24 +430,15 @@ export default function DashboardPage() {
       {activeProds.length > 0 && (
         <Card className="mb-6">
           <CardHeader>
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div>
-                <CardTitle>Sales Pulse</CardTitle>
-                <p className="text-xs text-stone-500 mt-0.5">Weekly ticket performance across active productions.</p>
-              </div>
-              <div className="flex items-center gap-3 text-[11px] text-stone-400 shrink-0">
-                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" /> ≥85% capacity</span>
-                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-amber-400" /> 65–84%</span>
-                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-400" /> &lt;65%</span>
-              </div>
-            </div>
+            <CardTitle>Sales Pulse</CardTitle>
+            <p className="text-xs text-stone-500 mt-0.5">Weekly ticket performance across active productions.</p>
           </CardHeader>
           <CardBody className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
                 <thead className="bg-stone-50 border-b border-stone-100">
                   <tr>
-                    {['Production', 'Last Week Gross', 'Avg Tickets/Perf', 'Avg Ticket Price', '6-wk Trend', 'Pacing'].map((h) => (
+                    {['Production', 'Last Week Gross', 'Avg Tickets/Perf', 'Avg Ticket Price', 'Total Tickets Sold', 'Pacing'].map((h) => (
                       <th key={h} className="px-5 py-2.5 text-left text-xs font-medium text-stone-500 uppercase tracking-wider whitespace-nowrap">
                         {h}
                       </th>
@@ -471,7 +446,7 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {salesPulse.map(({ prod: p, sparkWeeks, lastWeek, pacing }) => {
+                  {salesPulse.map(({ prod: p, totalTickets, lastWeek, pacing }) => {
                     const pacingCfg = PACING_CFG[pacing]
                     const avgTicketsPerPerf = lastWeek && lastWeek.performances > 0
                       ? Math.round(lastWeek.ticketsSold / lastWeek.performances)
@@ -494,8 +469,8 @@ export default function DashboardPage() {
                         <td className="px-5 py-3.5 tabular-nums text-stone-700">
                           {lastWeek ? fmt(lastWeek.avgTicketPrice, 2) : <span className="text-stone-300">—</span>}
                         </td>
-                        <td className="px-5 py-3.5">
-                          <SparkBar weeks={sparkWeeks} />
+                        <td className="px-5 py-3.5 tabular-nums text-stone-700 font-medium">
+                          {totalTickets > 0 ? totalTickets.toLocaleString() : <span className="text-stone-300">—</span>}
                         </td>
                         <td className="px-5 py-3.5">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium ${pacingCfg.cls}`}>

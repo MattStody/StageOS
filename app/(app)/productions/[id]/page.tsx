@@ -178,14 +178,14 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
     }
   })
 
-  // Reference line markers: opening night week and 6-weeks-into-run week
+  // Reference line markers: 6 weeks BEFORE opening, and opening night week
   const openingTs = prod.openingDate ? new Date(prod.openingDate + 'T12:00:00').getTime() : null
-  const sixWeeksTs = openingTs ? openingTs + 42 * 86_400_000 : null
+  const sixWeeksPreTs = openingTs ? openingTs - 42 * 86_400_000 : null
   const openingWeekLabel = openingTs
     ? chartData[weeks.findIndex((w) => new Date(w.weekEnding + 'T12:00:00').getTime() >= openingTs)]?.week ?? null
     : null
-  const sixWeeksLabel = sixWeeksTs
-    ? chartData[weeks.findIndex((w) => new Date(w.weekEnding + 'T12:00:00').getTime() >= sixWeeksTs)]?.week ?? null
+  const sixWeeksLabel = sixWeeksPreTs
+    ? chartData[weeks.findIndex((w) => new Date(w.weekEnding + 'T12:00:00').getTime() >= sixWeeksPreTs)]?.week ?? null
     : null
 
   const budgetPct = budgetUsedPct(totalActual, totalBudgeted)
@@ -281,13 +281,12 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <StatCard label="Gross Revenue" value={fmt(cumGross || prod.currentGross)} sub={`of ${fmt(prod.projectedGross)} projected`} trend="up" />
         <StatCard label="Budget Used" value={fmtPct(budgetPct)} sub={`${fmt(totalActual)} of ${fmt(totalBudgeted)}`} alert={budgetPct > 90} />
         <StatCard label="Cash on Hand" value={fmt(lastCash)} sub={runway ? `${runway} wk runway` : 'current balance'} />
         <StatCard label="Break-even" value={breakEvenLabel} sub={weeksRemaining > 0 ? `${weeksRemaining} wks remaining` : 'run complete'} alert={breakEvenCap !== null && breakEvenCap > 90} />
         <StatCard label="Contracts" value={`${prodContracts.filter(c=>c.status==='signed').length}/${prodContracts.length}`} sub={unsigned > 0 ? `${unsigned} unsigned` : 'All signed'} alert={unsigned > 0} />
-        <StatCard label="Deadlines" value={`${upcomingDeadlines.length}`} sub={overdueDeadlines.length > 0 ? `${overdueDeadlines.length} overdue` : 'upcoming'} alert={overdueDeadlines.length > 0} />
       </div>
 
       {/* Revenue chart — full width */}
@@ -317,17 +316,6 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                       stroke={prod.color}
                       strokeWidth={1.5}
                       strokeDasharray="4 3"
-                      label={(props: { viewBox?: { x?: number } }) => {
-                        const x = props.viewBox?.x ?? 0
-                        const txt = '★ Opening Night'
-                        const w = txt.length * 5.2 + 14
-                        return (
-                          <g>
-                            <rect x={x - w / 2} y={4} width={w} height={17} rx={3} fill={prod.color} fillOpacity={0.12} stroke={prod.color} strokeWidth={0.75} />
-                            <text x={x} y={16} textAnchor="middle" fontSize={9} fontWeight={700} fill={prod.color}>{txt}</text>
-                          </g>
-                        )
-                      }}
                     />
                   )}
                   {sixWeeksLabel && sixWeeksLabel !== openingWeekLabel && (
@@ -336,17 +324,6 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                       stroke="#78716c"
                       strokeWidth={1}
                       strokeDasharray="4 3"
-                      label={(props: { viewBox?: { x?: number } }) => {
-                        const x = props.viewBox?.x ?? 0
-                        const txt = '6 Wks Into Run'
-                        const w = txt.length * 5.2 + 14
-                        return (
-                          <g>
-                            <rect x={x - w / 2} y={4} width={w} height={17} rx={3} fill="#78716c" fillOpacity={0.08} stroke="#78716c" strokeWidth={0.75} />
-                            <text x={x} y={16} textAnchor="middle" fontSize={9} fontWeight={600} fill="#78716c">{txt}</text>
-                          </g>
-                        )
-                      }}
                     />
                   )}
                 </AreaChart>
@@ -367,7 +344,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                       <svg width="22" height="10" className="shrink-0">
                         <line x1="0" y1="5" x2="22" y2="5" stroke="#78716c" strokeWidth="1" strokeDasharray="4 3" />
                       </svg>
-                      <span className="text-stone-500">6 Weeks Into Run</span>
+                      <span className="text-stone-500">6 Weeks Pre-Opening</span>
                     </span>
                   )}
                 </div>
