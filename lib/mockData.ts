@@ -141,33 +141,46 @@ export const BUDGET_LINES: BudgetLine[] = [
 // ─── REVENUE WEEKS ───────────────────────────────────────────────────────────
 
 export const REVENUE_WEEKS: RevenueWeek[] = [
-  // prod-1: A Winter's Dream (8 weeks)
-  { id: 'r1-1', productionId: 'prod-1', weekEnding: '2025-11-22', performances: 8, ticketsSold: 1820, grossRevenue: 218400, avgTicketPrice: 120, capacityPct: 62, comps: 85, discounts: 12000, netRevenue: 204000, totalSeats: 2932 },
-  { id: 'r1-2', productionId: 'prod-1', weekEnding: '2025-11-29', performances: 8, ticketsSold: 2340, grossRevenue: 303000, avgTicketPrice: 129, capacityPct: 80, comps: 60, discounts: 8500, netRevenue: 286000, totalSeats: 2932 },
-  { id: 'r1-3', productionId: 'prod-1', weekEnding: '2025-12-06', performances: 8, ticketsSold: 2200, grossRevenue: 286000, avgTicketPrice: 130, capacityPct: 75, comps: 72, discounts: 9800, netRevenue: 269000, totalSeats: 2932 },
-  { id: 'r1-4', productionId: 'prod-1', weekEnding: '2025-12-13', performances: 8, ticketsSold: 2540, grossRevenue: 341000, avgTicketPrice: 134, capacityPct: 87, comps: 45, discounts: 6200, netRevenue: 326000, totalSeats: 2932 },
-  { id: 'r1-5', productionId: 'prod-1', weekEnding: '2025-12-20', performances: 10, ticketsSold: 2932, grossRevenue: 428000, avgTicketPrice: 146, capacityPct: 100, comps: 30, discounts: 4000, netRevenue: 417000, totalSeats: 2932 },
-  { id: 'r1-6', productionId: 'prod-1', weekEnding: '2025-12-27', performances: 10, ticketsSold: 2932, grossRevenue: 447000, avgTicketPrice: 152, capacityPct: 100, comps: 20, discounts: 2000, netRevenue: 438000, totalSeats: 2932 },
-  { id: 'r1-7', productionId: 'prod-1', weekEnding: '2026-01-03', performances: 8, ticketsSold: 2680, grossRevenue: 348000, avgTicketPrice: 130, capacityPct: 91, comps: 55, discounts: 7200, netRevenue: 333000, totalSeats: 2932 },
-  { id: 'r1-8', productionId: 'prod-1', weekEnding: '2026-01-05', performances: 3, ticketsSold: 820, grossRevenue: 109600, avgTicketPrice: 134, capacityPct: 94, comps: 18, discounts: 1800, netRevenue: 104000, totalSeats: 2932 },
+  // prod-1: A Winter's Dream — 3 advance weeks then 8 performance weeks (Sep–Nov 2026)
+  { id: 'r1-pre-1', productionId: 'prod-1', weekEnding: '2026-08-29', performances: 0, ticketsSold: 320,  grossRevenue: 38400,  avgTicketPrice: 120, capacityPct: 11, comps: 0,  discounts: 0,     netRevenue: 38400,  totalSeats: 2932 },
+  { id: 'r1-pre-2', productionId: 'prod-1', weekEnding: '2026-09-05', performances: 0, ticketsSold: 720,  grossRevenue: 86400,  avgTicketPrice: 120, capacityPct: 25, comps: 0,  discounts: 500,   netRevenue: 85900,  totalSeats: 2932 },
+  { id: 'r1-pre-3', productionId: 'prod-1', weekEnding: '2026-09-12', performances: 0, ticketsSold: 1150, grossRevenue: 138000, avgTicketPrice: 120, capacityPct: 39, comps: 15, discounts: 2000,  netRevenue: 134500, totalSeats: 2932 },
+  { id: 'r1-1', productionId: 'prod-1', weekEnding: '2026-09-22', performances: 8,  ticketsSold: 1820, grossRevenue: 218400, avgTicketPrice: 120, capacityPct: 62, comps: 85, discounts: 12000, netRevenue: 204000, totalSeats: 2932 },
+  { id: 'r1-2', productionId: 'prod-1', weekEnding: '2026-09-29', performances: 8,  ticketsSold: 2340, grossRevenue: 303000, avgTicketPrice: 129, capacityPct: 80, comps: 60, discounts: 8500,  netRevenue: 286000, totalSeats: 2932 },
+  { id: 'r1-3', productionId: 'prod-1', weekEnding: '2026-10-06', performances: 8,  ticketsSold: 2200, grossRevenue: 286000, avgTicketPrice: 130, capacityPct: 75, comps: 72, discounts: 9800,  netRevenue: 269000, totalSeats: 2932 },
+  { id: 'r1-4', productionId: 'prod-1', weekEnding: '2026-10-13', performances: 8,  ticketsSold: 2540, grossRevenue: 341000, avgTicketPrice: 134, capacityPct: 87, comps: 45, discounts: 6200,  netRevenue: 326000, totalSeats: 2932 },
+  { id: 'r1-5', productionId: 'prod-1', weekEnding: '2026-10-20', performances: 10, ticketsSold: 2932, grossRevenue: 428000, avgTicketPrice: 146, capacityPct: 100, comps: 30, discounts: 4000, netRevenue: 417000, totalSeats: 2932 },
+  { id: 'r1-6', productionId: 'prod-1', weekEnding: '2026-10-27', performances: 10, ticketsSold: 2932, grossRevenue: 447000, avgTicketPrice: 152, capacityPct: 100, comps: 20, discounts: 2000, netRevenue: 438000, totalSeats: 2932 },
+  { id: 'r1-7', productionId: 'prod-1', weekEnding: '2026-11-03', performances: 8,  ticketsSold: 2680, grossRevenue: 348000, avgTicketPrice: 130, capacityPct: 91, comps: 55, discounts: 7200,  netRevenue: 333000, totalSeats: 2932 },
+  { id: 'r1-8', productionId: 'prod-1', weekEnding: '2026-11-05', performances: 3,  ticketsSold: 820,  grossRevenue: 109600, avgTicketPrice: 134, capacityPct: 94, comps: 18, discounts: 1800,  netRevenue: 104000, totalSeats: 2932 },
 
-  // prod-2: The Silence Between — advance ticket sales (in rehearsal)
-  { id: 'r2-adv-1', productionId: 'prod-2', weekEnding: '2026-01-04', performances: 0, ticketsSold: 168, grossRevenue: 18816, avgTicketPrice: 112, capacityPct: 15, comps: 0, discounts: 0, netRevenue: 18816, totalSeats: 1100 },
-  { id: 'r2-adv-2', productionId: 'prod-2', weekEnding: '2026-01-11', performances: 0, ticketsSold: 285, grossRevenue: 31920, avgTicketPrice: 112, capacityPct: 26, comps: 0, discounts: 800, netRevenue: 31120, totalSeats: 1100 },
-  { id: 'r2-adv-3', productionId: 'prod-2', weekEnding: '2026-01-18', performances: 0, ticketsSold: 418, grossRevenue: 50160, avgTicketPrice: 120, capacityPct: 38, comps: 0, discounts: 1200, netRevenue: 48960, totalSeats: 1100 },
-  { id: 'r2-adv-4', productionId: 'prod-2', weekEnding: '2026-01-25', performances: 0, ticketsSold: 542, grossRevenue: 67750, avgTicketPrice: 125, capacityPct: 49, comps: 12, discounts: 1800, netRevenue: 65950, totalSeats: 1100 },
-  { id: 'r2-adv-5', productionId: 'prod-2', weekEnding: '2026-02-01', performances: 0, ticketsSold: 660, grossRevenue: 84480, avgTicketPrice: 128, capacityPct: 60, comps: 18, discounts: 2200, netRevenue: 82280, totalSeats: 1100 },
-  { id: 'r2-adv-6', productionId: 'prod-2', weekEnding: '2026-02-08', performances: 0, ticketsSold: 748, grossRevenue: 97240, avgTicketPrice: 130, capacityPct: 68, comps: 22, discounts: 2800, netRevenue: 94440, totalSeats: 1100 },
+  // prod-2: The Silence Between — advance sales Jul–Oct, then 4 performance weeks (Oct–Nov 2026)
+  { id: 'r2-adv-1', productionId: 'prod-2', weekEnding: '2026-07-04', performances: 0, ticketsSold: 168, grossRevenue: 18816,  avgTicketPrice: 112, capacityPct: 15, comps: 0,  discounts: 0,    netRevenue: 18816,  totalSeats: 1100 },
+  { id: 'r2-adv-2', productionId: 'prod-2', weekEnding: '2026-07-11', performances: 0, ticketsSold: 285, grossRevenue: 31920,  avgTicketPrice: 112, capacityPct: 26, comps: 0,  discounts: 800,  netRevenue: 31120,  totalSeats: 1100 },
+  { id: 'r2-adv-3', productionId: 'prod-2', weekEnding: '2026-07-18', performances: 0, ticketsSold: 418, grossRevenue: 50160,  avgTicketPrice: 120, capacityPct: 38, comps: 0,  discounts: 1200, netRevenue: 48960,  totalSeats: 1100 },
+  { id: 'r2-adv-4', productionId: 'prod-2', weekEnding: '2026-07-25', performances: 0, ticketsSold: 542, grossRevenue: 67750,  avgTicketPrice: 125, capacityPct: 49, comps: 12, discounts: 1800, netRevenue: 65950,  totalSeats: 1100 },
+  { id: 'r2-adv-5', productionId: 'prod-2', weekEnding: '2026-08-01', performances: 0, ticketsSold: 660, grossRevenue: 84480,  avgTicketPrice: 128, capacityPct: 60, comps: 18, discounts: 2200, netRevenue: 82280,  totalSeats: 1100 },
+  { id: 'r2-adv-6', productionId: 'prod-2', weekEnding: '2026-08-08', performances: 0, ticketsSold: 748, grossRevenue: 97240,  avgTicketPrice: 130, capacityPct: 68, comps: 22, discounts: 2800, netRevenue: 94440,  totalSeats: 1100 },
+  { id: 'r2-adv-7', productionId: 'prod-2', weekEnding: '2026-09-26', performances: 0, ticketsSold: 820, grossRevenue: 106600, avgTicketPrice: 130, capacityPct: 75, comps: 25, discounts: 3000, netRevenue: 103600, totalSeats: 1100 },
+  { id: 'r2-adv-8', productionId: 'prod-2', weekEnding: '2026-10-03', performances: 0, ticketsSold: 880, grossRevenue: 114400, avgTicketPrice: 130, capacityPct: 80, comps: 28, discounts: 3400, netRevenue: 111000, totalSeats: 1100 },
+  { id: 'r2-adv-9', productionId: 'prod-2', weekEnding: '2026-10-10', performances: 0, ticketsSold: 930, grossRevenue: 120900, avgTicketPrice: 130, capacityPct: 85, comps: 30, discounts: 3800, netRevenue: 117100, totalSeats: 1100 },
+  { id: 'r2-1', productionId: 'prod-2', weekEnding: '2026-10-17', performances: 4,  ticketsSold: 800,  grossRevenue: 104000, avgTicketPrice: 130, capacityPct: 73, comps: 35, discounts: 4000, netRevenue: 100000, totalSeats: 1100 },
+  { id: 'r2-2', productionId: 'prod-2', weekEnding: '2026-10-24', performances: 5,  ticketsSold: 970,  grossRevenue: 126100, avgTicketPrice: 130, capacityPct: 88, comps: 30, discounts: 3500, netRevenue: 122600, totalSeats: 1100 },
+  { id: 'r2-3', productionId: 'prod-2', weekEnding: '2026-10-31', performances: 4,  ticketsSold: 900,  grossRevenue: 117000, avgTicketPrice: 130, capacityPct: 82, comps: 32, discounts: 3800, netRevenue: 113200, totalSeats: 1100 },
+  { id: 'r2-4', productionId: 'prod-2', weekEnding: '2026-11-07', performances: 5,  ticketsSold: 990,  grossRevenue: 128700, avgTicketPrice: 130, capacityPct: 90, comps: 25, discounts: 3000, netRevenue: 125700, totalSeats: 1100 },
 
-  // prod-3: Echoes Tour (18 weeks of tour so far)
-  { id: 'r3-1', productionId: 'prod-3', weekEnding: '2025-09-13', performances: 4, ticketsSold: 24000, grossRevenue: 528000, avgTicketPrice: 22, capacityPct: 78, comps: 600, discounts: 18000, netRevenue: 498000, totalSeats: 30800 },
-  { id: 'r3-2', productionId: 'prod-3', weekEnding: '2025-09-20', performances: 5, ticketsSold: 31500, grossRevenue: 724500, avgTicketPrice: 23, capacityPct: 82, comps: 500, discounts: 22000, netRevenue: 690000, totalSeats: 38500 },
-  { id: 'r3-3', productionId: 'prod-3', weekEnding: '2025-09-27', performances: 4, ticketsSold: 28000, grossRevenue: 644000, avgTicketPrice: 23, capacityPct: 85, comps: 420, discounts: 16500, netRevenue: 614000, totalSeats: 32900 },
-  { id: 'r3-4', productionId: 'prod-3', weekEnding: '2025-10-04', performances: 5, ticketsSold: 33000, grossRevenue: 792000, avgTicketPrice: 24, capacityPct: 86, comps: 480, discounts: 21000, netRevenue: 755000, totalSeats: 38400 },
-  { id: 'r3-5', productionId: 'prod-3', weekEnding: '2025-10-11', performances: 4, ticketsSold: 29500, grossRevenue: 708000, avgTicketPrice: 24, capacityPct: 88, comps: 390, discounts: 17000, netRevenue: 675000, totalSeats: 33500 },
-  { id: 'r3-6', productionId: 'prod-3', weekEnding: '2025-10-18', performances: 5, ticketsSold: 34200, grossRevenue: 838900, avgTicketPrice: 24.5, capacityPct: 89, comps: 450, discounts: 19500, netRevenue: 803000, totalSeats: 38400 },
-  { id: 'r3-7', productionId: 'prod-3', weekEnding: '2025-10-25', performances: 4, ticketsSold: 30000, grossRevenue: 750000, avgTicketPrice: 25, capacityPct: 90, comps: 350, discounts: 15000, netRevenue: 720000, totalSeats: 33300 },
-  { id: 'r3-8', productionId: 'prod-3', weekEnding: '2025-11-01', performances: 5, ticketsSold: 35500, grossRevenue: 888000, avgTicketPrice: 25, capacityPct: 92, comps: 400, discounts: 16000, netRevenue: 857000, totalSeats: 38600 },
+  // prod-3: Echoes Tour — 3 advance weeks (MSG pre-sale) then 8 tour weeks (Sep–Nov 2026)
+  { id: 'r3-pre-1', productionId: 'prod-3', weekEnding: '2026-08-15', performances: 0, ticketsSold: 12000, grossRevenue: 264000, avgTicketPrice: 22, capacityPct: 39, comps: 0,   discounts: 5000,  netRevenue: 259000, totalSeats: 30800 },
+  { id: 'r3-pre-2', productionId: 'prod-3', weekEnding: '2026-08-22', performances: 0, ticketsSold: 20000, grossRevenue: 440000, avgTicketPrice: 22, capacityPct: 65, comps: 0,   discounts: 8000,  netRevenue: 432000, totalSeats: 30800 },
+  { id: 'r3-pre-3', productionId: 'prod-3', weekEnding: '2026-08-29', performances: 0, ticketsSold: 27500, grossRevenue: 605000, avgTicketPrice: 22, capacityPct: 89, comps: 0,   discounts: 12000, netRevenue: 593000, totalSeats: 30800 },
+  { id: 'r3-1', productionId: 'prod-3', weekEnding: '2026-09-13', performances: 4, ticketsSold: 24000, grossRevenue: 528000, avgTicketPrice: 22,   capacityPct: 78, comps: 600, discounts: 18000, netRevenue: 498000, totalSeats: 30800 },
+  { id: 'r3-2', productionId: 'prod-3', weekEnding: '2026-09-20', performances: 5, ticketsSold: 31500, grossRevenue: 724500, avgTicketPrice: 23,   capacityPct: 82, comps: 500, discounts: 22000, netRevenue: 690000, totalSeats: 38500 },
+  { id: 'r3-3', productionId: 'prod-3', weekEnding: '2026-09-27', performances: 4, ticketsSold: 28000, grossRevenue: 644000, avgTicketPrice: 23,   capacityPct: 85, comps: 420, discounts: 16500, netRevenue: 614000, totalSeats: 32900 },
+  { id: 'r3-4', productionId: 'prod-3', weekEnding: '2026-10-04', performances: 5, ticketsSold: 33000, grossRevenue: 792000, avgTicketPrice: 24,   capacityPct: 86, comps: 480, discounts: 21000, netRevenue: 755000, totalSeats: 38400 },
+  { id: 'r3-5', productionId: 'prod-3', weekEnding: '2026-10-11', performances: 4, ticketsSold: 29500, grossRevenue: 708000, avgTicketPrice: 24,   capacityPct: 88, comps: 390, discounts: 17000, netRevenue: 675000, totalSeats: 33500 },
+  { id: 'r3-6', productionId: 'prod-3', weekEnding: '2026-10-18', performances: 5, ticketsSold: 34200, grossRevenue: 838900, avgTicketPrice: 24.5, capacityPct: 89, comps: 450, discounts: 19500, netRevenue: 803000, totalSeats: 38400 },
+  { id: 'r3-7', productionId: 'prod-3', weekEnding: '2026-10-25', performances: 4, ticketsSold: 30000, grossRevenue: 750000, avgTicketPrice: 25,   capacityPct: 90, comps: 350, discounts: 15000, netRevenue: 720000, totalSeats: 33300 },
+  { id: 'r3-8', productionId: 'prod-3', weekEnding: '2026-11-01', performances: 5, ticketsSold: 35500, grossRevenue: 888000, avgTicketPrice: 25,   capacityPct: 92, comps: 400, discounts: 16000, netRevenue: 857000, totalSeats: 38600 },
 ]
 
 // ─── CONTRACTS ───────────────────────────────────────────────────────────────
@@ -209,29 +222,33 @@ export const CONTRACTS: Contract[] = [
 // ─── CASH FLOW ────────────────────────────────────────────────────────────────
 
 export const CASH_FLOW_ROWS: CashFlowRow[] = [
-  // prod-1: weeks through closing
-  { id: 'cf1-1', productionId: 'prod-1', weekOf: '2025-11-17', startingCash: 620000, ticketRevenue: 218400, otherInflows: 0, payroll: 65000, venueCosts: 40000, marketing: 28000, royalties: 6552, vendorPayments: 15000, otherOutflows: 8000, closingCash: 675848 },
-  { id: 'cf1-2', productionId: 'prod-1', weekOf: '2025-11-24', startingCash: 675848, ticketRevenue: 303000, otherInflows: 0, payroll: 65000, venueCosts: 40000, marketing: 22000, royalties: 9090, vendorPayments: 12000, otherOutflows: 5000, closingCash: 825758 },
-  { id: 'cf1-3', productionId: 'prod-1', weekOf: '2025-12-01', startingCash: 825758, ticketRevenue: 286000, otherInflows: 0, payroll: 65000, venueCosts: 40000, marketing: 20000, royalties: 8580, vendorPayments: 10000, otherOutflows: 4500, closingCash: 963678 },
-  { id: 'cf1-4', productionId: 'prod-1', weekOf: '2025-12-08', startingCash: 963678, ticketRevenue: 341000, otherInflows: 0, payroll: 65000, venueCosts: 40000, marketing: 18000, royalties: 10230, vendorPayments: 8000, otherOutflows: 4000, closingCash: 1159448 },
-  { id: 'cf1-5', productionId: 'prod-1', weekOf: '2025-12-15', startingCash: 1159448, ticketRevenue: 428000, otherInflows: 0, payroll: 72000, venueCosts: 48000, marketing: 15000, royalties: 12840, vendorPayments: 8000, otherOutflows: 3000, closingCash: 1428608 },
-  { id: 'cf1-6', productionId: 'prod-1', weekOf: '2025-12-22', startingCash: 1428608, ticketRevenue: 447000, otherInflows: 0, payroll: 72000, venueCosts: 48000, marketing: 12000, royalties: 13410, vendorPayments: 6000, otherOutflows: 3000, closingCash: 1721198 },
-  { id: 'cf1-7', productionId: 'prod-1', weekOf: '2025-12-29', startingCash: 1721198, ticketRevenue: 348000, otherInflows: 0, payroll: 65000, venueCosts: 40000, marketing: 10000, royalties: 10440, vendorPayments: 5000, otherOutflows: 2500, closingCash: 1936258 },
-  { id: 'cf1-8', productionId: 'prod-1', weekOf: '2026-01-05', startingCash: 1936258, ticketRevenue: 109600, otherInflows: 0, payroll: 25000, venueCosts: 18000, marketing: 4000, royalties: 3288, vendorPayments: 40000, otherOutflows: 35000, closingCash: 1920570 },
+  // prod-1: performance weeks Sep–Nov 2026 (shifted +10 months)
+  { id: 'cf1-1', productionId: 'prod-1', weekOf: '2026-09-14', startingCash: 620000,  ticketRevenue: 218400, otherInflows: 0, payroll: 65000, venueCosts: 40000, marketing: 28000, royalties: 6552,  vendorPayments: 15000, otherOutflows: 8000,  closingCash: 675848  },
+  { id: 'cf1-2', productionId: 'prod-1', weekOf: '2026-09-21', startingCash: 675848,  ticketRevenue: 303000, otherInflows: 0, payroll: 65000, venueCosts: 40000, marketing: 22000, royalties: 9090,  vendorPayments: 12000, otherOutflows: 5000,  closingCash: 825758  },
+  { id: 'cf1-3', productionId: 'prod-1', weekOf: '2026-09-28', startingCash: 825758,  ticketRevenue: 286000, otherInflows: 0, payroll: 65000, venueCosts: 40000, marketing: 20000, royalties: 8580,  vendorPayments: 10000, otherOutflows: 4500,  closingCash: 963678  },
+  { id: 'cf1-4', productionId: 'prod-1', weekOf: '2026-10-05', startingCash: 963678,  ticketRevenue: 341000, otherInflows: 0, payroll: 65000, venueCosts: 40000, marketing: 18000, royalties: 10230, vendorPayments: 8000,  otherOutflows: 4000,  closingCash: 1159448 },
+  { id: 'cf1-5', productionId: 'prod-1', weekOf: '2026-10-12', startingCash: 1159448, ticketRevenue: 428000, otherInflows: 0, payroll: 72000, venueCosts: 48000, marketing: 15000, royalties: 12840, vendorPayments: 8000,  otherOutflows: 3000,  closingCash: 1428608 },
+  { id: 'cf1-6', productionId: 'prod-1', weekOf: '2026-10-19', startingCash: 1428608, ticketRevenue: 447000, otherInflows: 0, payroll: 72000, venueCosts: 48000, marketing: 12000, royalties: 13410, vendorPayments: 6000,  otherOutflows: 3000,  closingCash: 1721198 },
+  { id: 'cf1-7', productionId: 'prod-1', weekOf: '2026-10-26', startingCash: 1721198, ticketRevenue: 348000, otherInflows: 0, payroll: 65000, venueCosts: 40000, marketing: 10000, royalties: 10440, vendorPayments: 5000,  otherOutflows: 2500,  closingCash: 1936258 },
+  { id: 'cf1-8', productionId: 'prod-1', weekOf: '2026-11-02', startingCash: 1936258, ticketRevenue: 109600, otherInflows: 0, payroll: 25000, venueCosts: 18000, marketing: 4000,  royalties: 3288,  vendorPayments: 40000, otherOutflows: 35000, closingCash: 1920570 },
 
-  // prod-2: The Silence Between (pre-production weeks)
-  { id: 'cf2-1', productionId: 'prod-2', weekOf: '2025-11-17', startingCash: 380000, ticketRevenue: 0, otherInflows: 0, payroll: 18000, venueCosts: 0, marketing: 8000, royalties: 0, vendorPayments: 12000, otherOutflows: 5000, closingCash: 337000 },
-  { id: 'cf2-2', productionId: 'prod-2', weekOf: '2025-11-24', startingCash: 337000, ticketRevenue: 0, otherInflows: 0, payroll: 18000, venueCosts: 0, marketing: 9500, royalties: 0, vendorPayments: 15000, otherOutflows: 4500, closingCash: 290000 },
-  { id: 'cf2-3', productionId: 'prod-2', weekOf: '2025-12-01', startingCash: 290000, ticketRevenue: 42000, otherInflows: 0, payroll: 22000, venueCosts: 8000, marketing: 12000, royalties: 0, vendorPayments: 8000, otherOutflows: 3500, closingCash: 278500 },
-  { id: 'cf2-4', productionId: 'prod-2', weekOf: '2025-12-08', startingCash: 278500, ticketRevenue: 55000, otherInflows: 0, payroll: 22000, venueCosts: 8000, marketing: 12000, royalties: 0, vendorPayments: 6000, otherOutflows: 3000, closingCash: 282500 },
-  { id: 'cf2-5', productionId: 'prod-2', weekOf: '2025-12-15', startingCash: 282500, ticketRevenue: 68000, otherInflows: 0, payroll: 25000, venueCosts: 10000, marketing: 14000, royalties: 0, vendorPayments: 6000, otherOutflows: 3000, closingCash: 292500 },
+  // prod-2: pre-production Jul–Aug 2026, then performance weeks Oct–Nov 2026
+  { id: 'cf2-1', productionId: 'prod-2', weekOf: '2026-07-14', startingCash: 380000, ticketRevenue: 0,      otherInflows: 0, payroll: 18000, venueCosts: 0,  marketing: 8000,  royalties: 0,    vendorPayments: 12000, otherOutflows: 5000, closingCash: 337000 },
+  { id: 'cf2-2', productionId: 'prod-2', weekOf: '2026-07-21', startingCash: 337000, ticketRevenue: 0,      otherInflows: 0, payroll: 18000, venueCosts: 0,  marketing: 9500,  royalties: 0,    vendorPayments: 15000, otherOutflows: 4500, closingCash: 290000 },
+  { id: 'cf2-3', productionId: 'prod-2', weekOf: '2026-07-28', startingCash: 290000, ticketRevenue: 42000,  otherInflows: 0, payroll: 22000, venueCosts: 8000, marketing: 12000, royalties: 0,    vendorPayments: 8000,  otherOutflows: 3500, closingCash: 278500 },
+  { id: 'cf2-4', productionId: 'prod-2', weekOf: '2026-08-04', startingCash: 278500, ticketRevenue: 55000,  otherInflows: 0, payroll: 22000, venueCosts: 8000, marketing: 12000, royalties: 0,    vendorPayments: 6000,  otherOutflows: 3000, closingCash: 282500 },
+  { id: 'cf2-5', productionId: 'prod-2', weekOf: '2026-08-11', startingCash: 282500, ticketRevenue: 68000,  otherInflows: 0, payroll: 25000, venueCosts: 10000, marketing: 14000, royalties: 0,   vendorPayments: 6000,  otherOutflows: 3000, closingCash: 292500 },
+  { id: 'cf2-6', productionId: 'prod-2', weekOf: '2026-10-12', startingCash: 292500, ticketRevenue: 104000, otherInflows: 0, payroll: 32000, venueCosts: 22000, marketing: 8000, royalties: 4160,  vendorPayments: 5000,  otherOutflows: 2500, closingCash: 322840 },
+  { id: 'cf2-7', productionId: 'prod-2', weekOf: '2026-10-19', startingCash: 322840, ticketRevenue: 126100, otherInflows: 0, payroll: 32000, venueCosts: 22000, marketing: 6000, royalties: 5044,  vendorPayments: 4000,  otherOutflows: 2000, closingCash: 377896 },
+  { id: 'cf2-8', productionId: 'prod-2', weekOf: '2026-10-26', startingCash: 377896, ticketRevenue: 117000, otherInflows: 0, payroll: 32000, venueCosts: 22000, marketing: 5000, royalties: 4680,  vendorPayments: 4000,  otherOutflows: 2000, closingCash: 425216 },
+  { id: 'cf2-9', productionId: 'prod-2', weekOf: '2026-11-02', startingCash: 425216, ticketRevenue: 128700, otherInflows: 0, payroll: 32000, venueCosts: 22000, marketing: 4000, royalties: 5148,  vendorPayments: 15000, otherOutflows: 8000, closingCash: 467768 },
 
-  // prod-3: Echoes Tour
-  { id: 'cf3-1', productionId: 'prod-3', weekOf: '2025-11-17', startingCash: 820000, ticketRevenue: 888000, otherInflows: 0, payroll: 85000, venueCosts: 62000, marketing: 22000, royalties: 26640, vendorPayments: 18000, otherOutflows: 8000, closingCash: 1486360 },
-  { id: 'cf3-2', productionId: 'prod-3', weekOf: '2025-11-24', startingCash: 1486360, ticketRevenue: 720000, otherInflows: 0, payroll: 85000, venueCosts: 58000, marketing: 20000, royalties: 21600, vendorPayments: 16000, otherOutflows: 7000, closingCash: 1998760 },
-  { id: 'cf3-3', productionId: 'prod-3', weekOf: '2025-12-01', startingCash: 1998760, ticketRevenue: 755000, otherInflows: 0, payroll: 85000, venueCosts: 60000, marketing: 18000, royalties: 22650, vendorPayments: 15000, otherOutflows: 7500, closingCash: 2545610 },
-  { id: 'cf3-4', productionId: 'prod-3', weekOf: '2025-12-08', startingCash: 2545610, ticketRevenue: 803000, otherInflows: 0, payroll: 85000, venueCosts: 62000, marketing: 16000, royalties: 24090, vendorPayments: 14000, otherOutflows: 7000, closingCash: 3140520 },
-  { id: 'cf3-5', productionId: 'prod-3', weekOf: '2025-12-15', startingCash: 3140520, ticketRevenue: 850000, otherInflows: 0, payroll: 85000, venueCosts: 65000, marketing: 14000, royalties: 25500, vendorPayments: 13000, otherOutflows: 6500, closingCash: 3781520 },
+  // prod-3: Echoes Tour — starting from first shows Sep 2026 (shifted +12 months)
+  { id: 'cf3-1', productionId: 'prod-3', weekOf: '2026-09-07', startingCash: 820000,  ticketRevenue: 528000, otherInflows: 0, payroll: 85000, venueCosts: 62000, marketing: 22000, royalties: 15840, vendorPayments: 18000, otherOutflows: 8000, closingCash: 1137160 },
+  { id: 'cf3-2', productionId: 'prod-3', weekOf: '2026-09-14', startingCash: 1137160, ticketRevenue: 724500, otherInflows: 0, payroll: 85000, venueCosts: 58000, marketing: 20000, royalties: 21735, vendorPayments: 16000, otherOutflows: 7000, closingCash: 1653925 },
+  { id: 'cf3-3', productionId: 'prod-3', weekOf: '2026-09-21', startingCash: 1653925, ticketRevenue: 644000, otherInflows: 0, payroll: 85000, venueCosts: 60000, marketing: 18000, royalties: 19320, vendorPayments: 15000, otherOutflows: 7500, closingCash: 2093105 },
+  { id: 'cf3-4', productionId: 'prod-3', weekOf: '2026-09-28', startingCash: 2093105, ticketRevenue: 792000, otherInflows: 0, payroll: 85000, venueCosts: 62000, marketing: 16000, royalties: 23760, vendorPayments: 14000, otherOutflows: 7000, closingCash: 2677345 },
+  { id: 'cf3-5', productionId: 'prod-3', weekOf: '2026-10-05', startingCash: 2677345, ticketRevenue: 708000, otherInflows: 0, payroll: 85000, venueCosts: 65000, marketing: 14000, royalties: 21240, vendorPayments: 13000, otherOutflows: 6500, closingCash: 3180605 },
 ]
 
 // ─── DEADLINES ────────────────────────────────────────────────────────────────
