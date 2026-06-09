@@ -317,20 +317,61 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                       stroke={prod.color}
                       strokeWidth={1.5}
                       strokeDasharray="4 3"
-                      label={{ value: 'Opening', position: 'top', fontSize: 10, fill: prod.color, fontWeight: 500 }}
+                      label={(props: { viewBox?: { x?: number } }) => {
+                        const x = props.viewBox?.x ?? 0
+                        const txt = '★ Opening Night'
+                        const w = txt.length * 5.2 + 14
+                        return (
+                          <g>
+                            <rect x={x - w / 2} y={4} width={w} height={17} rx={3} fill={prod.color} fillOpacity={0.12} stroke={prod.color} strokeWidth={0.75} />
+                            <text x={x} y={16} textAnchor="middle" fontSize={9} fontWeight={700} fill={prod.color}>{txt}</text>
+                          </g>
+                        )
+                      }}
                     />
                   )}
                   {sixWeeksLabel && sixWeeksLabel !== openingWeekLabel && (
                     <ReferenceLine
                       x={sixWeeksLabel}
-                      stroke="#a8a29e"
+                      stroke="#78716c"
                       strokeWidth={1}
                       strokeDasharray="4 3"
-                      label={{ value: 'Wk 6', position: 'top', fontSize: 10, fill: '#a8a29e' }}
+                      label={(props: { viewBox?: { x?: number } }) => {
+                        const x = props.viewBox?.x ?? 0
+                        const txt = '6 Wks Into Run'
+                        const w = txt.length * 5.2 + 14
+                        return (
+                          <g>
+                            <rect x={x - w / 2} y={4} width={w} height={17} rx={3} fill="#78716c" fillOpacity={0.08} stroke="#78716c" strokeWidth={0.75} />
+                            <text x={x} y={16} textAnchor="middle" fontSize={9} fontWeight={600} fill="#78716c">{txt}</text>
+                          </g>
+                        )
+                      }}
                     />
                   )}
                 </AreaChart>
               </ResponsiveContainer>
+              {(openingWeekLabel || (sixWeeksLabel && sixWeeksLabel !== openingWeekLabel)) && (
+                <div className="flex items-center gap-5 text-[11px] text-stone-500 mt-3 mb-1">
+                  {openingWeekLabel && (
+                    <span className="flex items-center gap-1.5">
+                      <svg width="22" height="10" className="shrink-0">
+                        <line x1="0" y1="5" x2="22" y2="5" stroke={prod.color} strokeWidth="1.5" strokeDasharray="4 3" />
+                      </svg>
+                      <span style={{ color: prod.color }} className="font-semibold">Opening Night</span>
+                      {prod.openingDate && <span className="text-stone-400">({formatDateShort(prod.openingDate)})</span>}
+                    </span>
+                  )}
+                  {sixWeeksLabel && sixWeeksLabel !== openingWeekLabel && (
+                    <span className="flex items-center gap-1.5">
+                      <svg width="22" height="10" className="shrink-0">
+                        <line x1="0" y1="5" x2="22" y2="5" stroke="#78716c" strokeWidth="1" strokeDasharray="4 3" />
+                      </svg>
+                      <span className="text-stone-500">6 Weeks Into Run</span>
+                    </span>
+                  )}
+                </div>
+              )}
               {weeks.length >= 2 && (() => {
                 const last  = weeks[weeks.length - 1]
                 const prev  = weeks[weeks.length - 2]
