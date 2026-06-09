@@ -164,18 +164,22 @@ export default function ProductionsPage() {
             const prodContracts = contracts.filter((c) => c.productionId === p.id)
             const signedCount = prodContracts.filter((c) => c.status === 'signed').length
             const overdueItems = deadlines.filter((d) => d.productionId === p.id && d.status === 'overdue').length
+            const grossActual = cumGross || p.currentGross
             const weeksRemaining = p.closingDate
               ? Math.max(0, Math.ceil((new Date(p.closingDate + 'T12:00:00').getTime() - Date.now()) / (7 * 86_400_000)))
               : 0
             const avgATP = weeks.length > 0 ? weeks.reduce((s, w) => s + w.avgTicketPrice, 0) / weeks.length : 0
             const avgPerfsPerWk = weeks.length > 0 ? weeks.reduce((s, w) => s + w.performances, 0) / weeks.length : 0
             const seatsHouse = weeks.length > 0 ? Math.max(...weeks.map((w) => w.totalSeats)) : 0
-            const grossNeeded = Math.max(0, p.totalBudget - (cumGross || p.currentGross))
+            const grossNeeded = Math.max(0, p.totalBudget - grossActual)
+            const isProfitable = p.totalBudget > 0 && grossActual >= p.totalBudget
+            const profitPct = isProfitable && p.totalBudget > 0 ? Math.round(((grossActual - p.totalBudget) / p.totalBudget) * 100) : 0
             const beCap = weeksRemaining > 0 && avgATP > 0 && seatsHouse > 0 && avgPerfsPerWk > 0
               ? (grossNeeded / (weeksRemaining * avgPerfsPerWk * seatsHouse * avgATP)) * 100
               : null
-            const beLabel = beCap === null ? '—'
-              : beCap <= 0 ? '✓ Profitable'
+            const beLabel = isProfitable
+              ? `+${profitPct}% above B/E`
+              : beCap === null ? '—'
               : beCap > 110 ? 'SRO+ needed'
               : `${Math.ceil(beCap)}% avg cap`
 
@@ -196,14 +200,18 @@ export default function ProductionsPage() {
                     {p.totalBudget > 0 && (
                       <div className="mb-3">
                         <div className="flex justify-between text-[10px] mb-0.5">
-                          <span className="text-stone-400">Break-even</span>
-                          <span className={`font-medium ${beCap === null ? 'text-stone-400' : beCap <= 0 ? 'text-emerald-600' : beCap > 90 ? 'text-red-600' : beCap > 65 ? 'text-amber-600' : 'text-emerald-600'}`}>{beLabel}</span>
+                          <span className="text-stone-400">{isProfitable ? 'Profitability' : 'Break-even'}</span>
+                          <span className={`font-medium ${isProfitable ? 'text-emerald-600' : beCap === null ? 'text-stone-400' : beCap > 90 ? 'text-red-600' : beCap > 65 ? 'text-amber-600' : 'text-stone-700'}`}>{beLabel}</span>
                         </div>
-                        {beCap !== null && beCap > 0 && beCap <= 110 && (
+                        {isProfitable ? (
+                          <div className="h-1 bg-emerald-100 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.min(profitPct * (100 / 30), 100)}%` }} />
+                          </div>
+                        ) : beCap !== null && beCap > 0 && beCap <= 110 ? (
                           <div className="h-1 bg-stone-100 rounded-full overflow-hidden">
                             <div className="h-full rounded-full" style={{ width: `${Math.min(beCap, 100)}%`, backgroundColor: beCap > 90 ? '#ef4444' : beCap > 65 ? '#f59e0b' : '#10b981' }} />
                           </div>
-                        )}
+                        ) : null}
                       </div>
                     )}
                     <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px] mb-2">
