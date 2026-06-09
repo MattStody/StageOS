@@ -11,7 +11,7 @@ import {
   encodeDemo, DEMO_SESSION_KEY,
 } from '@/lib/demo'
 import { getScenarioData } from '@/lib/demoScenarios'
-import { Copy, Check, Trash2, ExternalLink, Plus, Pencil } from 'lucide-react'
+import { Copy, Check, Trash2, ExternalLink, Plus, Pencil, Download, Upload } from 'lucide-react'
 import { ProductionPoster } from '@/components/ui/ProductionPoster'
 
 interface SavedDemo {
@@ -215,6 +215,69 @@ export default function DemoCreatorPage() {
     setExtraProductions([])
     setNoBaseProductions(false)
     setGeneratedUrl('')
+  }
+
+  const csvFileRef = useRef<HTMLInputElement>(null)
+
+  function downloadCsvTemplate() {
+    const header = 'name,subtitle,venue,status,openingDate,closingDate,color,imageUrl'
+    const example = '"My Musical","A New Musical","Princess of Wales Theatre Toronto","pre_production","2027-09-15","2027-12-20","#7c3aed",""'
+    const blob = new Blob([header + '\n' + example], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'productions-template.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function parseCsvLine(line: string): string[] {
+    const result: string[] = []
+    let current = ''
+    let inQuotes = false
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i]
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { current += '"'; i++ }
+        else inQuotes = !inQuotes
+      } else if (ch === ',' && !inQuotes) {
+        result.push(current)
+        current = ''
+      } else {
+        current += ch
+      }
+    }
+    result.push(current)
+    return result
+  }
+
+  function handleCsvImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (evt) => {
+      const text = evt.target?.result as string
+      if (!text) return
+      const lines = text.trim().split('\n').filter(Boolean)
+      if (lines.length < 2) return
+      const validStatuses = ['pre_production', 'in_rehearsal', 'in_performance', 'closing', 'closed']
+      const imported: DemoExtraProduction[] = lines.slice(1).map((line, idx) => {
+        const [name, subtitle, venue, status, openingDate, closingDate, color, imageUrl] = parseCsvLine(line)
+        return {
+          name: name?.trim() ?? '',
+          subtitle: subtitle?.trim() ?? '',
+          venue: venue?.trim() ?? '',
+          status: (validStatuses.includes(status?.trim() ?? '') ? status.trim() : 'pre_production') as DemoExtraProduction['status'],
+          openingDate: openingDate?.trim() ?? '',
+          closingDate: closingDate?.trim() ?? '',
+          color: /^#[0-9a-fA-F]{6}$/.test(color?.trim() ?? '') ? color.trim() : ACCENT_COLORS[idx % ACCENT_COLORS.length].value,
+          ...(imageUrl?.trim() && { imageUrl: imageUrl.trim() }),
+        }
+      }).filter((ep) => ep.name.length > 0)
+      setExtraProductions((prev) => [...prev, ...imported])
+    }
+    reader.readAsText(file)
+    e.target.value = ''
   }
 
   function deleteDemo(id: string) {
@@ -655,18 +718,43 @@ export default function DemoCreatorPage() {
                   </div>
                 </div>
               ))}
-              <button
-                onClick={() => setExtraProductions((prev) => [...prev, {
-                  name: '', subtitle: '', venue: '',
-                  status: 'pre_production',
-                  openingDate: '', closingDate: '',
-                  color: ACCENT_COLORS[extraProductions.length % ACCENT_COLORS.length].value,
-                }])}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-stone-500 border border-dashed border-stone-300 rounded hover:border-stone-400 hover:text-stone-700 transition-colors w-full justify-center"
-              >
-                <Plus size={14} />
-                Add Production
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setExtraProductions((prev) => [...prev, {
+                    name: '', subtitle: '', venue: '',
+                    status: 'pre_production',
+                    openingDate: '', closingDate: '',
+                    color: ACCENT_COLORS[extraProductions.length % ACCENT_COLORS.length].value,
+                  }])}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-stone-500 border border-dashed border-stone-300 rounded hover:border-stone-400 hover:text-stone-700 transition-colors flex-1 justify-center"
+                >
+                  <Plus size={14} />
+                  Add Production
+                </button>
+                <button
+                  onClick={() => csvFileRef.current?.click()}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-stone-500 border border-dashed border-stone-300 rounded hover:border-stone-400 hover:text-stone-700 transition-colors"
+                  title="Import multiple productions from a CSV file"
+                >
+                  <Upload size={14} />
+                  Import CSV
+                </button>
+                <button
+                  onClick={downloadCsvTemplate}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-stone-500 border border-stone-200 rounded hover:border-stone-400 hover:text-stone-700 transition-colors"
+                  title="Download a CSV template"
+                >
+                  <Download size={14} />
+                  Template
+                </button>
+                <input
+                  ref={csvFileRef}
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={handleCsvImport}
+                />
+              </div>
             </CardBody>
           </Card>
 
