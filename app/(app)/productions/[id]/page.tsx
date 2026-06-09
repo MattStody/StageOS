@@ -224,37 +224,37 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <div>
-      {/* Hero image */}
-      {prod.imageUrl && (
-        <div className="w-full h-52 rounded-lg overflow-hidden mb-6">
-          <img
-            src={prod.imageUrl}
-            alt={prod.name}
-            className="w-full h-full object-cover"
-            onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none' }}
-          />
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
-        <div className="flex items-start gap-3">
-          <div className="w-1 h-12 rounded-full mt-1" style={{ backgroundColor: prod.color }} />
-          <div>
-            <div className="flex items-center gap-3 mb-0.5 flex-wrap">
-              <h1 className="text-2xl font-light text-stone-900">{prod.name}</h1>
-              <Badge variant={prod.status}>{statusLabel(prod.status)}</Badge>
-              {isAdmin && (
-                <button
-                  onClick={() => { setImageDraft(prod.imageUrl || ''); setEditImageOpen(true) }}
-                  className="p-1.5 text-stone-400 hover:text-stone-600 rounded hover:bg-stone-100 transition-colors"
-                  title={prod.imageUrl ? 'Change image' : 'Add image'}
-                >
-                  <ImageIcon size={14} />
-                </button>
-              )}
+        <div className="flex items-start gap-4">
+          {prod.imageUrl && (
+            <div className="w-20 h-20 rounded-lg overflow-hidden shrink-0">
+              <img
+                src={prod.imageUrl}
+                alt={prod.name}
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none' }}
+              />
             </div>
-            <p className="text-sm text-stone-500">{prod.venue} · {formatDate(prod.openingDate)} — {formatDate(prod.closingDate)}</p>
+          )}
+          <div className="flex items-start gap-3">
+            <div className="w-1 h-12 rounded-full mt-1" style={{ backgroundColor: prod.color }} />
+            <div>
+              <div className="flex items-center gap-3 mb-0.5 flex-wrap">
+                <h1 className="text-2xl font-semibold text-stone-900">{prod.name}</h1>
+                <Badge variant={prod.status}>{statusLabel(prod.status)}</Badge>
+                {isAdmin && (
+                  <button
+                    onClick={() => { setImageDraft(prod.imageUrl || ''); setEditImageOpen(true) }}
+                    className="p-1.5 text-stone-400 hover:text-stone-600 rounded hover:bg-stone-100 transition-colors"
+                    title={prod.imageUrl ? 'Change image' : 'Add image'}
+                  >
+                    <ImageIcon size={14} />
+                  </button>
+                )}
+              </div>
+              <p className="text-sm text-stone-500">{prod.venue} · {formatDate(prod.openingDate)} — {formatDate(prod.closingDate)}</p>
+            </div>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 mt-1">
