@@ -344,6 +344,32 @@ export default function DashboardPage() {
     return { headline, strengths: strengths.slice(0, 3), watches: watches.slice(0, 3) }
   })()
 
+  // ── Spotlight production ─────────────────────────────────────────────────
+  const spotlightProd = (() => {
+    const playing = activeProds.filter(p => p.status === 'in_performance' || p.status === 'closing')
+    if (playing.length > 0) return playing.sort((a, b) => b.currentGross - a.currentGross)[0]
+    return [...activeProds].sort((a, b) => new Date(a.openingDate).getTime() - new Date(b.openingDate).getTime())[0] ?? null
+  })()
+  const spotlightEntry = spotlightProd ? (salesPulse.find(s => s.prod.id === spotlightProd.id) ?? null) : null
+  const spotlightWeeks = spotlightProd
+    ? revenueWeeks.filter(w => w.productionId === spotlightProd.id)
+        .sort((a, b) => new Date(a.weekEnding).getTime() - new Date(b.weekEnding).getTime())
+    : []
+  const spotlightLastPerfWeek = spotlightWeeks.filter(w => w.performances > 0).at(-1) ?? null
+  const spotlightAdvanceGross = spotlightWeeks.filter(w => w.performances === 0).reduce((s, w) => s + w.grossRevenue, 0)
+  const spotlightAdvanceTickets = spotlightWeeks.filter(w => w.performances === 0).reduce((s, w) => s + w.ticketsSold, 0)
+  const spotlightCumGross = spotlightWeeks.reduce((s, w) => s + w.grossRevenue, 0) || (spotlightProd?.currentGross ?? 0)
+  const spotlightIsPlaying = spotlightProd?.status === 'in_performance' || spotlightProd?.status === 'closing'
+  const spotlightLabel = !spotlightProd ? '' :
+    spotlightProd.status === 'in_performance' ? 'Now Playing' :
+    spotlightProd.status === 'closing' ? 'Closing Soon' :
+    spotlightProd.status === 'in_rehearsal' ? 'In Rehearsal' : 'Opening Soon'
+  const spotlightDaysToOpen = spotlightProd ? daysUntil(spotlightProd.openingDate) : 0
+  const spotlightDaysToClose = spotlightProd ? daysUntil(spotlightProd.closingDate) : 0
+  const spotlightPctCaptured = spotlightProd && spotlightProd.projectedGross > 0
+    ? Math.round((spotlightCumGross / spotlightProd.projectedGross) * 100)
+    : null
+
   // ── Upcoming deadlines ───────────────────────────────────────────────────
   const upcomingDeadlines = deadlines
     .filter((d) => d.status !== 'completed' && daysUntil(d.date) >= 0 && daysUntil(d.date) <= 14)
@@ -458,6 +484,151 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Spotlight Production ──────────────────────────────────────────── */}
+      {spotlightProd && spotlightEntry && (
+        <div
+          className="mb-6 rounded-xl border border-stone-200 bg-white overflow-hidden flex flex-col sm:flex-row"
+          style={{ borderTopWidth: 3, borderTopColor: spotlightProd.color }}
+        >
+          {/* Poster */}
+          <div
+            className="relative overflow-hidden w-full h-40 sm:w-36 sm:h-auto shrink-0"
+            style={{ backgroundColor: `${spotlightProd.color}18` }}
+          >
+            {spotlightProd.imageUrl ? (
+              <img
+                src={spotlightProd.imageUrl}
+                alt={spotlightProd.name}
+                className="absolute inset-0 w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+            ) : (
+              <div className="flex items-center justify-center w-full h-full">
+                <span className="text-6xl font-bold" style={{ color: spotlightProd.color, opacity: 0.25 }}>
+                  {spotlightProd.name.charAt(0)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 p-5 min-w-0">
+            {/* Label + pacing */}
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span
+                className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded"
+                style={{ color: spotlightProd.color, backgroundColor: `${spotlightProd.color}18` }}
+              >
+                {spotlightLabel}
+              </span>
+              {spotlightEntry.pacing !== 'unknown' && (
+                <span className={`inline-flex items-center px-2 py-0.5 rounded border text-[10px] font-medium ${PACING_CFG[spotlightEntry.pacing].cls}`}>
+                  {PACING_CFG[spotlightEntry.pacing].label}
+                </span>
+              )}
+            </div>
+
+            {/* Title + link */}
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="min-w-0">
+                <h2 className="text-xl font-semibold text-stone-900 leading-tight">{spotlightProd.name}</h2>
+                <p className="text-xs text-stone-500 mt-0.5 truncate">{spotlightProd.subtitle} · {spotlightProd.venue}</p>
+              </div>
+              <Link
+                href={`/productions/${spotlightProd.id}`}
+                className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-stone-500 hover:text-stone-900 transition-colors group"
+              >
+                Full view <ArrowRight size={11} className="group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 border-t border-stone-100 pt-4">
+              {spotlightIsPlaying ? (
+                <>
+                  <div>
+                    <p className="text-xs text-stone-500 mb-0.5">Gross to Date</p>
+                    <p className="text-sm font-semibold text-stone-900">{fmt(spotlightCumGross)}</p>
+                    {spotlightPctCaptured !== null && (
+                      <p className="text-xs text-stone-400 mt-0.5">{spotlightPctCaptured}% of projected</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-stone-500 mb-0.5">Last Week Gross</p>
+                    <p className="text-sm font-semibold text-stone-900">
+                      {spotlightLastPerfWeek ? fmt(spotlightLastPerfWeek.grossRevenue) : <span className="text-stone-300">—</span>}
+                    </p>
+                    {spotlightLastPerfWeek && (
+                      <p className="text-xs text-stone-400 mt-0.5">{spotlightLastPerfWeek.capacityPct.toFixed(0)}% capacity</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-stone-500 mb-0.5">Break-even</p>
+                    <p className="text-sm font-semibold text-stone-900">
+                      {spotlightEntry.isProfitable
+                        ? <span className="text-emerald-700">+{spotlightEntry.profitPct}% above</span>
+                        : spotlightEntry.breakEvenCap !== null
+                          ? `${Math.ceil(spotlightEntry.breakEvenCap)}% avg cap`
+                          : <span className="text-stone-300">—</span>
+                      }
+                    </p>
+                    {!spotlightEntry.isProfitable && spotlightEntry.breakEvenCap !== null && (
+                      <p className="text-xs text-stone-400 mt-0.5">needed to recoup</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-stone-500 mb-0.5">Closes</p>
+                    <p className="text-sm font-semibold text-stone-900">{formatDate(spotlightProd.closingDate)}</p>
+                    <p className="text-xs text-stone-400 mt-0.5">
+                      {spotlightDaysToClose > 0 ? `in ${spotlightDaysToClose} days` : 'closed'}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-xs text-stone-500 mb-0.5">Advance Sales</p>
+                    <p className="text-sm font-semibold text-stone-900">
+                      {spotlightAdvanceGross > 0
+                        ? fmt(spotlightAdvanceGross)
+                        : <span className="text-stone-400 text-xs">Not yet on sale</span>
+                      }
+                    </p>
+                    {spotlightAdvanceGross > 0 && spotlightPctCaptured !== null && (
+                      <p className="text-xs text-stone-400 mt-0.5">{spotlightPctCaptured}% of projected</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-stone-500 mb-0.5">Tickets Sold</p>
+                    <p className="text-sm font-semibold text-stone-900">
+                      {spotlightAdvanceTickets > 0
+                        ? spotlightAdvanceTickets.toLocaleString()
+                        : <span className="text-stone-300">—</span>
+                      }
+                    </p>
+                    {spotlightAdvanceTickets > 0 && <p className="text-xs text-stone-400 mt-0.5">advance tickets</p>}
+                  </div>
+                  <div>
+                    <p className="text-xs text-stone-500 mb-0.5">Opening Night</p>
+                    <p className="text-sm font-semibold text-stone-900">{formatDate(spotlightProd.openingDate)}</p>
+                    <p className="text-xs text-stone-400 mt-0.5">
+                      {spotlightDaysToOpen > 0
+                        ? `in ${spotlightDaysToOpen} days`
+                        : spotlightDaysToOpen === 0 ? 'Tonight!' : 'Opened'
+                      }
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-stone-500 mb-0.5">Cash on Hand</p>
+                    <p className="text-sm font-semibold text-stone-900">{fmt(spotlightProd.cashOnHand)}</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── KPI cards ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
