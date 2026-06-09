@@ -178,6 +178,16 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
     }
   })
 
+  // Reference line markers: opening night week and 6-weeks-into-run week
+  const openingTs = prod.openingDate ? new Date(prod.openingDate + 'T12:00:00').getTime() : null
+  const sixWeeksTs = openingTs ? openingTs + 42 * 86_400_000 : null
+  const openingWeekLabel = openingTs
+    ? chartData[weeks.findIndex((w) => new Date(w.weekEnding + 'T12:00:00').getTime() >= openingTs)]?.week ?? null
+    : null
+  const sixWeeksLabel = sixWeeksTs
+    ? chartData[weeks.findIndex((w) => new Date(w.weekEnding + 'T12:00:00').getTime() >= sixWeeksTs)]?.week ?? null
+    : null
+
   const budgetPct = budgetUsedPct(totalActual, totalBudgeted)
 
   // ── Break-even ────────────────────────────────────────────────────────────
@@ -301,6 +311,24 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                   <YAxis tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                   <Tooltip formatter={(v) => fmt(Number(v))} contentStyle={{ fontSize: 12, border: '1px solid #e7e5e4', borderRadius: 6 }} />
                   <Area type="monotone" dataKey="weekly" stroke={prod.color} strokeWidth={1.5} fill={`url(#grad-${id})`} name="Weekly Gross" />
+                  {openingWeekLabel && (
+                    <ReferenceLine
+                      x={openingWeekLabel}
+                      stroke={prod.color}
+                      strokeWidth={1.5}
+                      strokeDasharray="4 3"
+                      label={{ value: 'Opening', position: 'top', fontSize: 10, fill: prod.color, fontWeight: 500 }}
+                    />
+                  )}
+                  {sixWeeksLabel && sixWeeksLabel !== openingWeekLabel && (
+                    <ReferenceLine
+                      x={sixWeeksLabel}
+                      stroke="#a8a29e"
+                      strokeWidth={1}
+                      strokeDasharray="4 3"
+                      label={{ value: 'Wk 6', position: 'top', fontSize: 10, fill: '#a8a29e' }}
+                    />
+                  )}
                 </AreaChart>
               </ResponsiveContainer>
               {weeks.length >= 2 && (() => {

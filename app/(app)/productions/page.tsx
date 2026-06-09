@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { fmt, fmtPct, formatDate, statusLabel, budgetUsedPct } from '@/lib/utils'
 import Link from 'next/link'
-import { ArrowRight, Plus, Theater } from 'lucide-react'
+import { ArrowRight, Plus, Theater, LayoutGrid, List } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Production, ProductionStatus } from '@/lib/types'
 
@@ -105,6 +105,7 @@ export default function ProductionsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState<Omit<Production, 'id'>>(blankProduction())
   const [imagePreview, setImagePreview] = useState('')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   function openCreate() {
     setForm(blankProduction())
@@ -127,97 +128,140 @@ export default function ProductionsPage() {
       <PageHeader
         title="Productions"
         subtitle={`${productions.filter((p) => p.status !== 'closed').length} active · ${productions.length} total`}
-        actions={isAdmin ? (
-          <Button onClick={openCreate} size="sm">
-            <Plus size={13} /> New Production
-          </Button>
-        ) : undefined}
+        actions={
+          <div className="flex items-center gap-2">
+            <div className="flex items-center border border-stone-200 rounded overflow-hidden">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 transition-colors ${viewMode === 'grid' ? 'bg-stone-900 text-white' : 'text-stone-400 hover:text-stone-700 hover:bg-stone-50'}`}
+                title="Grid view"
+              >
+                <LayoutGrid size={14} />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 transition-colors ${viewMode === 'list' ? 'bg-stone-900 text-white' : 'text-stone-400 hover:text-stone-700 hover:bg-stone-50'}`}
+                title="List view"
+              >
+                <List size={14} />
+              </button>
+            </div>
+            {isAdmin && (
+              <Button onClick={openCreate} size="sm">
+                <Plus size={13} /> New Production
+              </Button>
+            )}
+          </div>
+        }
       />
 
-      {/* Production poster grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
-        {productions.map((p) => {
-          const weeks = revenueWeeks.filter((w) => w.productionId === p.id)
-          const cumGross = weeks.reduce((s, w) => s + w.grossRevenue, 0)
-          const prodContracts = contracts.filter((c) => c.productionId === p.id)
-          const signedCount = prodContracts.filter((c) => c.status === 'signed').length
-          const budgetPct = budgetUsedPct(p.totalActual, p.totalBudget)
-          const overdueItems = deadlines.filter((d) => d.productionId === p.id && d.status === 'overdue').length
+      {/* Production grid / list */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {productions.map((p) => {
+            const weeks = revenueWeeks.filter((w) => w.productionId === p.id)
+            const cumGross = weeks.reduce((s, w) => s + w.grossRevenue, 0)
+            const prodContracts = contracts.filter((c) => c.productionId === p.id)
+            const signedCount = prodContracts.filter((c) => c.status === 'signed').length
+            const budgetPct = budgetUsedPct(p.totalActual, p.totalBudget)
+            const overdueItems = deadlines.filter((d) => d.productionId === p.id && d.status === 'overdue').length
 
-          return (
-            <Link key={p.id} href={`/productions/${p.id}`} className="group block">
-              <div className="bg-white border border-stone-200 rounded-lg overflow-hidden hover:border-stone-300 hover:shadow-md transition-all">
-                {/* Poster image */}
-                <ProductionPoster imageUrl={p.imageUrl} color={p.color} name={p.name} />
-
-                {/* Info panel */}
-                <div className="p-3.5">
-                  <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
-                    <Badge variant={p.status}>{statusLabel(p.status)}</Badge>
-                    {overdueItems > 0 && (
-                      <span className="text-[10px] px-1.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded">{overdueItems} overdue</span>
+            return (
+              <Link key={p.id} href={`/productions/${p.id}`} className="group block">
+                <div className="bg-white border border-stone-200 rounded-lg overflow-hidden hover:border-stone-300 hover:shadow-md transition-all">
+                  <ProductionPoster imageUrl={p.imageUrl} color={p.color} name={p.name} />
+                  <div className="p-4">
+                    <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+                      <Badge variant={p.status}>{statusLabel(p.status)}</Badge>
+                      {overdueItems > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded">{overdueItems} overdue</span>
+                      )}
+                    </div>
+                    <h2 className="text-sm font-semibold text-stone-900 leading-snug mb-0.5 truncate">{p.name}</h2>
+                    <p className="text-[11px] text-stone-500 truncate mb-3">{p.venue}</p>
+                    {p.totalBudget > 0 && (
+                      <div className="mb-3">
+                        <div className="flex justify-between text-[10px] mb-0.5">
+                          <span className="text-stone-400">Budget used</span>
+                          <span className={`font-medium ${budgetPct > 90 ? 'text-red-600' : budgetPct > 80 ? 'text-amber-600' : 'text-stone-600'}`}>{fmtPct(budgetPct)}</span>
+                        </div>
+                        <div className="h-1 bg-stone-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${Math.min(budgetPct, 100)}%`, backgroundColor: budgetPct > 90 ? '#ef4444' : budgetPct > 80 ? '#f59e0b' : p.color }} />
+                        </div>
+                      </div>
                     )}
-                  </div>
-
-                  <h2 className="text-sm font-semibold text-stone-900 leading-snug mb-0.5 truncate">{p.name}</h2>
-                  <p className="text-[11px] text-stone-500 truncate mb-3">{p.venue}</p>
-
-                  {/* Budget bar */}
-                  {p.totalBudget > 0 && (
-                    <div className="mb-3">
-                      <div className="flex justify-between text-[10px] mb-0.5">
-                        <span className="text-stone-400">Budget used</span>
-                        <span className={`font-medium ${budgetPct > 90 ? 'text-red-600' : budgetPct > 80 ? 'text-amber-600' : 'text-stone-600'}`}>
-                          {fmtPct(budgetPct)}
-                        </span>
-                      </div>
-                      <div className="h-1 bg-stone-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${Math.min(budgetPct, 100)}%`,
-                            backgroundColor: budgetPct > 90 ? '#ef4444' : budgetPct > 80 ? '#f59e0b' : p.color,
-                          }}
-                        />
-                      </div>
+                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px] mb-2">
+                      <div><span className="text-stone-400">Gross</span><p className="font-medium text-stone-800">{fmt(cumGross || p.currentGross)}</p></div>
+                      <div><span className="text-stone-400">Cash</span><p className="font-medium text-stone-800">{fmt(p.cashOnHand)}</p></div>
+                      <div className="col-span-2"><span className="text-stone-400">Contracts</span><span className="font-medium text-stone-800 ml-1">{signedCount}/{prodContracts.length} signed</span></div>
                     </div>
-                  )}
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px]">
-                    <div>
-                      <span className="text-stone-400">Gross</span>
-                      <p className="font-medium text-stone-800">{fmt(cumGross || p.currentGross)}</p>
+                    {p.openingDate && <p className="text-[10px] text-stone-400 truncate">{formatDate(p.openingDate)}{p.closingDate ? ` — ${formatDate(p.closingDate)}` : ''}</p>}
+                    <div className="flex items-center justify-end mt-2">
+                      <ArrowRight size={12} className="text-stone-300 group-hover:text-stone-500 transition-colors" />
                     </div>
-                    <div>
-                      <span className="text-stone-400">Cash</span>
-                      <p className="font-medium text-stone-800">{fmt(p.cashOnHand)}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-stone-400">Contracts</span>
-                      <span className="font-medium text-stone-800 ml-1">{signedCount}/{prodContracts.length} signed</span>
-                    </div>
-                  </div>
-
-                  {/* Dates */}
-                  {p.openingDate && (
-                    <p className="text-[10px] text-stone-400 mt-2 truncate">
-                      {formatDate(p.openingDate)}{p.closingDate ? ` — ${formatDate(p.closingDate)}` : ''}
-                    </p>
-                  )}
-
-                  <div className="flex items-center justify-end mt-2">
-                    <ArrowRight size={12} className="text-stone-300 group-hover:text-stone-500 transition-colors" />
                   </div>
                 </div>
-              </div>
-            </Link>
-          )
-        })}
+              </Link>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {productions.map((p) => {
+            const weeks = revenueWeeks.filter((w) => w.productionId === p.id)
+            const cumGross = weeks.reduce((s, w) => s + w.grossRevenue, 0)
+            const prodContracts = contracts.filter((c) => c.productionId === p.id)
+            const signedCount = prodContracts.filter((c) => c.status === 'signed').length
+            const budgetPct = budgetUsedPct(p.totalActual, p.totalBudget)
+            const overdueItems = deadlines.filter((d) => d.productionId === p.id && d.status === 'overdue').length
+            const lastWeek = weeks.sort((a, b) => b.weekEnding.localeCompare(a.weekEnding))[0]
 
-        {/* Create new card (admin only) — removed; use "New Production" button in header */}
-      </div>
+            return (
+              <Link key={p.id} href={`/productions/${p.id}`} className="group block">
+                <div className="bg-white border border-stone-200 rounded-lg overflow-hidden hover:border-stone-300 hover:shadow-sm transition-all flex">
+                  {/* Thumbnail */}
+                  <div className="w-28 shrink-0 relative overflow-hidden bg-stone-900" style={{ minHeight: '80px' }}>
+                    {p.imageUrl ? (
+                      <>
+                        <div className="absolute inset-0" style={{ backgroundImage: `url(${p.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(16px)', transform: 'scale(1.2)', opacity: 0.6 }} />
+                        <img src={p.imageUrl} alt={p.name} className="relative z-10 w-full h-full object-contain" />
+                      </>
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center" style={{ background: `linear-gradient(160deg, ${p.color}22 0%, ${p.color}66 100%)` }}>
+                        <Theater size={20} className="opacity-20" style={{ color: p.color }} />
+                      </div>
+                    )}
+                  </div>
+                  {/* Info */}
+                  <div className="flex-1 px-4 py-3 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+                          <h2 className="text-sm font-semibold text-stone-900 truncate">{p.name}</h2>
+                          <Badge variant={p.status}>{statusLabel(p.status)}</Badge>
+                          {overdueItems > 0 && <span className="text-[10px] px-1.5 py-0.5 bg-red-50 text-red-700 border border-red-200 rounded">{overdueItems} overdue</span>}
+                        </div>
+                        <p className="text-xs text-stone-400 truncate">{p.venue}{p.openingDate ? ` · ${formatDate(p.openingDate)}${p.closingDate ? ` – ${formatDate(p.closingDate)}` : ''}` : ''}</p>
+                      </div>
+                      <ArrowRight size={13} className="text-stone-300 group-hover:text-stone-500 transition-colors shrink-0 mt-0.5" />
+                    </div>
+                    {/* Stats row */}
+                    <div className="flex items-center gap-5 mt-2.5 text-xs">
+                      <div><span className="text-stone-400">Gross </span><span className="font-medium text-stone-700">{fmt(cumGross || p.currentGross)}</span></div>
+                      <div><span className="text-stone-400">Cash </span><span className="font-medium text-stone-700">{fmt(p.cashOnHand)}</span></div>
+                      {p.totalBudget > 0 && <div><span className="text-stone-400">Budget </span><span className={`font-medium ${budgetPct > 90 ? 'text-red-600' : budgetPct > 80 ? 'text-amber-600' : 'text-stone-700'}`}>{fmtPct(budgetPct)}</span></div>}
+                      <div><span className="text-stone-400">Contracts </span><span className="font-medium text-stone-700">{signedCount}/{prodContracts.length}</span></div>
+                      {lastWeek && <div><span className="text-stone-400">Last wk cap </span><span className={`font-medium ${lastWeek.capacityPct >= 85 ? 'text-emerald-600' : lastWeek.capacityPct >= 65 ? 'text-amber-600' : 'text-red-600'}`}>{lastWeek.capacityPct.toFixed(0)}%</span></div>}
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      )}
 
       {/* Create production modal */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="New Production" className="max-w-lg">

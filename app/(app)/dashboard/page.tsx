@@ -446,15 +446,24 @@ export default function DashboardPage() {
       {activeProds.length > 0 && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Sales Pulse</CardTitle>
-            <p className="text-xs text-stone-500 mt-0.5">Weekly ticket performance across active productions.</p>
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <CardTitle>Sales Pulse</CardTitle>
+                <p className="text-xs text-stone-500 mt-0.5">Weekly ticket performance across active productions.</p>
+              </div>
+              <div className="flex items-center gap-3 text-[11px] text-stone-400 shrink-0">
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" /> ≥85% capacity</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-amber-400" /> 65–84%</span>
+                <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-red-400" /> &lt;65%</span>
+              </div>
+            </div>
           </CardHeader>
           <CardBody className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
                 <thead className="bg-stone-50 border-b border-stone-100">
                   <tr>
-                    {['Production', 'Last Week Gross', 'Capacity', '6-wk Trend', 'Break-even', 'Runway', 'Pacing'].map((h) => (
+                    {['Production', 'Last Week Gross', 'Avg Tickets/Perf', 'Avg Ticket Price', '6-wk Trend', 'Pacing'].map((h) => (
                       <th key={h} className="px-5 py-2.5 text-left text-xs font-medium text-stone-500 uppercase tracking-wider whitespace-nowrap">
                         {h}
                       </th>
@@ -462,21 +471,11 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {salesPulse.map(({ prod: p, sparkWeeks, lastWeek, capTrend, pacing, breakEvenCap, runway }) => {
+                  {salesPulse.map(({ prod: p, sparkWeeks, lastWeek, pacing }) => {
                     const pacingCfg = PACING_CFG[pacing]
-                    const beLabel = breakEvenCap === null ? '—'
-                      : breakEvenCap <= 0 ? '✓ Profit'
-                      : breakEvenCap > 110 ? 'SRO+ needed'
-                      : `${Math.ceil(breakEvenCap)}% avg`
-                    const beCls = breakEvenCap === null ? 'text-stone-300'
-                      : breakEvenCap <= 0 ? 'text-emerald-600 font-medium'
-                      : breakEvenCap > 90 ? 'text-red-600 font-medium'
-                      : breakEvenCap > 75 ? 'text-amber-600 font-medium'
-                      : 'text-stone-700'
-                    const runwayCls = runway === null ? 'text-stone-300'
-                      : runway <= 4 ? 'text-red-600 font-medium'
-                      : runway <= 8 ? 'text-amber-600 font-medium'
-                      : 'text-stone-700'
+                    const avgTicketsPerPerf = lastWeek && lastWeek.performances > 0
+                      ? Math.round(lastWeek.ticketsSold / lastWeek.performances)
+                      : null
                     return (
                       <tr key={p.id} className="hover:bg-stone-50/60 transition-colors">
                         <td className="px-5 py-3.5">
@@ -489,30 +488,14 @@ export default function DashboardPage() {
                         <td className="px-5 py-3.5 font-medium text-stone-800">
                           {lastWeek ? fmt(lastWeek.grossRevenue) : <span className="text-stone-300">—</span>}
                         </td>
-                        <td className="px-5 py-3.5">
-                          {lastWeek ? (
-                            <div className="flex items-center gap-1">
-                              <span className={`font-medium tabular-nums ${lastWeek.capacityPct >= 85 ? 'text-emerald-700' : lastWeek.capacityPct >= 65 ? 'text-amber-600' : 'text-red-600'}`}>
-                                {lastWeek.capacityPct.toFixed(0)}%
-                              </span>
-                              {capTrend !== null && Math.abs(capTrend) >= 1 && (
-                                <span className={`text-[11px] font-bold ${capTrend > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
-                                  {capTrend > 0 ? '▲' : '▼'}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-stone-300">—</span>
-                          )}
+                        <td className="px-5 py-3.5 tabular-nums text-stone-700">
+                          {avgTicketsPerPerf !== null ? avgTicketsPerPerf.toLocaleString() : <span className="text-stone-300">—</span>}
+                        </td>
+                        <td className="px-5 py-3.5 tabular-nums text-stone-700">
+                          {lastWeek ? fmt(lastWeek.avgTicketPrice, 2) : <span className="text-stone-300">—</span>}
                         </td>
                         <td className="px-5 py-3.5">
                           <SparkBar weeks={sparkWeeks} />
-                        </td>
-                        <td className="px-5 py-3.5 text-xs">
-                          <span className={beCls}>{beLabel}</span>
-                        </td>
-                        <td className="px-5 py-3.5 text-xs">
-                          <span className={runwayCls}>{runway !== null ? `${runway} wks` : '—'}</span>
                         </td>
                         <td className="px-5 py-3.5">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-medium ${pacingCfg.cls}`}>

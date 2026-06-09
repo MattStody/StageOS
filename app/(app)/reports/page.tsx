@@ -70,7 +70,12 @@ export default function ReportsPage() {
       <div className="flex gap-2 mb-6">
         {productions.map((p) => (
           <button key={p.id} onClick={() => { setSelectedProd(p.id); setGenerated(false) }}
-            className={`px-3 py-1.5 rounded text-sm transition-colors ${selectedProd === p.id ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-400'}`}>
+            className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-colors ${selectedProd === p.id ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-400'}`}>
+            {p.imageUrl ? (
+              <img src={p.imageUrl} alt="" className="w-5 h-5 rounded object-cover shrink-0" />
+            ) : (
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+            )}
             {p.name}
           </button>
         ))}

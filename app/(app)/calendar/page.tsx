@@ -315,7 +315,11 @@ export default function CalendarPage() {
         <button onClick={() => setSelectedProd('all')} className={`px-3 py-1.5 rounded text-xs transition-colors ${selectedProd === 'all' ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-400'}`}>All</button>
         {productions.map((p) => (
           <button key={p.id} onClick={() => setSelectedProd(p.id)} className={`px-3 py-1.5 rounded text-xs transition-colors flex items-center gap-1.5 ${selectedProd === p.id ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-400'}`}>
-            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: p.color }} />
+            {p.imageUrl ? (
+              <img src={p.imageUrl} alt="" className="w-4 h-4 rounded object-cover shrink-0" />
+            ) : (
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+            )}
             {p.name}
           </button>
         ))}
