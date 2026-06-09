@@ -856,8 +856,8 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                       <th className="text-left px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Day</th>
                       <th className="text-left px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Time</th>
                       <th className="text-left px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Status</th>
-                      <th className="text-right px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Sold</th>
-                      <th className="text-right px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Avg ATP</th>
+                      <th className="text-right px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Tickets Sold</th>
+                      <th className="text-right px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Avg Ticket Price</th>
                       <th className="text-left px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Notes</th>
                       {isAdmin && <th className="px-4 py-2 w-16" />}
                     </tr>
@@ -867,8 +867,10 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                       const d = new Date(p.date + 'T12:00:00')
                       const wk = weekForPerf(p.date)
                       const perfsInWeek = wk ? perfs.filter((pp) => weekForPerf(pp.date)?.weekEnding === wk.weekEnding && pp.status !== 'cancelled').length : 0
-                      const soldPct = wk && perfsInWeek > 0 ? wk.capacityPct : null
-                      const atp = wk && perfsInWeek > 0 ? wk.avgTicketPrice : null
+                      const ticketsPerPerf = wk && perfsInWeek > 0 ? Math.round(wk.ticketsSold / perfsInWeek) : null
+                      const soldPct        = wk && perfsInWeek > 0 ? wk.capacityPct : null
+                      const atp            = wk && perfsInWeek > 0 ? wk.avgTicketPrice : null
+                      const grossPerPerf   = wk && perfsInWeek > 0 ? Math.round(wk.grossRevenue / perfsInWeek) : null
                       return (
                         <tr
                           key={p.id}
@@ -884,16 +886,30 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                             </span>
                           </td>
                           <td className="px-4 py-2.5 text-right">
-                            {soldPct !== null ? (
-                              <span className={`text-xs font-medium ${soldPct >= 85 ? 'text-emerald-700' : soldPct >= 65 ? 'text-stone-700' : 'text-amber-700'}`}>
-                                {soldPct.toFixed(0)}%
-                              </span>
+                            {ticketsPerPerf !== null ? (
+                              <div>
+                                <span className={`text-xs font-medium tabular-nums ${soldPct !== null && soldPct >= 85 ? 'text-emerald-700' : soldPct !== null && soldPct >= 65 ? 'text-stone-700' : 'text-amber-700'}`}>
+                                  {ticketsPerPerf.toLocaleString()}
+                                </span>
+                                {soldPct !== null && (
+                                  <p className="text-[10px] text-stone-400 leading-none mt-0.5">{soldPct.toFixed(0)}% cap</p>
+                                )}
+                              </div>
                             ) : (
                               <span className="text-xs text-stone-300">—</span>
                             )}
                           </td>
-                          <td className="px-4 py-2.5 text-right text-xs text-stone-600">
-                            {atp !== null ? `$${atp.toFixed(0)}` : <span className="text-stone-300">—</span>}
+                          <td className="px-4 py-2.5 text-right">
+                            {atp !== null ? (
+                              <div>
+                                <span className="text-xs font-medium tabular-nums text-stone-700">{fmt(atp, 0)}</span>
+                                {grossPerPerf !== null && (
+                                  <p className="text-[10px] text-stone-400 leading-none mt-0.5">{fmt(grossPerPerf)} gross</p>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-stone-300">—</span>
+                            )}
                           </td>
                           <td className="px-4 py-2.5 text-xs text-stone-400 max-w-xs truncate">{p.notes || '—'}</td>
                           <td className="px-4 py-2.5">
