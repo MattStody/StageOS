@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Film, DollarSign, TrendingUp, FileText,
-  ArrowRightLeft, CalendarDays, FileBarChart, FolderOpen, Settings, ChevronRight, Megaphone, Wand2, FlaskConical, Plug2, Upload,
+  ArrowRightLeft, CalendarDays, FileBarChart, FolderOpen, Settings, ChevronRight, Megaphone, Wand2, FlaskConical, Plug2, Upload, Landmark,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useStore } from '@/lib/store'
@@ -33,6 +33,7 @@ const navGroups: NavGroup[] = [
       { label: 'Budget', href: '/budget', icon: DollarSign, exact: false },
       { label: 'Revenue', href: '/revenue', icon: TrendingUp, exact: false },
       { label: 'Cash Flow', href: '/cashflow', icon: ArrowRightLeft, exact: false },
+      { label: 'Grants', href: '/grants', icon: Landmark, exact: false },
     ],
   },
   {

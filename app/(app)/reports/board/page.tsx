@@ -7,6 +7,7 @@ import { Card, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel, variancePct } from '@/lib/utils'
+import type { Grant, Production as ProductionType } from '@/lib/types'
 import { computeCoreForecast } from '@/lib/forecasting'
 import Link from 'next/link'
 import {
@@ -112,10 +113,126 @@ function deriveRisk(sc: Omit<Scorecard, 'risk' | 'criticalFlags'>): { risk: Port
   return { risk, criticalFlags: flags }
 }
 
+// ── Grant Pipeline sub-component ───────────────────────────────────────────────
+
+const GRANT_STATUS_LABEL: Record<string, string> = {
+  identified: 'Identified', drafting: 'Drafting', submitted: 'Submitted',
+  under_review: 'Under Review', awarded: 'Awarded', declined: 'Declined',
+  report_due: 'Report Due', report_submitted: 'Report Submitted', complete: 'Complete',
+}
+const GRANT_STATUS_CLS: Record<string, string> = {
+  identified: 'text-stone-500 bg-stone-50 border-stone-200',
+  drafting: 'text-blue-700 bg-blue-50 border-blue-200',
+  submitted: 'text-violet-700 bg-violet-50 border-violet-200',
+  under_review: 'text-amber-700 bg-amber-50 border-amber-200',
+  awarded: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+  declined: 'text-red-700 bg-red-50 border-red-200',
+  report_due: 'text-orange-700 bg-orange-50 border-orange-200',
+  report_submitted: 'text-teal-700 bg-teal-50 border-teal-200',
+  complete: 'text-stone-400 bg-stone-50 border-stone-100',
+}
+
+function GrantPipelineSection({ grants, productions }: { grants: Grant[]; productions: ProductionType[] }) {
+  const pipeline = grants.filter(g => ['identified', 'drafting', 'submitted', 'under_review'].includes(g.status))
+  const awarded  = grants.filter(g => ['awarded', 'report_due', 'report_submitted'].includes(g.status))
+  const totalAwarded  = awarded.reduce((s, g) => s + (g.amountAwarded ?? 0), 0)
+  const totalPipeline = pipeline.reduce((s, g) => s + g.amountRequested, 0)
+  const reportsUrgent = grants.filter(g => g.status === 'report_due' && g.reportDeadline && daysUntil(g.reportDeadline) <= 30)
+
+  return (
+    <section>
+      <h2 className="flex items-center gap-2 text-xs font-semibold text-stone-500 uppercase tracking-wider mb-4">
+        <DollarSign size={13} className="text-stone-400" />
+        6. Grant Pipeline
+      </h2>
+
+      <div className="grid grid-cols-3 gap-3 mb-5">
+        {[
+          { label: 'Confirmed Funding', value: fmt(totalAwarded), sub: `${awarded.length} active grant${awarded.length !== 1 ? 's' : ''}` },
+          { label: 'Pipeline Value',    value: fmt(totalPipeline), sub: `${pipeline.length} application${pipeline.length !== 1 ? 's' : ''} pending decision` },
+          { label: 'Reports Due ≤30d',  value: String(reportsUrgent.length), sub: reportsUrgent.length > 0 ? reportsUrgent.map(g => g.funder.split(' ').slice(0, 2).join(' ')).join(', ') : 'All current', alert: reportsUrgent.length > 0 },
+        ].map(({ label, value, sub, alert }) => (
+          <div key={label} className={`rounded-lg border p-3.5 ${alert ? 'border-orange-200 bg-orange-50' : 'bg-stone-50 border-stone-100'}`}>
+            <p className="text-xs text-stone-400 mb-0.5">{label}</p>
+            <p className={`text-base font-semibold ${alert ? 'text-orange-700' : 'text-stone-900'}`}>{value}</p>
+            <p className={`text-xs mt-0.5 ${alert ? 'text-orange-600' : 'text-stone-400'}`}>{sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {grants.length === 0 ? (
+        <p className="text-sm text-stone-500 p-4 bg-stone-50 rounded-lg border border-stone-100">No grants on record.</p>
+      ) : (
+        <div className="overflow-x-auto border border-stone-100 rounded-lg">
+          <table className="w-full min-w-[640px] text-xs">
+            <thead>
+              <tr className="bg-stone-50 border-b border-stone-100">
+                {['Funder / Program', 'Production', 'Requested', 'Awarded', 'Report Deadline', 'Status'].map(h => (
+                  <th key={h} className="text-left px-4 py-2.5 font-medium text-stone-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stone-50">
+              {[...grants]
+                .filter(g => g.status !== 'declined' && g.status !== 'complete')
+                .sort((a, b) => {
+                  const order: Record<string, number> = { report_due: 0, report_submitted: 1, awarded: 2, under_review: 3, submitted: 4, drafting: 5, identified: 6 }
+                  return (order[a.status] ?? 9) - (order[b.status] ?? 9)
+                })
+                .map(g => {
+                  const prod = productions.find(p => p.id === g.productionId)
+                  const sc   = GRANT_STATUS_CLS[g.status] ?? ''
+                  const repDays = g.reportDeadline ? daysUntil(g.reportDeadline) : null
+                  return (
+                    <tr key={g.id} className="hover:bg-stone-50/50 transition-colors">
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-stone-800">{g.funder}</p>
+                        <p className="text-stone-400 mt-0.5 leading-tight">{g.programName}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        {prod ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: prod.color }} />
+                            <span className="text-stone-600">{prod.name}</span>
+                          </div>
+                        ) : (
+                          <span className="text-stone-400">General operating</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-stone-700 whitespace-nowrap">{fmt(g.amountRequested)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {g.amountAwarded != null
+                          ? <span className="font-semibold text-emerald-700">{fmt(g.amountAwarded)}</span>
+                          : <span className="text-stone-300">—</span>
+                        }
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {g.reportDeadline ? (
+                          <span className={repDays !== null && repDays <= 30 ? 'font-medium text-orange-700' : 'text-stone-600'}>
+                            {formatDate(g.reportDeadline)}{repDays !== null && repDays <= 0 ? ' (overdue)' : repDays !== null && repDays <= 30 ? ` (${repDays}d)` : ''}
+                          </span>
+                        ) : <span className="text-stone-300">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded border font-medium ${sc}`}>
+                          {GRANT_STATUS_LABEL[g.status] ?? g.status}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  )
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function BoardReportPage() {
-  const { productions, budgetLines, revenueWeeks, contracts, cashFlowRows, deadlines, obligations } = useStore()
+  const { productions, budgetLines, revenueWeeks, contracts, cashFlowRows, deadlines, obligations, grants } = useStore()
   const { isDemo, config } = useDemo()
 
   const orgName  = isDemo && config?.org  ? config.org  : 'Adam Blanshay Productions'
@@ -355,6 +472,14 @@ export default function BoardReportPage() {
       return `   ${formatDate(d.date)} — ${d.title} (${prod?.name ?? 'Portfolio'})`
     }),
     '',
+    '6. GRANT PIPELINE',
+    `   Confirmed funding: ${fmt(grants.filter(g => ['awarded','report_due','report_submitted'].includes(g.status)).reduce((s,g) => s+(g.amountAwarded??0), 0))}`,
+    `   Pipeline value:    ${fmt(grants.filter(g => ['identified','drafting','submitted','under_review'].includes(g.status)).reduce((s,g) => s+g.amountRequested, 0))}`,
+    ...grants.filter(g => g.status !== 'declined' && g.status !== 'complete').map(g => {
+      const prod = productions.find(p => p.id === g.productionId)
+      return `   [${(g.status).toUpperCase().replace('_',' ')}] ${g.funder} — ${g.programName} ${g.amountAwarded != null ? fmt(g.amountAwarded)+' awarded' : fmt(g.amountRequested)+' requested'}${prod ? ` (${prod.name})` : ''}`
+    }),
+    '',
     '─'.repeat(60),
     `Board Report generated by StageOS · ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
   ].filter(l => l !== undefined).join('\n')
@@ -428,6 +553,7 @@ export default function BoardReportPage() {
                       ['Risk Register', `${riskItems.length} identified risk${riskItems.length !== 1 ? 's' : ''} across portfolio`],
                       ['Decisions Required', `${decisions.length} item${decisions.length !== 1 ? 's' : ''} requiring board action`],
                       ['Forward Calendar', `${forwardItems.length} milestone${forwardItems.length !== 1 ? 's' : ''} in the next 30 days`],
+                      ['Grant Pipeline', `${grants.length} grant${grants.length !== 1 ? 's' : ''} — funding pipeline & reporting obligations`],
                       ['Production Appendix', 'Detailed financials per production', !includeAppendix],
                     ].map(([title, desc, disabled]) => (
                       <div key={title as string} className={`flex items-center gap-2.5 text-sm ${disabled ? 'opacity-40' : ''}`}>
@@ -775,6 +901,9 @@ export default function BoardReportPage() {
               </div>
             )}
           </section>
+
+          {/* ── Section 6: Grant Pipeline ── */}
+          <GrantPipelineSection grants={grants} productions={productions} />
 
           {/* ── Appendix: Per-production detail ── */}
           {includeAppendix && (

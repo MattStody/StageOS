@@ -197,6 +197,30 @@ export interface ContractObligation {
   createdAt: string
 }
 
+// ── Grants & Subsidies ───────────────────────────────────────────────────────
+
+export type GrantStatus =
+  | 'identified' | 'drafting' | 'submitted' | 'under_review'
+  | 'awarded' | 'declined' | 'report_due' | 'report_submitted' | 'complete'
+
+export type GrantType = 'operating' | 'project' | 'touring' | 'capital' | 'commissioning' | 'emergency' | 'other'
+
+export interface Grant {
+  id: string
+  funder: string
+  programName: string
+  grantType: GrantType
+  status: GrantStatus
+  amountRequested: number
+  amountAwarded?: number
+  applicationDeadline: string
+  awardedDate?: string
+  reportDeadline?: string
+  year: string
+  productionId?: string
+  notes: string
+}
+
 // ── Union Agreement Templates ────────────────────────────────────────────────
 
 export interface ObligationTemplate {

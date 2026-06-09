@@ -1,7 +1,7 @@
 'use client'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate } from './types'
+import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate, Grant } from './types'
 import {
   PRODUCTIONS,
   BUDGET_LINES,
@@ -15,6 +15,7 @@ import {
   CUSTOM_EVENTS,
   OBLIGATIONS,
   PERFORMANCE_DATES,
+  GRANTS,
 } from './mockData'
 import type { ScenarioData } from './demoScenarios'
 
@@ -75,6 +76,11 @@ interface StageOpsState {
   updatePerformanceDate: (perf: PerformanceDate) => void
   deletePerformanceDate: (id: string) => void
 
+  grants: Grant[]
+  addGrant: (grant: Grant) => void
+  updateGrant: (grant: Grant) => void
+  deleteGrant: (id: string) => void
+
   spektrixBaseUrl: string
   setSpektrixBaseUrl: (url: string) => void
 
@@ -97,6 +103,7 @@ export const useStore = create<StageOpsState>()(
       customEvents: CUSTOM_EVENTS,
       obligations: OBLIGATIONS,
       performanceDates: PERFORMANCE_DATES,
+      grants: GRANTS,
       spektrixBaseUrl: '',
 
       addBudgetLine: (line) => set((s) => ({ budgetLines: [...s.budgetLines, line] })),
@@ -142,6 +149,10 @@ export const useStore = create<StageOpsState>()(
       updatePerformanceDate: (perf) => set((s) => ({ performanceDates: s.performanceDates.map((p) => (p.id === perf.id ? perf : p)) })),
       deletePerformanceDate: (id) => set((s) => ({ performanceDates: s.performanceDates.filter((p) => p.id !== id) })),
 
+      addGrant: (grant) => set((s) => ({ grants: [...s.grants, grant] })),
+      updateGrant: (grant) => set((s) => ({ grants: s.grants.map((g) => (g.id === grant.id ? grant : g)) })),
+      deleteGrant: (id) => set((s) => ({ grants: s.grants.filter((g) => g.id !== id) })),
+
       setSpektrixBaseUrl: (url) => set(() => ({ spektrixBaseUrl: url })),
 
       loadScenario: (data) => set(() => ({
@@ -157,6 +168,7 @@ export const useStore = create<StageOpsState>()(
         customEvents: data.customEvents,
         obligations: OBLIGATIONS,
         performanceDates: PERFORMANCE_DATES,
+        grants: GRANTS,
       })),
 
       resetToDefaults: () => set(() => ({
@@ -172,6 +184,7 @@ export const useStore = create<StageOpsState>()(
         customEvents: CUSTOM_EVENTS,
         obligations: OBLIGATIONS,
         performanceDates: PERFORMANCE_DATES,
+        grants: GRANTS,
       })),
     }),
     { name: 'stageops-store' }
