@@ -13,7 +13,7 @@ export const PRODUCTIONS: Production[] = [
     totalActual: 2641000,
     cashOnHand: 412000,
     projectedGross: 3200000,
-    currentGross: 1840000,
+    currentGross: 478000,
     color: '#6366f1',
   },
   {
@@ -141,18 +141,10 @@ export const BUDGET_LINES: BudgetLine[] = [
 // ─── REVENUE WEEKS ───────────────────────────────────────────────────────────
 
 export const REVENUE_WEEKS: RevenueWeek[] = [
-  // prod-1: A Winter's Dream — 3 advance weeks then 8 performance weeks (Sep–Nov 2026)
-  { id: 'r1-pre-1', productionId: 'prod-1', weekEnding: '2026-08-29', performances: 0, ticketsSold: 320,  grossRevenue: 38400,  avgTicketPrice: 120, capacityPct: 11, comps: 0,  discounts: 0,     netRevenue: 38400,  totalSeats: 2932 },
-  { id: 'r1-pre-2', productionId: 'prod-1', weekEnding: '2026-09-05', performances: 0, ticketsSold: 720,  grossRevenue: 86400,  avgTicketPrice: 120, capacityPct: 25, comps: 0,  discounts: 500,   netRevenue: 85900,  totalSeats: 2932 },
-  { id: 'r1-pre-3', productionId: 'prod-1', weekEnding: '2026-09-12', performances: 0, ticketsSold: 1150, grossRevenue: 138000, avgTicketPrice: 120, capacityPct: 39, comps: 15, discounts: 2000,  netRevenue: 134500, totalSeats: 2932 },
-  { id: 'r1-1', productionId: 'prod-1', weekEnding: '2026-09-22', performances: 8,  ticketsSold: 1820, grossRevenue: 218400, avgTicketPrice: 120, capacityPct: 62, comps: 85, discounts: 12000, netRevenue: 204000, totalSeats: 2932 },
-  { id: 'r1-2', productionId: 'prod-1', weekEnding: '2026-09-29', performances: 8,  ticketsSold: 2340, grossRevenue: 303000, avgTicketPrice: 129, capacityPct: 80, comps: 60, discounts: 8500,  netRevenue: 286000, totalSeats: 2932 },
-  { id: 'r1-3', productionId: 'prod-1', weekEnding: '2026-10-06', performances: 8,  ticketsSold: 2200, grossRevenue: 286000, avgTicketPrice: 130, capacityPct: 75, comps: 72, discounts: 9800,  netRevenue: 269000, totalSeats: 2932 },
-  { id: 'r1-4', productionId: 'prod-1', weekEnding: '2026-10-13', performances: 8,  ticketsSold: 2540, grossRevenue: 341000, avgTicketPrice: 134, capacityPct: 87, comps: 45, discounts: 6200,  netRevenue: 326000, totalSeats: 2932 },
-  { id: 'r1-5', productionId: 'prod-1', weekEnding: '2026-10-20', performances: 10, ticketsSold: 2932, grossRevenue: 428000, avgTicketPrice: 146, capacityPct: 100, comps: 30, discounts: 4000, netRevenue: 417000, totalSeats: 2932 },
-  { id: 'r1-6', productionId: 'prod-1', weekEnding: '2026-10-27', performances: 10, ticketsSold: 2932, grossRevenue: 447000, avgTicketPrice: 152, capacityPct: 100, comps: 20, discounts: 2000, netRevenue: 438000, totalSeats: 2932 },
-  { id: 'r1-7', productionId: 'prod-1', weekEnding: '2026-11-03', performances: 8,  ticketsSold: 2680, grossRevenue: 348000, avgTicketPrice: 130, capacityPct: 91, comps: 55, discounts: 7200,  netRevenue: 333000, totalSeats: 2932 },
-  { id: 'r1-8', productionId: 'prod-1', weekEnding: '2026-11-05', performances: 3,  ticketsSold: 820,  grossRevenue: 109600, avgTicketPrice: 134, capacityPct: 94, comps: 18, discounts: 1800,  netRevenue: 104000, totalSeats: 2932 },
+  // prod-1: A Winter's Dream — advance sales only (in rehearsal, opening Sep 15 2026)
+  { id: 'r1-pre-1', productionId: 'prod-1', weekEnding: '2026-08-29', performances: 0, ticketsSold: 625,  grossRevenue: 75000,  avgTicketPrice: 120, capacityPct: 21, comps: 0,  discounts: 0,    netRevenue: 75000,  totalSeats: 2932 },
+  { id: 'r1-pre-2', productionId: 'prod-1', weekEnding: '2026-09-05', performances: 0, ticketsSold: 1275, grossRevenue: 153000, avgTicketPrice: 120, capacityPct: 43, comps: 0,  discounts: 500,  netRevenue: 152500, totalSeats: 2932 },
+  { id: 'r1-pre-3', productionId: 'prod-1', weekEnding: '2026-09-12', performances: 0, ticketsSold: 2083, grossRevenue: 250000, avgTicketPrice: 120, capacityPct: 71, comps: 15, discounts: 2000, netRevenue: 246500, totalSeats: 2932 },
 
   // prod-2: The Silence Between — advance sales Jul–Oct, then 4 performance weeks (Oct–Nov 2026)
   { id: 'r2-adv-1', productionId: 'prod-2', weekEnding: '2026-07-04', performances: 0, ticketsSold: 168, grossRevenue: 18816,  avgTicketPrice: 112, capacityPct: 15, comps: 0,  discounts: 0,    netRevenue: 18816,  totalSeats: 1100 },

@@ -169,13 +169,12 @@ export default function ProductionsPage() {
               ? Math.max(0, Math.ceil((new Date(p.closingDate + 'T12:00:00').getTime() - Date.now()) / (7 * 86_400_000)))
               : 0
             const avgATP = weeks.length > 0 ? weeks.reduce((s, w) => s + w.avgTicketPrice, 0) / weeks.length : 0
-            const avgPerfsPerWk = weeks.length > 0 ? weeks.reduce((s, w) => s + w.performances, 0) / weeks.length : 0
             const seatsHouse = weeks.length > 0 ? Math.max(...weeks.map((w) => w.totalSeats)) : 0
             const grossNeeded = Math.max(0, p.totalBudget - grossActual)
             const isProfitable = p.totalBudget > 0 && grossActual >= p.totalBudget
             const profitPct = isProfitable && p.totalBudget > 0 ? Math.round(((grossActual - p.totalBudget) / p.totalBudget) * 100) : 0
-            const beCap = weeksRemaining > 0 && avgATP > 0 && seatsHouse > 0 && avgPerfsPerWk > 0
-              ? (grossNeeded / (weeksRemaining * avgPerfsPerWk * seatsHouse * avgATP)) * 100
+            const beCap = weeksRemaining > 0 && avgATP > 0 && seatsHouse > 0
+              ? (grossNeeded / (weeksRemaining * seatsHouse * avgATP)) * 100
               : null
             const beLabel = isProfitable
               ? `+${profitPct}% above B/E`

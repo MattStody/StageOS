@@ -92,21 +92,11 @@ export default function DashboardPage() {
     (l) => l.budgeted > 0 && Math.abs((l.actual - l.budgeted) / l.budgeted) > 0.1 && l.actual > 0,
   )
 
-  // ── Cash runway per production ───────────────────────────────────────────
-  const runwayByProd = productions
-    .filter(p => p.status !== 'closed')
-    .map(p => {
-      const rows = cashFlowRows.filter(r => r.productionId === p.id)
-        .sort((a, b) => a.weekOf.localeCompare(b.weekOf))
-      if (rows.length === 0) return null
-      const out  = rows.reduce((s, r) => s + r.payroll + r.venueCosts + r.marketing + r.royalties + r.vendorPayments + r.otherOutflows, 0)
-      const ins  = rows.reduce((s, r) => s + r.ticketRevenue + r.otherInflows, 0)
-      const burn = (out - ins) / rows.length
-      const last = rows[rows.length - 1].closingCash
-      return burn > 0 ? Math.round(last / burn) : null
-    })
-    .filter((r): r is number => r !== null)
-  const minRunway = runwayByProd.length > 0 ? Math.min(...runwayByProd) : null
+  // ── Tickets sold across all productions ─────────────────────────────────
+  const totalTicketsSold = revenueWeeks.reduce((s, w) => s + w.ticketsSold, 0)
+
+  // ── Budget variance ──────────────────────────────────────────────────────
+  const portfolioBudgetVariance = totalBudget - totalActual  // positive = under budget
 
   // ── Sales Pulse ──────────────────────────────────────────────────────────
   const activeProds = productions.filter((p) => p.status !== 'closed')
@@ -135,27 +125,20 @@ export default function DashboardPage() {
       }
     }
 
-    // Break-even
+    // Break-even (totalSeats is per-week, so no avgPerfsPerWk in denominator)
     const avgATPsp      = allWeeks.length > 0 ? allWeeks.reduce((s, w) => s + w.avgTicketPrice, 0) / allWeeks.length : 0
-    const avgPerfsSp    = allWeeks.length > 0 ? allWeeks.reduce((s, w) => s + w.performances, 0) / allWeeks.length : 8
     const seatsSp       = allWeeks.length > 0 ? Math.max(...allWeeks.map(w => w.totalSeats)) : 0
     const weeksRemSp    = p.closingDate
       ? Math.max(0, Math.ceil((new Date(p.closingDate + 'T12:00:00').getTime() - Date.now()) / (7 * 86_400_000)))
       : 0
     const grossNeededSp = Math.max(0, (p.totalBudget || 0) - cumGross)
     const breakEvenCap  = weeksRemSp > 0 && avgATPsp > 0 && seatsSp > 0
-      ? (grossNeededSp / (weeksRemSp * avgPerfsSp * seatsSp * avgATPsp)) * 100
+      ? (grossNeededSp / (weeksRemSp * seatsSp * avgATPsp)) * 100
       : null
+    const isProfitable  = p.totalBudget > 0 && cumGross >= p.totalBudget
+    const profitPct     = isProfitable ? Math.round(((cumGross - p.totalBudget) / p.totalBudget) * 100) : 0
 
-    // Runway
-    const prodRows   = cashFlowRows.filter(r => r.productionId === p.id).sort((a, b) => a.weekOf.localeCompare(b.weekOf))
-    const outSp      = prodRows.reduce((s, r) => s + r.payroll + r.venueCosts + r.marketing + r.royalties + r.vendorPayments + r.otherOutflows, 0)
-    const inSp       = prodRows.reduce((s, r) => s + r.ticketRevenue + r.otherInflows, 0)
-    const burnSp     = prodRows.length > 0 ? (outSp - inSp) / prodRows.length : 0
-    const lastCashSp = prodRows.length ? prodRows[prodRows.length - 1].closingCash : p.cashOnHand
-    const runway     = burnSp > 0 ? Math.round(lastCashSp / burnSp) : null
-
-    return { prod: p, totalTickets, lastWeek, pacing, breakEvenCap, runway }
+    return { prod: p, totalTickets, lastWeek, pacing, breakEvenCap, isProfitable, profitPct }
   })
 
   // ── Build attention items ────────────────────────────────────────────────
@@ -308,6 +291,50 @@ export default function DashboardPage() {
   const mediumCount    = undismissed.filter((i) => i.priority === 'medium').length
   const affectedProds  = new Set(undismissed.map((i) => i.production).filter((p) => p !== 'All productions')).size
 
+  // ── Portfolio briefing ───────────────────────────────────────────────────
+  const briefing = (() => {
+    const strengths: string[] = []
+    const watches: string[] = []
+
+    for (const { prod: p, pacing, breakEvenCap, isProfitable, profitPct } of salesPulse) {
+      if (isProfitable) {
+        strengths.push(`${p.name} is ${profitPct}% above breakeven`)
+      } else if (pacing === 'ahead') {
+        strengths.push(`${p.name} advance sales pacing ahead of target`)
+      }
+      if (!isProfitable && breakEvenCap !== null && breakEvenCap > 50) {
+        watches.push(`${p.name} needs ${Math.ceil(breakEvenCap)}% avg capacity to recoup`)
+      } else if (!isProfitable && pacing === 'behind') {
+        watches.push(`${p.name} is pacing behind target`)
+      }
+    }
+
+    if (portfolioBudgetVariance < -100000) {
+      watches.push(`Portfolio is ${fmt(Math.abs(portfolioBudgetVariance))} over budget`)
+    } else if (portfolioBudgetVariance > 300000) {
+      strengths.push(`Portfolio is ${fmt(portfolioBudgetVariance)} under budget`)
+    }
+
+    const unsignedTotal = contracts.filter(c => c.status !== 'signed' && c.status !== 'expired').length
+    if (unsignedTotal > 0) watches.push(`${unsignedTotal} contract${unsignedTotal > 1 ? 's' : ''} still need signing`)
+
+    if (criticalCount > 0) watches.push(`${criticalCount} critical item${criticalCount > 1 ? 's' : ''} need immediate attention`)
+
+    const profitableCount = salesPulse.filter(s => s.isProfitable).length
+    let headline = ''
+    if (profitableCount === activeProds.length && activeProds.length > 0) {
+      headline = `All ${activeProds.length} productions are tracking profitably. Portfolio is in a strong position.`
+    } else if (profitableCount > 0) {
+      const names = salesPulse.filter(s => s.isProfitable).map(s => s.prod.name)
+      const notYet = salesPulse.filter(s => !s.isProfitable).map(s => s.prod.name)
+      headline = `${names.join(' and ')} ${names.length === 1 ? 'is' : 'are'} above breakeven.${notYet.length > 0 ? ` ${notYet.join(' and ')} ${notYet.length === 1 ? 'is' : 'are'} still working toward recoupment.` : ''}`
+    } else {
+      headline = `No productions have reached breakeven yet — advance sales and pacing are the priority.`
+    }
+
+    return { headline, strengths: strengths.slice(0, 3), watches: watches.slice(0, 3) }
+  })()
+
   // ── Upcoming deadlines ───────────────────────────────────────────────────
   const upcomingDeadlines = deadlines
     .filter((d) => d.status !== 'completed' && daysUntil(d.date) >= 0 && daysUntil(d.date) <= 14)
@@ -348,17 +375,17 @@ export default function DashboardPage() {
     '',
     `ACTIVE PRODUCTIONS (${activeProds.length})`,
     '',
-    ...salesPulse.flatMap(({ prod: p, lastWeek, breakEvenCap, runway }) => {
+    ...salesPulse.flatMap(({ prod: p, lastWeek, breakEvenCap, isProfitable, profitPct }) => {
       const weeksRem = p.closingDate
         ? Math.max(0, Math.ceil((new Date(p.closingDate + 'T12:00:00').getTime() - Date.now()) / (7 * 86_400_000)))
         : null
       const pctCaptured = p.projectedGross > 0 ? Math.round((p.currentGross / p.projectedGross) * 100) : null
-      const beLabel = breakEvenCap === null ? '—' : breakEvenCap <= 0 ? '✓ In profit' : `${Math.ceil(breakEvenCap)}% avg capacity`
+      const beLabel = isProfitable ? `+${profitPct}% above B/E` : breakEvenCap === null ? '—' : `${Math.ceil(breakEvenCap)}% avg capacity`
       return [
         `${p.name.toUpperCase()}`,
         `  Gross to date:  ${fmt(p.currentGross)}${pctCaptured !== null ? `  (${pctCaptured}% of projected ${fmt(p.projectedGross)})` : ''}`,
         lastWeek ? `  Last week:      ${fmt(lastWeek.grossRevenue)} gross  |  ${lastWeek.capacityPct.toFixed(0)}% capacity` : '  Last week:      No data',
-        `  Cash on hand:   ${fmt(p.cashOnHand)}${runway ? `  |  ${runway}-wk runway` : ''}`,
+        `  Cash on hand:   ${fmt(p.cashOnHand)}`,
         weeksRem !== null ? `  Break-even:     ${beLabel}${weeksRem > 0 ? ` over ${weeksRem} remaining wk${weeksRem !== 1 ? 's' : ''}` : ''}` : '',
         '',
       ].filter(Boolean)
@@ -390,6 +417,39 @@ export default function DashboardPage() {
         }
       />
 
+      {/* ── Portfolio Briefing ───────────────────────────────────────────── */}
+      <div className="mb-6 rounded-xl border border-stone-800 bg-stone-950 px-6 py-5">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">Portfolio Briefing</p>
+        </div>
+        <p className="text-sm font-medium text-white leading-relaxed mb-4">{briefing.headline}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
+          <div>
+            {briefing.strengths.length > 0 && (
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-500 mb-1.5">Strengths</p>
+            )}
+            {briefing.strengths.map((s, i) => (
+              <div key={i} className="flex items-start gap-2 text-xs text-stone-300 mb-1">
+                <span className="text-emerald-400 shrink-0 mt-px">↑</span>
+                {s}
+              </div>
+            ))}
+          </div>
+          <div>
+            {briefing.watches.length > 0 && (
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-500 mb-1.5">Watch</p>
+            )}
+            {briefing.watches.map((w, i) => (
+              <div key={i} className="flex items-start gap-2 text-xs text-stone-300 mb-1">
+                <span className="text-amber-400 shrink-0 mt-px">!</span>
+                {w}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── KPI cards ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
@@ -400,23 +460,16 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Budget Variance"
-          value={`${highVarianceLines.length} line${highVarianceLines.length !== 1 ? 's' : ''} over threshold`}
-          sub={highVarianceLines.length > 0 ? 'review required' : 'all within range'}
-          trend={highVarianceLines.length > 0 ? 'down' : 'neutral'}
-          alert={highVarianceLines.length > 0}
+          value={portfolioBudgetVariance >= 0 ? `+${fmt(portfolioBudgetVariance)}` : `-${fmt(Math.abs(portfolioBudgetVariance))}`}
+          sub={portfolioBudgetVariance >= 0 ? 'under budget — on track' : 'over budget — review required'}
+          trend={portfolioBudgetVariance >= 0 ? 'up' : 'down'}
+          alert={portfolioBudgetVariance < 0}
         />
         <StatCard
-          label="Cash Runway"
-          value={minRunway !== null ? `${minRunway} wks` : '—'}
-          sub={minRunway !== null
-            ? minRunway <= 4
-              ? 'critical — review cash flow'
-              : minRunway <= 8
-                ? 'watch closely'
-                : 'healthy buffer'
-            : 'no burn data yet'}
-          trend={minRunway !== null ? (minRunway <= 4 ? 'down' : minRunway <= 8 ? 'neutral' : 'up') : 'neutral'}
-          alert={minRunway !== null && minRunway <= 4}
+          label="Tickets Sold"
+          value={totalTicketsSold.toLocaleString()}
+          sub="across all productions"
+          trend="up"
         />
         <StatCard
           label="Cash on Hand"

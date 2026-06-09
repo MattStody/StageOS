@@ -194,12 +194,11 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
   const weeksRemaining = prod.closingDate
     ? Math.max(0, Math.ceil((new Date(prod.closingDate + 'T12:00:00').getTime() - Date.now()) / (7 * 86_400_000)))
     : 0
-  const avgATPprod      = weeks.length > 0 ? weeks.reduce((s, w) => s + w.avgTicketPrice, 0) / weeks.length : 0
-  const avgPerfsPerWeek = weeks.length > 0 ? weeks.reduce((s, w) => s + w.performances, 0) / weeks.length : 8
-  const seatsHouse      = weeks.length > 0 ? Math.max(...weeks.map(w => w.totalSeats)) : 0
-  const grossNeeded     = Math.max(0, totalBudgeted - (cumGross || prod.currentGross))
-  const breakEvenCap    = weeksRemaining > 0 && avgATPprod > 0 && seatsHouse > 0
-    ? (grossNeeded / (weeksRemaining * avgPerfsPerWeek * seatsHouse * avgATPprod)) * 100
+  const avgATPprod  = weeks.length > 0 ? weeks.reduce((s, w) => s + w.avgTicketPrice, 0) / weeks.length : 0
+  const seatsHouse  = weeks.length > 0 ? Math.max(...weeks.map(w => w.totalSeats)) : 0
+  const grossNeeded = Math.max(0, totalBudgeted - (cumGross || prod.currentGross))
+  const breakEvenCap = weeksRemaining > 0 && avgATPprod > 0 && seatsHouse > 0
+    ? (grossNeeded / (weeksRemaining * seatsHouse * avgATPprod)) * 100
     : null
   const breakEvenLabel  = breakEvenCap === null ? '—'
     : breakEvenCap <= 0 ? '✓ In profit'
