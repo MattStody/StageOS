@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/Modal'
 import { fmt, formatDate, daysUntil, statusLabel } from '@/lib/utils'
 import {
   AlertTriangle, CheckCircle2, Clock, Sparkles, Plus, Pencil, Trash2,
-  FileText, ChevronLeft, Calendar, DollarSign, Shield, RefreshCw,
+  FileText, ChevronLeft, Calendar, DollarSign, Shield, RefreshCw, BookOpen,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { extractObligations, type SuggestedObligation } from '@/lib/obligationEngine'
@@ -311,6 +311,11 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                       {o.source === 'ai_extracted' && o.confidence && (
                         <span className="text-[10px] text-purple-600 flex items-center gap-1 mt-0.5">
                           <Sparkles size={9} /> AI · {o.confidence} confidence
+                        </span>
+                      )}
+                      {o.source === 'union_template' && (
+                        <span className="text-[10px] text-stone-400 flex items-center gap-1 mt-0.5">
+                          <BookOpen size={9} /> From union template
                         </span>
                       )}
                     </td>

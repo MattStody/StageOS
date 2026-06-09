@@ -1,15 +1,16 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from '@/lib/store'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { fmt, formatDate, daysUntil, statusLabel } from '@/lib/utils'
-import { Plus, Trash2, Pencil, FileText, AlertTriangle, File, Shield } from 'lucide-react'
+import { Plus, Trash2, Pencil, FileText, AlertTriangle, File, Shield, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import type { Contract, ContractType, ContractStatus } from '@/lib/types'
+import { UNION_AGREEMENT_TEMPLATES, getTemplatesForType, resolveObligationDate } from '@/lib/unionTemplates'
 
 const CONTRACT_TYPES: ContractType[] = ['cast', 'creative', 'vendor', 'venue', 'rights', 'investor', 'employment']
 const CONTRACT_STATUSES: ContractStatus[] = ['draft', 'sent', 'signed', 'expired', 'needs_review']
@@ -31,8 +32,26 @@ const typeLabel: Record<ContractType, string> = {
   rights: 'Rights/Licensing', investor: 'Investor/Co-Producer', employment: 'Employment',
 }
 
+const RISK_STYLES: Record<string, string> = {
+  critical: 'text-red-700 bg-red-50 border-red-200',
+  high:     'text-amber-700 bg-amber-50 border-amber-200',
+  medium:   'text-yellow-700 bg-yellow-50 border-yellow-200',
+  low:      'text-stone-500 bg-stone-50 border-stone-200',
+}
+
+function offsetLabel(anchor: string, days: number): string {
+  if (days === 0) {
+    const name = anchor === 'contract_start' ? 'work start' : anchor === 'opening_date' ? 'opening' : 'closing'
+    return `On ${name}`
+  }
+  const abs = Math.abs(days)
+  const dir = days < 0 ? 'before' : 'after'
+  const name = anchor === 'contract_start' ? 'work start' : anchor === 'opening_date' ? 'opening' : 'closing'
+  return `${abs}d ${dir} ${name}`
+}
+
 export default function ContractsPage() {
-  const { productions, contracts, obligations, addContract, updateContract, deleteContract } = useStore()
+  const { productions, contracts, obligations, addContract, updateContract, deleteContract, addObligation } = useStore()
   const { isAdmin } = useAuth()
 
   const [selectedProd, setSelectedProd] = useState('all')
@@ -41,6 +60,17 @@ export default function ContractsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Contract | null>(null)
   const [form, setForm] = useState<Omit<Contract, 'id'>>(blank(productions[0]?.id || ''))
+
+  // Union template state — only relevant for new contracts
+  const [selectedUnionId, setSelectedUnionId] = useState<string | null>(null)
+  const [enabledOblIds, setEnabledOblIds] = useState<Set<string>>(new Set())
+
+  // When union selection changes, reset enabled obligations to the template defaults
+  useEffect(() => {
+    if (!selectedUnionId) { setEnabledOblIds(new Set()); return }
+    const t = UNION_AGREEMENT_TEMPLATES.find(t => t.id === selectedUnionId)
+    if (t) setEnabledOblIds(new Set(t.obligations.filter(o => o.enabledByDefault).map(o => o.id)))
+  }, [selectedUnionId])
 
   const filtered = contracts.filter((c) => {
     if (selectedProd !== 'all' && c.productionId !== selectedProd) return false
@@ -52,20 +82,54 @@ export default function ContractsPage() {
   function openAdd() {
     setEditing(null)
     setForm(blank(selectedProd !== 'all' ? selectedProd : productions[0]?.id || ''))
+    setSelectedUnionId(null)
     setModalOpen(true)
   }
 
   function openEdit(c: Contract) {
     setEditing(c)
     setForm({ ...c })
+    setSelectedUnionId(null)
     setModalOpen(true)
   }
 
   function handleSave() {
+    const contractId = editing ? editing.id : `c-${Date.now()}`
     if (editing) {
-      updateContract({ ...form, id: editing.id })
+      updateContract({ ...form, id: contractId })
     } else {
-      addContract({ ...form, id: `c-${Date.now()}` })
+      addContract({ ...form, id: contractId })
+      // Auto-generate union obligations on new contracts
+      if (selectedUnionId && form.startDate) {
+        const template = UNION_AGREEMENT_TEMPLATES.find(t => t.id === selectedUnionId)
+        const production = productions.find(p => p.id === form.productionId)
+        if (template && production) {
+          for (const obl of template.obligations) {
+            if (!enabledOblIds.has(obl.id)) continue
+            const dueDate = resolveObligationDate(
+              obl.anchor, obl.offsetDays,
+              form.startDate!, production.openingDate, production.closingDate,
+            )
+            addObligation({
+              id: `obl-${contractId}-${obl.id}`,
+              productionId: form.productionId,
+              contractId,
+              partyName: form.partyName,
+              type: obl.type,
+              description: obl.description,
+              dueDate,
+              status: 'not_started',
+              owner: obl.defaultOwner,
+              risk: obl.risk,
+              source: 'union_template',
+              notes: obl.clauseRef,
+              syncedToCalendar: false,
+              syncedToCashFlow: false,
+              createdAt: new Date().toISOString(),
+            })
+          }
+        }
+      }
     }
     setModalOpen(false)
   }
@@ -218,17 +282,116 @@ export default function ContractsPage() {
               <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Contract Type</label>
               <select
                 value={form.contractType}
-                onChange={(e) => setForm({ ...form, contractType: e.target.value as ContractType })}
+                onChange={(e) => {
+                  setForm({ ...form, contractType: e.target.value as ContractType })
+                  setSelectedUnionId(null)
+                }}
                 className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
               >
                 {CONTRACT_TYPES.map((t) => <option key={t} value={t}>{typeLabel[t]}</option>)}
               </select>
             </div>
           </div>
+
           <div>
             <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Party Name</label>
             <input value={form.partyName} onChange={(e) => setForm({ ...form, partyName: e.target.value })} className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
           </div>
+
+          {/* Union agreement — new contracts only */}
+          {!editing && (() => {
+            const unionOptions = getTemplatesForType(form.contractType)
+            if (unionOptions.length === 0) return null
+            return (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">
+                    Union Agreement <span className="normal-case text-stone-400 font-normal">(optional)</span>
+                  </label>
+                  <select
+                    value={selectedUnionId ?? ''}
+                    onChange={(e) => setSelectedUnionId(e.target.value || null)}
+                    className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+                  >
+                    <option value="">— Non-union / skip —</option>
+                    {unionOptions.map(t => <option key={t.id} value={t.id}>{t.shortName} — {t.union}</option>)}
+                  </select>
+                </div>
+                {selectedUnionId && (
+                  <div>
+                    <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">
+                      Work Start Date <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={form.startDate ?? ''}
+                      onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
+                    />
+                    <p className="text-[10px] text-stone-400 mt-1">First rehearsal or engagement day — used to calculate obligation due dates</p>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* Obligation preview */}
+          {!editing && selectedUnionId && form.startDate && (() => {
+            const template = UNION_AGREEMENT_TEMPLATES.find(t => t.id === selectedUnionId)
+            const production = productions.find(p => p.id === form.productionId)
+            if (!template || !production) return null
+            const selectedCount = template.obligations.filter(o => enabledOblIds.has(o.id)).length
+            return (
+              <div className="rounded-lg border border-stone-200 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-2.5 bg-stone-50 border-b border-stone-100">
+                  <div className="flex items-center gap-2">
+                    <BookOpen size={13} className="text-stone-400" />
+                    <span className="text-xs font-semibold text-stone-700">{template.shortName} obligations</span>
+                  </div>
+                  <span className="text-xs text-stone-500">{selectedCount} of {template.obligations.length} selected</span>
+                </div>
+                <div className="divide-y divide-stone-50 max-h-64 overflow-y-auto">
+                  {template.obligations.map((obl) => {
+                    const enabled = enabledOblIds.has(obl.id)
+                    const resolved = resolveObligationDate(
+                      obl.anchor, obl.offsetDays,
+                      form.startDate!, production.openingDate, production.closingDate,
+                    )
+                    return (
+                      <label key={obl.id} className={`flex items-start gap-3 px-4 py-2.5 cursor-pointer hover:bg-stone-50 transition-colors ${!enabled ? 'opacity-50' : ''}`}>
+                        <input
+                          type="checkbox"
+                          checked={enabled}
+                          onChange={(e) => {
+                            setEnabledOblIds(prev => {
+                              const next = new Set(prev)
+                              e.target.checked ? next.add(obl.id) : next.delete(obl.id)
+                              return next
+                            })
+                          }}
+                          className="mt-0.5 shrink-0 accent-stone-900"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-stone-800 leading-snug">{obl.description}</p>
+                          <p className="text-[10px] text-stone-400 mt-0.5 font-mono">{obl.clauseRef}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${RISK_STYLES[obl.risk]}`}>
+                            {obl.risk}
+                          </span>
+                          <span className="text-[10px] text-stone-500 whitespace-nowrap">{formatDate(resolved)}</span>
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
+                <div className="px-4 py-2 bg-stone-50 border-t border-stone-100">
+                  <p className="text-[10px] text-stone-400">Obligations are created immediately on save. Edit dates, owners, or notes from the contract detail page.</p>
+                </div>
+              </div>
+            )
+          })()}
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Status</label>
@@ -237,7 +400,7 @@ export default function ContractsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Due Date</label>
+              <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Signature Due Date</label>
               <input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
             </div>
             <div>
@@ -245,6 +408,7 @@ export default function ContractsPage() {
               <input type="number" value={form.fee} onChange={(e) => setForm({ ...form, fee: Number(e.target.value) })} className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
             </div>
           </div>
+
           <div>
             <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Key Obligations</label>
             <input value={form.keyObligations} onChange={(e) => setForm({ ...form, keyObligations: e.target.value })} className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />

@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { ArrowRight, CheckCircle2, Upload } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Upload, BookOpen } from 'lucide-react'
 
 export default function SettingsPage() {
   return (
@@ -89,6 +89,25 @@ export default function SettingsPage() {
                 <div>
                   <p className="text-sm font-medium text-stone-800">CSV Import</p>
                   <p className="text-[11px] text-stone-400">Upload productions, revenue, budget, performances, and contracts</p>
+                </div>
+              </div>
+              <ArrowRight size={13} className="text-stone-300 group-hover:text-stone-500 transition-colors" />
+            </Link>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle>Union Agreements</CardTitle></CardHeader>
+          <CardBody>
+            <Link
+              href="/settings/unions"
+              className="flex items-center justify-between py-2.5 px-3 -mx-3 rounded-lg hover:bg-stone-50 transition-colors group"
+            >
+              <div className="flex items-center gap-2.5">
+                <BookOpen size={14} className="text-stone-400 shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-stone-800">Obligation Templates</p>
+                  <p className="text-[11px] text-stone-400">CAEA-ITA, AFM Local 149, SDC, IATSE 58 — auto-generate obligations on new contracts</p>
                 </div>
               </div>
               <ArrowRight size={13} className="text-stone-300 group-hover:text-stone-500 transition-colors" />

@@ -55,6 +55,7 @@ export interface Contract {
   contractType: ContractType
   status: ContractStatus
   dueDate: string
+  startDate?: string
   fee: number
   keyObligations: string
   notes: string
@@ -173,7 +174,8 @@ export type ObligationStatus =
 
 export type ObligationRisk = 'low' | 'medium' | 'high' | 'critical'
 
-export type ObligationSource = 'ai_extracted' | 'manual'
+export type ObligationSource = 'ai_extracted' | 'manual' | 'union_template'
+export type ObligationAnchor = 'contract_start' | 'opening_date' | 'closing_date'
 
 export interface ContractObligation {
   id: string
@@ -193,4 +195,33 @@ export interface ContractObligation {
   syncedToCashFlow: boolean
   confidence?: 'high' | 'medium' | 'low'
   createdAt: string
+}
+
+// ── Union Agreement Templates ────────────────────────────────────────────────
+
+export interface ObligationTemplate {
+  id: string
+  type: ObligationType
+  description: string
+  plainEnglish: string
+  anchor: ObligationAnchor
+  offsetDays: number
+  risk: ObligationRisk
+  defaultOwner: string
+  clauseRef: string
+  enabledByDefault: boolean
+}
+
+export interface UnionAgreementTemplate {
+  id: string
+  name: string
+  shortName: string
+  union: string
+  country: string
+  region?: string
+  applicableTypes: ContractType[]
+  description: string
+  effectiveDate: string
+  expiryDate?: string
+  obligations: ObligationTemplate[]
 }
