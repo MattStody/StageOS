@@ -7,13 +7,14 @@ export const PRODUCTIONS: Production[] = [
     subtitle: 'A New Commercial Holiday Musical',
     status: 'in_rehearsal',
     venue: 'Princess of Wales Theatre, Toronto',
+    onSaleDate: '2026-04-15',
     openingDate: '2026-09-15',
     closingDate: '2026-11-05',
     totalBudget: 2800000,
     totalActual: 2641000,
     cashOnHand: 412000,
     projectedGross: 3200000,
-    currentGross: 478000,
+    currentGross: 656000,
     color: '#6366f1',
   },
   {
@@ -22,6 +23,7 @@ export const PRODUCTIONS: Production[] = [
     subtitle: 'A New Opera — Nonprofit Production',
     status: 'pre_production',
     venue: 'Bluma Appel Theatre, Toronto',
+    onSaleDate: '2026-05-14',
     openingDate: '2026-10-14',
     closingDate: '2026-11-08',
     totalBudget: 980000,
@@ -37,6 +39,7 @@ export const PRODUCTIONS: Production[] = [
     subtitle: 'A National Touring Concert Production',
     status: 'in_rehearsal',
     venue: 'Multi-city Tour',
+    onSaleDate: '2026-04-05',
     openingDate: '2026-09-05',
     closingDate: '2027-04-20',
     totalBudget: 4100000,
@@ -141,12 +144,33 @@ export const BUDGET_LINES: BudgetLine[] = [
 // ─── REVENUE WEEKS ───────────────────────────────────────────────────────────
 
 export const REVENUE_WEEKS: RevenueWeek[] = [
-  // prod-1: A Winter's Dream — advance sales only (in rehearsal, opening Sep 15 2026)
+  // prod-1: A Winter's Dream — on-sale Apr 15 → opening Sep 15 → closing Nov 5 2026
+  // Advance: 8 biweekly + 3 pre-opening surge weeks
+  { id: 'r1-adv-1', productionId: 'prod-1', weekEnding: '2026-04-19', performances: 0, ticketsSold: 583,  grossRevenue: 70000,  avgTicketPrice: 120, capacityPct: 20, comps: 0,  discounts: 1500, netRevenue: 68500,  totalSeats: 2932 },
+  { id: 'r1-adv-2', productionId: 'prod-1', weekEnding: '2026-04-26', performances: 0, ticketsSold: 133,  grossRevenue: 16000,  avgTicketPrice: 120, capacityPct: 5,  comps: 0,  discounts: 500,  netRevenue: 15500,  totalSeats: 2932 },
+  { id: 'r1-adv-3', productionId: 'prod-1', weekEnding: '2026-05-10', performances: 0, ticketsSold: 100,  grossRevenue: 12000,  avgTicketPrice: 120, capacityPct: 3,  comps: 0,  discounts: 400,  netRevenue: 11600,  totalSeats: 2932 },
+  { id: 'r1-adv-4', productionId: 'prod-1', weekEnding: '2026-05-24', performances: 0, ticketsSold: 92,   grossRevenue: 11000,  avgTicketPrice: 120, capacityPct: 3,  comps: 0,  discounts: 300,  netRevenue: 10700,  totalSeats: 2932 },
+  { id: 'r1-adv-5', productionId: 'prod-1', weekEnding: '2026-06-07', performances: 0, ticketsSold: 88,   grossRevenue: 10500,  avgTicketPrice: 119, capacityPct: 3,  comps: 0,  discounts: 300,  netRevenue: 10200,  totalSeats: 2932 },
+  { id: 'r1-adv-6', productionId: 'prod-1', weekEnding: '2026-06-28', performances: 0, ticketsSold: 108,  grossRevenue: 13000,  avgTicketPrice: 120, capacityPct: 4,  comps: 0,  discounts: 400,  netRevenue: 12600,  totalSeats: 2932 },
+  { id: 'r1-adv-7', productionId: 'prod-1', weekEnding: '2026-07-19', performances: 0, ticketsSold: 146,  grossRevenue: 17500,  avgTicketPrice: 120, capacityPct: 5,  comps: 0,  discounts: 500,  netRevenue: 17000,  totalSeats: 2932 },
+  { id: 'r1-adv-8', productionId: 'prod-1', weekEnding: '2026-08-09', performances: 0, ticketsSold: 233,  grossRevenue: 28000,  avgTicketPrice: 120, capacityPct: 8,  comps: 0,  discounts: 800,  netRevenue: 27200,  totalSeats: 2932 },
   { id: 'r1-pre-1', productionId: 'prod-1', weekEnding: '2026-08-29', performances: 0, ticketsSold: 625,  grossRevenue: 75000,  avgTicketPrice: 120, capacityPct: 21, comps: 0,  discounts: 0,    netRevenue: 75000,  totalSeats: 2932 },
   { id: 'r1-pre-2', productionId: 'prod-1', weekEnding: '2026-09-05', performances: 0, ticketsSold: 1275, grossRevenue: 153000, avgTicketPrice: 120, capacityPct: 43, comps: 0,  discounts: 500,  netRevenue: 152500, totalSeats: 2932 },
   { id: 'r1-pre-3', productionId: 'prod-1', weekEnding: '2026-09-12', performances: 0, ticketsSold: 2083, grossRevenue: 250000, avgTicketPrice: 120, capacityPct: 71, comps: 15, discounts: 2000, netRevenue: 246500, totalSeats: 2932 },
+  // Performance weeks — 8 perfs/week (opening Sep 15, closing Nov 5)
+  { id: 'r1-1', productionId: 'prod-1', weekEnding: '2026-09-20', performances: 8, ticketsSold: 2199, grossRevenue: 280000, avgTicketPrice: 127, capacityPct: 75, comps: 100, discounts: 5000, netRevenue: 275000, totalSeats: 2932 },
+  { id: 'r1-2', productionId: 'prod-1', weekEnding: '2026-09-27', performances: 8, ticketsSold: 2346, grossRevenue: 298000, avgTicketPrice: 127, capacityPct: 80, comps: 75,  discounts: 4000, netRevenue: 294000, totalSeats: 2932 },
+  { id: 'r1-3', productionId: 'prod-1', weekEnding: '2026-10-04', performances: 8, ticketsSold: 2492, grossRevenue: 315000, avgTicketPrice: 126, capacityPct: 85, comps: 60,  discounts: 3500, netRevenue: 311500, totalSeats: 2932 },
+  { id: 'r1-4', productionId: 'prod-1', weekEnding: '2026-10-11', performances: 8, ticketsSold: 2639, grossRevenue: 332000, avgTicketPrice: 126, capacityPct: 90, comps: 50,  discounts: 3000, netRevenue: 329000, totalSeats: 2932 },
+  { id: 'r1-5', productionId: 'prod-1', weekEnding: '2026-10-18', performances: 8, ticketsSold: 2785, grossRevenue: 352000, avgTicketPrice: 126, capacityPct: 95, comps: 40,  discounts: 2500, netRevenue: 349500, totalSeats: 2932 },
+  { id: 'r1-6', productionId: 'prod-1', weekEnding: '2026-10-25', performances: 8, ticketsSold: 2844, grossRevenue: 355000, avgTicketPrice: 125, capacityPct: 97, comps: 30,  discounts: 2000, netRevenue: 353000, totalSeats: 2932 },
+  { id: 'r1-7', productionId: 'prod-1', weekEnding: '2026-11-01', performances: 8, ticketsSold: 2785, grossRevenue: 352000, avgTicketPrice: 126, capacityPct: 95, comps: 40,  discounts: 2500, netRevenue: 349500, totalSeats: 2932 },
+  { id: 'r1-8', productionId: 'prod-1', weekEnding: '2026-11-05', performances: 4, ticketsSold: 2785, grossRevenue: 350000, avgTicketPrice: 126, capacityPct: 95, comps: 20,  discounts: 1500, netRevenue: 348500, totalSeats: 2932 },
 
-  // prod-2: The Silence Between — advance sales Jul–Oct, then 4 performance weeks (Oct–Nov 2026)
+  // prod-2: The Silence Between — on-sale May 14 → opening Oct 14 2026
+  { id: 'r2-adv-early-1', productionId: 'prod-2', weekEnding: '2026-05-17', performances: 0, ticketsSold: 196, grossRevenue: 22000, avgTicketPrice: 112, capacityPct: 18, comps: 0, discounts: 500,  netRevenue: 21500, totalSeats: 1100 },
+  { id: 'r2-adv-early-2', productionId: 'prod-2', weekEnding: '2026-06-07', performances: 0, ticketsSold: 63,  grossRevenue: 7000,  avgTicketPrice: 112, capacityPct: 6,  comps: 0, discounts: 200,  netRevenue: 6800,  totalSeats: 1100 },
+  { id: 'r2-adv-early-3', productionId: 'prod-2', weekEnding: '2026-06-28', performances: 0, ticketsSold: 49,  grossRevenue: 5500,  avgTicketPrice: 112, capacityPct: 4,  comps: 0, discounts: 150,  netRevenue: 5350,  totalSeats: 1100 },
   { id: 'r2-adv-1', productionId: 'prod-2', weekEnding: '2026-07-04', performances: 0, ticketsSold: 168, grossRevenue: 18816,  avgTicketPrice: 112, capacityPct: 15, comps: 0,  discounts: 0,    netRevenue: 18816,  totalSeats: 1100 },
   { id: 'r2-adv-2', productionId: 'prod-2', weekEnding: '2026-07-11', performances: 0, ticketsSold: 285, grossRevenue: 31920,  avgTicketPrice: 112, capacityPct: 26, comps: 0,  discounts: 800,  netRevenue: 31120,  totalSeats: 1100 },
   { id: 'r2-adv-3', productionId: 'prod-2', weekEnding: '2026-07-18', performances: 0, ticketsSold: 418, grossRevenue: 50160,  avgTicketPrice: 120, capacityPct: 38, comps: 0,  discounts: 1200, netRevenue: 48960,  totalSeats: 1100 },
@@ -161,7 +185,12 @@ export const REVENUE_WEEKS: RevenueWeek[] = [
   { id: 'r2-3', productionId: 'prod-2', weekEnding: '2026-10-31', performances: 4,  ticketsSold: 900,  grossRevenue: 117000, avgTicketPrice: 130, capacityPct: 82, comps: 32, discounts: 3800, netRevenue: 113200, totalSeats: 1100 },
   { id: 'r2-4', productionId: 'prod-2', weekEnding: '2026-11-07', performances: 5,  ticketsSold: 990,  grossRevenue: 128700, avgTicketPrice: 130, capacityPct: 90, comps: 25, discounts: 3000, netRevenue: 125700, totalSeats: 1100 },
 
-  // prod-3: Echoes Tour — 3 advance weeks (MSG pre-sale) then 8 tour weeks (Sep–Nov 2026)
+  // prod-3: Echoes Tour — on-sale Apr 5 → opening Sep 5 2026
+  { id: 'r3-adv-early-1', productionId: 'prod-3', weekEnding: '2026-04-12', performances: 0, ticketsSold: 8409, grossRevenue: 185000, avgTicketPrice: 22, capacityPct: 27, comps: 0, discounts: 4000, netRevenue: 181000, totalSeats: 30800 },
+  { id: 'r3-adv-early-2', productionId: 'prod-3', weekEnding: '2026-05-03', performances: 0, ticketsSold: 4182, grossRevenue: 92000,  avgTicketPrice: 22, capacityPct: 14, comps: 0, discounts: 2000, netRevenue: 90000,  totalSeats: 30800 },
+  { id: 'r3-adv-early-3', productionId: 'prod-3', weekEnding: '2026-06-07', performances: 0, ticketsSold: 2955, grossRevenue: 65000,  avgTicketPrice: 22, capacityPct: 10, comps: 0, discounts: 1500, netRevenue: 63500,  totalSeats: 30800 },
+  { id: 'r3-adv-early-4', productionId: 'prod-3', weekEnding: '2026-07-05', performances: 0, ticketsSold: 3545, grossRevenue: 78000,  avgTicketPrice: 22, capacityPct: 12, comps: 0, discounts: 1800, netRevenue: 76200,  totalSeats: 30800 },
+  { id: 'r3-adv-early-5', productionId: 'prod-3', weekEnding: '2026-08-02', performances: 0, ticketsSold: 4773, grossRevenue: 105000, avgTicketPrice: 22, capacityPct: 15, comps: 0, discounts: 2500, netRevenue: 102500, totalSeats: 30800 },
   { id: 'r3-pre-1', productionId: 'prod-3', weekEnding: '2026-08-15', performances: 0, ticketsSold: 12000, grossRevenue: 264000, avgTicketPrice: 22, capacityPct: 39, comps: 0,   discounts: 5000,  netRevenue: 259000, totalSeats: 30800 },
   { id: 'r3-pre-2', productionId: 'prod-3', weekEnding: '2026-08-22', performances: 0, ticketsSold: 20000, grossRevenue: 440000, avgTicketPrice: 22, capacityPct: 65, comps: 0,   discounts: 8000,  netRevenue: 432000, totalSeats: 30800 },
   { id: 'r3-pre-3', productionId: 'prod-3', weekEnding: '2026-08-29', performances: 0, ticketsSold: 27500, grossRevenue: 605000, avgTicketPrice: 22, capacityPct: 89, comps: 0,   discounts: 12000, netRevenue: 593000, totalSeats: 30800 },

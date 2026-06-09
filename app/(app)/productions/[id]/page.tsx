@@ -178,9 +178,13 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
     }
   })
 
-  // Reference line markers: 6 weeks BEFORE opening, and opening night week
-  const openingTs = prod.openingDate ? new Date(prod.openingDate + 'T12:00:00').getTime() : null
+  // Reference line markers: on-sale, 6 weeks BEFORE opening, and opening night week
+  const onSaleTs      = prod.onSaleDate ? new Date(prod.onSaleDate + 'T12:00:00').getTime() : null
+  const openingTs     = prod.openingDate ? new Date(prod.openingDate + 'T12:00:00').getTime() : null
   const sixWeeksPreTs = openingTs ? openingTs - 42 * 86_400_000 : null
+  const onSaleWeekLabel = onSaleTs
+    ? chartData[weeks.findIndex((w) => new Date(w.weekEnding + 'T12:00:00').getTime() >= onSaleTs)]?.week ?? null
+    : null
   const openingWeekLabel = openingTs
     ? chartData[weeks.findIndex((w) => new Date(w.weekEnding + 'T12:00:00').getTime() >= openingTs)]?.week ?? null
     : null
@@ -309,6 +313,22 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                   <YAxis tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                   <Tooltip formatter={(v) => fmt(Number(v))} contentStyle={{ fontSize: 12, border: '1px solid #e7e5e4', borderRadius: 6 }} />
                   <Area type="monotone" dataKey="weekly" stroke={prod.color} strokeWidth={1.5} fill={`url(#grad-${id})`} name="Weekly Gross" />
+                  {onSaleWeekLabel && (
+                    <ReferenceLine
+                      x={onSaleWeekLabel}
+                      stroke="#d97706"
+                      strokeWidth={1.5}
+                      strokeDasharray="3 3"
+                    />
+                  )}
+                  {sixWeeksLabel && sixWeeksLabel !== openingWeekLabel && sixWeeksLabel !== onSaleWeekLabel && (
+                    <ReferenceLine
+                      x={sixWeeksLabel}
+                      stroke="#78716c"
+                      strokeWidth={1}
+                      strokeDasharray="4 3"
+                    />
+                  )}
                   {openingWeekLabel && (
                     <ReferenceLine
                       x={openingWeekLabel}
@@ -317,18 +337,27 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                       strokeDasharray="4 3"
                     />
                   )}
-                  {sixWeeksLabel && sixWeeksLabel !== openingWeekLabel && (
-                    <ReferenceLine
-                      x={sixWeeksLabel}
-                      stroke="#78716c"
-                      strokeWidth={1}
-                      strokeDasharray="4 3"
-                    />
-                  )}
                 </AreaChart>
               </ResponsiveContainer>
-              {(openingWeekLabel || (sixWeeksLabel && sixWeeksLabel !== openingWeekLabel)) && (
-                <div className="flex items-center gap-5 text-[11px] text-stone-500 mt-3 mb-1">
+              {(onSaleWeekLabel || openingWeekLabel || (sixWeeksLabel && sixWeeksLabel !== openingWeekLabel)) && (
+                <div className="flex items-center gap-5 text-[11px] text-stone-500 mt-3 mb-1 flex-wrap">
+                  {onSaleWeekLabel && (
+                    <span className="flex items-center gap-1.5">
+                      <svg width="22" height="10" className="shrink-0">
+                        <line x1="0" y1="5" x2="22" y2="5" stroke="#d97706" strokeWidth="1.5" strokeDasharray="3 3" />
+                      </svg>
+                      <span className="text-amber-700 font-semibold">On Sale</span>
+                      {prod.onSaleDate && <span className="text-stone-400">({formatDateShort(prod.onSaleDate)})</span>}
+                    </span>
+                  )}
+                  {sixWeeksLabel && sixWeeksLabel !== openingWeekLabel && sixWeeksLabel !== onSaleWeekLabel && (
+                    <span className="flex items-center gap-1.5">
+                      <svg width="22" height="10" className="shrink-0">
+                        <line x1="0" y1="5" x2="22" y2="5" stroke="#78716c" strokeWidth="1" strokeDasharray="4 3" />
+                      </svg>
+                      <span className="text-stone-500">6 Weeks Pre-Opening</span>
+                    </span>
+                  )}
                   {openingWeekLabel && (
                     <span className="flex items-center gap-1.5">
                       <svg width="22" height="10" className="shrink-0">
@@ -336,14 +365,6 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                       </svg>
                       <span style={{ color: prod.color }} className="font-semibold">Opening Night</span>
                       {prod.openingDate && <span className="text-stone-400">({formatDateShort(prod.openingDate)})</span>}
-                    </span>
-                  )}
-                  {sixWeeksLabel && sixWeeksLabel !== openingWeekLabel && (
-                    <span className="flex items-center gap-1.5">
-                      <svg width="22" height="10" className="shrink-0">
-                        <line x1="0" y1="5" x2="22" y2="5" stroke="#78716c" strokeWidth="1" strokeDasharray="4 3" />
-                      </svg>
-                      <span className="text-stone-500">6 Weeks Pre-Opening</span>
                     </span>
                   )}
                 </div>

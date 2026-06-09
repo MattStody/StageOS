@@ -10,6 +10,7 @@ export interface Production {
   subtitle: string
   status: ProductionStatus
   venue: string
+  onSaleDate?: string
   openingDate: string
   closingDate: string
   totalBudget: number
