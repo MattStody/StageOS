@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel, budgetUsedPct, variancePct } from '@/lib/utils'
-import { FileBarChart, Download, AlertTriangle, CheckCircle, Sparkles } from 'lucide-react'
+import { FileBarChart, Download, AlertTriangle, CheckCircle, Sparkles, Users } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ReportsPage() {
@@ -85,16 +85,27 @@ export default function ReportsPage() {
               <p className="text-sm text-stone-500 mb-6 max-w-sm mx-auto">
                 Select a report type and generate a producer-ready summary from your live production data.
               </p>
-              {/* AI Brief highlight */}
-              <Link href={`/reports/ai-brief?prod=${selectedProd}`} className="block mb-4 max-w-xs mx-auto">
-                <div className="flex items-start gap-3 p-4 rounded-lg border-2 border-stone-900 bg-stone-900 text-white cursor-pointer hover:bg-stone-800 transition-colors">
-                  <Sparkles size={18} className="text-stone-300 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold">AI Weekly Producer Brief</p>
-                    <p className="text-xs text-stone-400 mt-0.5">Executive-ready briefing generated from your live production data — with decisions, narrative, and email copy</p>
+              {/* Featured reports */}
+              <div className="space-y-2 mb-4 max-w-xs mx-auto">
+                <Link href="/reports/board" className="block">
+                  <div className="flex items-start gap-3 p-4 rounded-lg border-2 border-stone-900 bg-stone-900 text-white cursor-pointer hover:bg-stone-800 transition-colors">
+                    <Users size={18} className="text-stone-300 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold">Board Report</p>
+                      <p className="text-xs text-stone-400 mt-0.5">Portfolio-level governance report — scorecards, risk register, decisions required, forward calendar</p>
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+                <Link href={`/reports/ai-brief?prod=${selectedProd}`} className="block">
+                  <div className="flex items-start gap-3 p-4 rounded-lg border border-stone-200 bg-white cursor-pointer hover:bg-stone-50 transition-colors">
+                    <Sparkles size={18} className="text-stone-400 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-stone-800">AI Weekly Producer Brief</p>
+                      <p className="text-xs text-stone-500 mt-0.5">Executive-ready briefing from live production data — with decisions, narrative, and email copy</p>
+                    </div>
+                  </div>
+                </Link>
+              </div>
 
               <div className="grid grid-cols-1 gap-2 mb-6 text-left max-w-xs mx-auto">
                 {([
