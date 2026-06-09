@@ -6,7 +6,7 @@ export const PRODUCTIONS: Production[] = [
     name: "A Winter's Dream",
     subtitle: 'A New Commercial Holiday Musical',
     status: 'in_rehearsal',
-    venue: 'St. James Theatre, New York',
+    venue: 'Princess of Wales Theatre, Toronto',
     openingDate: '2026-09-15',
     closingDate: '2026-11-05',
     totalBudget: 2800000,
@@ -21,7 +21,7 @@ export const PRODUCTIONS: Production[] = [
     name: 'The Silence Between',
     subtitle: 'A New Opera — Nonprofit Production',
     status: 'pre_production',
-    venue: 'Brooklyn Academy of Music, Harvey Theater',
+    venue: 'Bluma Appel Theatre, Toronto',
     openingDate: '2026-10-14',
     closingDate: '2026-11-08',
     totalBudget: 980000,
@@ -76,13 +76,13 @@ export const BUDGET_LINES: BudgetLine[] = [
   // prod-1: A Winter's Dream
   { id: 'b1-1', productionId: 'prod-1', category: 'General Management', lineItem: 'GM Fee', budgeted: 85000, committed: 85000, actual: 85000, notes: 'Full season fee' },
   { id: 'b1-2', productionId: 'prod-1', category: 'General Management', lineItem: 'Office & Admin', budgeted: 12000, committed: 10000, actual: 9800, notes: '' },
-  { id: 'b1-3', productionId: 'prod-1', category: 'Cast', lineItem: 'Principal Salaries', budgeted: 320000, committed: 320000, actual: 310000, notes: 'AEA contracts' },
+  { id: 'b1-3', productionId: 'prod-1', category: 'Cast', lineItem: 'Principal Salaries', budgeted: 320000, committed: 320000, actual: 310000, notes: 'CAEA contracts' },
   { id: 'b1-4', productionId: 'prod-1', category: 'Cast', lineItem: 'Ensemble Salaries', budgeted: 180000, committed: 180000, actual: 175000, notes: '' },
   { id: 'b1-5', productionId: 'prod-1', category: 'Cast', lineItem: 'Understudies', budgeted: 45000, committed: 45000, actual: 43000, notes: '' },
   { id: 'b1-6', productionId: 'prod-1', category: 'Creative Team', lineItem: 'Director Fee', budgeted: 75000, committed: 75000, actual: 75000, notes: '' },
   { id: 'b1-7', productionId: 'prod-1', category: 'Creative Team', lineItem: 'Choreographer', budgeted: 55000, committed: 55000, actual: 55000, notes: '' },
   { id: 'b1-8', productionId: 'prod-1', category: 'Creative Team', lineItem: 'Music Director', budgeted: 40000, committed: 40000, actual: 38000, notes: '' },
-  { id: 'b1-9', productionId: 'prod-1', category: 'Musicians', lineItem: 'Orchestra (10 players)', budgeted: 95000, committed: 95000, actual: 92000, notes: 'AFM Local 802' },
+  { id: 'b1-9', productionId: 'prod-1', category: 'Musicians', lineItem: 'Orchestra (10 players)', budgeted: 95000, committed: 95000, actual: 92000, notes: 'AFM Local 149' },
   { id: 'b1-10', productionId: 'prod-1', category: 'Set', lineItem: 'Scenic Design', budgeted: 180000, committed: 195000, actual: 198000, notes: 'Over budget — snow effect added' },
   { id: 'b1-11', productionId: 'prod-1', category: 'Costumes', lineItem: 'Costume Build & Rental', budgeted: 120000, committed: 118000, actual: 115000, notes: '' },
   { id: 'b1-12', productionId: 'prod-1', category: 'Lighting', lineItem: 'Lighting Design & Equipment', budgeted: 95000, committed: 97000, actual: 95000, notes: '' },
@@ -101,7 +101,7 @@ export const BUDGET_LINES: BudgetLine[] = [
 
   // prod-2: The Silence Between
   { id: 'b2-1', productionId: 'prod-2', category: 'General Management', lineItem: 'GM Fee', budgeted: 42000, committed: 42000, actual: 28000, notes: '' },
-  { id: 'b2-2', productionId: 'prod-2', category: 'Cast', lineItem: 'Principal Singers', budgeted: 145000, committed: 145000, actual: 72500, notes: 'AGMA contracts' },
+  { id: 'b2-2', productionId: 'prod-2', category: 'Cast', lineItem: 'Principal Singers', budgeted: 145000, committed: 145000, actual: 72500, notes: 'CAEA contracts' },
   { id: 'b2-3', productionId: 'prod-2', category: 'Creative Team', lineItem: 'Stage Director', budgeted: 38000, committed: 38000, actual: 19000, notes: '' },
   { id: 'b2-4', productionId: 'prod-2', category: 'Creative Team', lineItem: 'Conductor', budgeted: 32000, committed: 32000, actual: 16000, notes: '' },
   { id: 'b2-5', productionId: 'prod-2', category: 'Musicians', lineItem: 'Chamber Orchestra', budgeted: 120000, committed: 120000, actual: 60000, notes: 'AFM' },
@@ -109,7 +109,7 @@ export const BUDGET_LINES: BudgetLine[] = [
   { id: 'b2-7', productionId: 'prod-2', category: 'Costumes', lineItem: 'Costume Design', budgeted: 55000, committed: 55000, actual: 25000, notes: '' },
   { id: 'b2-8', productionId: 'prod-2', category: 'Lighting', lineItem: 'Lighting', budgeted: 48000, committed: 48000, actual: 22000, notes: '' },
   { id: 'b2-9', productionId: 'prod-2', category: 'Sound', lineItem: 'Sound Design', budgeted: 35000, committed: 35000, actual: 18000, notes: '' },
-  { id: 'b2-10', productionId: 'prod-2', category: 'Venue Rental', lineItem: 'BAM Harvey Rental', budgeted: 95000, committed: 95000, actual: 0, notes: 'Settlement post-run' },
+  { id: 'b2-10', productionId: 'prod-2', category: 'Venue Rental', lineItem: 'Bluma Appel Rental', budgeted: 95000, committed: 95000, actual: 0, notes: 'Settlement post-run' },
   { id: 'b2-11', productionId: 'prod-2', category: 'Marketing & Advertising', lineItem: 'Marketing', budgeted: 75000, committed: 62000, actual: 35000, notes: '' },
   { id: 'b2-12', productionId: 'prod-2', category: 'Royalties', lineItem: 'Composer/Librettist', budgeted: 45000, committed: 45000, actual: 0, notes: 'Post-run' },
   { id: 'b2-13', productionId: 'prod-2', category: 'Legal', lineItem: 'Legal', budgeted: 18000, committed: 18000, actual: 12000, notes: '' },
@@ -179,26 +179,26 @@ export const REVENUE_WEEKS: RevenueWeek[] = [
 
 export const CONTRACTS: Contract[] = [
   // prod-1
-  { id: 'c1-1', productionId: 'prod-1', partyName: 'Jordan A. Mercer', contractType: 'cast', status: 'signed', dueDate: '2025-09-01', fee: 28000, keyObligations: 'Lead role, exclusive through closing', notes: 'AEA principal', hasFile: true },
-  { id: 'c1-2', productionId: 'prod-1', partyName: 'Sarah Chen', contractType: 'cast', status: 'signed', dueDate: '2025-09-01', fee: 22000, keyObligations: 'Supporting lead', notes: 'AEA', hasFile: true },
-  { id: 'c1-3', productionId: 'prod-1', partyName: 'Ensemble (12)', contractType: 'cast', status: 'signed', dueDate: '2025-09-01', fee: 148000, keyObligations: 'AEA minimum + 15%', notes: '', hasFile: true },
+  { id: 'c1-1', productionId: 'prod-1', partyName: 'Jordan A. Mercer', contractType: 'cast', status: 'signed', dueDate: '2025-09-01', fee: 28000, keyObligations: 'Lead role, exclusive through closing', notes: 'CAEA principal', hasFile: true },
+  { id: 'c1-2', productionId: 'prod-1', partyName: 'Sarah Chen', contractType: 'cast', status: 'signed', dueDate: '2025-09-01', fee: 22000, keyObligations: 'Supporting lead', notes: 'CAEA', hasFile: true },
+  { id: 'c1-3', productionId: 'prod-1', partyName: 'Ensemble (12)', contractType: 'cast', status: 'signed', dueDate: '2025-09-01', fee: 148000, keyObligations: 'CAEA minimum + 15%', notes: '', hasFile: true },
   { id: 'c1-4', productionId: 'prod-1', partyName: 'Daniel Rivera (Director)', contractType: 'creative', status: 'signed', dueDate: '2025-07-01', fee: 75000, keyObligations: 'Approval rights over design elements', notes: '', hasFile: true },
   { id: 'c1-5', productionId: 'prod-1', partyName: 'Premiere Rights LLC', contractType: 'rights', status: 'signed', dueDate: '2025-06-01', fee: 45000, keyObligations: 'NY rights only, 3% gross royalty', notes: 'Option exercised', hasFile: true },
-  { id: 'c1-6', productionId: 'prod-1', partyName: 'St. James Theatre', contractType: 'venue', status: 'signed', dueDate: '2025-08-01', fee: 320000, keyObligations: 'Exclusive booking Nov 15 – Jan 5', notes: '', hasFile: true },
+  { id: 'c1-6', productionId: 'prod-1', partyName: 'Princess of Wales Theatre', contractType: 'venue', status: 'signed', dueDate: '2025-08-01', fee: 320000, keyObligations: 'Exclusive booking Sep 15 – Nov 5', notes: '', hasFile: true },
   { id: 'c1-7', productionId: 'prod-1', partyName: 'Pinnacle Scenic Studios', contractType: 'vendor', status: 'signed', dueDate: '2025-09-15', fee: 198000, keyObligations: 'Delivery by Oct 30 load-in', notes: 'Over budget — approved', hasFile: true },
   { id: 'c1-8', productionId: 'prod-1', partyName: 'Marcus Lee (Choreographer)', contractType: 'creative', status: 'needs_review', dueDate: '2026-01-10', fee: 55000, keyObligations: 'Closing fee + transfer clause', notes: 'Renegotiation for potential transfer', hasFile: false },
   { id: 'c1-9', productionId: 'prod-1', partyName: 'Horizon Investors LLC', contractType: 'investor', status: 'signed', dueDate: '2025-05-15', fee: 500000, keyObligations: 'Capitalization agreement, recoupment at 110%', notes: '', hasFile: true },
   { id: 'c1-10', productionId: 'prod-1', partyName: 'Lightworks (Lighting)', contractType: 'vendor', status: 'signed', dueDate: '2025-10-01', fee: 95000, keyObligations: 'Equipment rental through closing', notes: '', hasFile: true },
 
   // prod-2
-  { id: 'c2-1', productionId: 'prod-2', partyName: 'Elena Vasquez (Soprano)', contractType: 'cast', status: 'signed', dueDate: '2025-10-15', fee: 48000, keyObligations: 'Title role, AGMA', notes: '', hasFile: true },
-  { id: 'c2-2', productionId: 'prod-2', partyName: 'Thomas Kline (Tenor)', contractType: 'cast', status: 'sent', dueDate: '2025-11-01', fee: 38000, keyObligations: 'Male lead, AGMA', notes: 'Awaiting counter-signature', hasFile: false },
+  { id: 'c2-1', productionId: 'prod-2', partyName: 'Elena Vasquez (Soprano)', contractType: 'cast', status: 'signed', dueDate: '2025-10-15', fee: 48000, keyObligations: 'Title role, CAEA', notes: '', hasFile: true },
+  { id: 'c2-2', productionId: 'prod-2', partyName: 'Thomas Kline (Tenor)', contractType: 'cast', status: 'sent', dueDate: '2025-11-01', fee: 38000, keyObligations: 'Male lead, CAEA', notes: 'Awaiting counter-signature', hasFile: false },
   { id: 'c2-3', productionId: 'prod-2', partyName: 'Amara Osei (Composer)', contractType: 'rights', status: 'signed', dueDate: '2025-08-01', fee: 35000, keyObligations: 'Commission fee + 4% gross royalty', notes: 'World premiere rights', hasFile: true },
-  { id: 'c2-4', productionId: 'prod-2', partyName: 'BAM Harvey Theater', contractType: 'venue', status: 'signed', dueDate: '2025-09-01', fee: 95000, keyObligations: 'Feb 14 – Mar 8, 2026', notes: '', hasFile: true },
+  { id: 'c2-4', productionId: 'prod-2', partyName: 'Bluma Appel Theatre', contractType: 'venue', status: 'signed', dueDate: '2025-09-01', fee: 95000, keyObligations: 'Oct 14 – Nov 8, 2026', notes: '', hasFile: true },
   { id: 'c2-5', productionId: 'prod-2', partyName: 'Dr. Fiona Walsh (Director)', contractType: 'creative', status: 'signed', dueDate: '2025-09-01', fee: 38000, keyObligations: 'Approval rights, revival rights held 5 yrs', notes: '', hasFile: true },
-  { id: 'c2-6', productionId: 'prod-2', partyName: 'NEA Grant Agreement', contractType: 'investor', status: 'signed', dueDate: '2025-07-01', fee: 75000, keyObligations: 'Reporting requirements, non-commercial clause', notes: 'Final report due Mar 30', hasFile: true },
+  { id: 'c2-6', productionId: 'prod-2', partyName: 'Canada Council for the Arts Grant', contractType: 'investor', status: 'signed', dueDate: '2025-07-01', fee: 75000, keyObligations: 'Reporting requirements, non-commercial clause', notes: 'Final report due Mar 30', hasFile: true },
   { id: 'c2-7', productionId: 'prod-2', partyName: 'Apex Sound Design', contractType: 'vendor', status: 'draft', dueDate: '2025-12-01', fee: 35000, keyObligations: 'Design and rental through closing', notes: 'In negotiation', hasFile: false },
-  { id: 'c2-8', productionId: 'prod-2', partyName: 'Chamber Orchestra (8)', contractType: 'employment', status: 'sent', dueDate: '2025-12-15', fee: 95000, keyObligations: 'AFM touring rates, 3-week run', notes: '', hasFile: false },
+  { id: 'c2-8', productionId: 'prod-2', partyName: 'Chamber Orchestra (8)', contractType: 'employment', status: 'sent', dueDate: '2025-12-15', fee: 95000, keyObligations: 'AFM Local 149 rates, 3-week run', notes: '', hasFile: false },
 
   // prod-3
   { id: 'c3-1', productionId: 'prod-3', partyName: 'Kai Monroe (Headliner)', contractType: 'cast', status: 'signed', dueDate: '2025-06-01', fee: 850000, keyObligations: 'Tour guarantee, approval of support artists', notes: 'Exclusive worldwide through Apr 20', hasFile: true },
@@ -247,23 +247,23 @@ export const CASH_FLOW_ROWS: CashFlowRow[] = [
 
 export const DEADLINES: Deadline[] = [
   // prod-1
-  { id: 'd1-1', productionId: 'prod-1', title: 'Final settlement with St. James', date: '2026-01-20', type: 'settlement', status: 'upcoming', notes: 'Coordinate with venue manager', assignedTo: 'Finance' },
+  { id: 'd1-1', productionId: 'prod-1', title: 'Final settlement with Princess of Wales Theatre', date: '2026-01-20', type: 'settlement', status: 'upcoming', notes: 'Coordinate with venue manager', assignedTo: 'Finance' },
   { id: 'd1-2', productionId: 'prod-1', title: 'Royalty report — Q4', date: '2026-01-15', type: 'royalty', status: 'upcoming', notes: 'Submit to rights holders', assignedTo: 'GM' },
   { id: 'd1-3', productionId: 'prod-1', title: 'Closing night', date: '2026-01-05', type: 'closing', status: 'completed', notes: '', assignedTo: 'Production' },
   { id: 'd1-4', productionId: 'prod-1', title: 'Investor closing notice', date: '2026-01-12', type: 'general', status: 'upcoming', notes: 'Notify Horizon Investors', assignedTo: 'GM' },
   { id: 'd1-5', productionId: 'prod-1', title: 'Choreographer renegotiation deadline', date: '2026-01-10', type: 'contract', status: 'at_risk', notes: 'Transfer clause must be resolved', assignedTo: 'Legal' },
-  { id: 'd1-6', productionId: 'prod-1', title: 'Final payroll run', date: '2026-01-08', type: 'payroll', status: 'upcoming', notes: 'AEA closeout payroll', assignedTo: 'Finance' },
+  { id: 'd1-6', productionId: 'prod-1', title: 'Final payroll run', date: '2026-01-08', type: 'payroll', status: 'upcoming', notes: 'CAEA closeout payroll', assignedTo: 'Finance' },
 
   // prod-2
   { id: 'd2-1', productionId: 'prod-2', title: 'Tenor contract signed', date: '2025-11-30', type: 'contract', status: 'overdue', notes: 'Thomas Kline — sent Oct 15, no response', assignedTo: 'Casting' },
   { id: 'd2-2', productionId: 'prod-2', title: 'Orchestrations delivered', date: '2025-12-15', type: 'general', status: 'upcoming', notes: 'From composer Amara Osei', assignedTo: 'Music' },
-  { id: 'd2-3', productionId: 'prod-2', title: 'Rehearsals begin', date: '2026-01-12', type: 'rehearsal', status: 'upcoming', notes: 'BAM studio space confirmed', assignedTo: 'Stage Management' },
+  { id: 'd2-3', productionId: 'prod-2', title: 'Rehearsals begin', date: '2026-01-12', type: 'rehearsal', status: 'upcoming', notes: 'Bluma Appel Theatre studio space confirmed', assignedTo: 'Stage Management' },
   { id: 'd2-4', productionId: 'prod-2', title: 'Tech rehearsal start', date: '2026-02-07', type: 'tech', status: 'upcoming', notes: '', assignedTo: 'Stage Management' },
   { id: 'd2-5', productionId: 'prod-2', title: 'First preview', date: '2026-02-14', type: 'preview', status: 'upcoming', notes: '', assignedTo: 'Production' },
   { id: 'd2-6', productionId: 'prod-2', title: 'Opening night', date: '2026-02-21', type: 'opening', status: 'upcoming', notes: 'Press night same evening', assignedTo: 'Production' },
   { id: 'd2-7', productionId: 'prod-2', title: 'Sound vendor contract finalized', date: '2025-12-01', type: 'contract', status: 'overdue', notes: 'Apex Sound still in draft', assignedTo: 'Production' },
   { id: 'd2-8', productionId: 'prod-2', title: 'Marketing launch — digital', date: '2025-12-20', type: 'marketing', status: 'upcoming', notes: 'Social + email push', assignedTo: 'Marketing' },
-  { id: 'd2-9', productionId: 'prod-2', title: 'NEA grant final report', date: '2026-03-30', type: 'royalty', status: 'upcoming', notes: 'Required per grant agreement', assignedTo: 'GM' },
+  { id: 'd2-9', productionId: 'prod-2', title: 'Canada Council grant final report', date: '2026-03-30', type: 'royalty', status: 'upcoming', notes: 'Required per grant agreement', assignedTo: 'GM' },
 
   // prod-3
   { id: 'd3-1', productionId: 'prod-3', title: 'Remaining venue contracts (6 cities)', date: '2025-11-30', type: 'contract', status: 'overdue', notes: 'Escalate immediately', assignedTo: 'GM' },
@@ -278,15 +278,15 @@ export const DEADLINES: Deadline[] = [
 
 export const DOCUMENTS: Document[] = [
   { id: 'doc1-1', productionId: 'prod-1', name: "A Winter's Dream — Production Budget v3", category: 'budgets', uploadedAt: '2025-10-14', size: '842 KB', type: 'xlsx' },
-  { id: 'doc1-2', productionId: 'prod-1', name: 'St. James Theatre License Agreement', category: 'contracts', uploadedAt: '2025-08-22', size: '1.2 MB', type: 'pdf' },
+  { id: 'doc1-2', productionId: 'prod-1', name: 'Princess of Wales Theatre License Agreement', category: 'contracts', uploadedAt: '2025-08-22', size: '1.2 MB', type: 'pdf' },
   { id: 'doc1-3', productionId: 'prod-1', name: 'Capitalization Agreement — Horizon Investors', category: 'contracts', uploadedAt: '2025-05-20', size: '2.4 MB', type: 'pdf' },
   { id: 'doc1-4', productionId: 'prod-1', name: 'Production Insurance Certificate', category: 'insurance', uploadedAt: '2025-09-30', size: '380 KB', type: 'pdf' },
   { id: 'doc1-5', productionId: 'prod-1', name: 'Holiday Campaign Brief', category: 'marketing', uploadedAt: '2025-10-01', size: '5.1 MB', type: 'pdf' },
   { id: 'doc1-6', productionId: 'prod-1', name: 'Weekly Report — Dec 13 2025', category: 'reports', uploadedAt: '2025-12-13', size: '210 KB', type: 'pdf' },
 
   { id: 'doc2-1', productionId: 'prod-2', name: 'The Silence Between — Production Budget', category: 'budgets', uploadedAt: '2025-09-10', size: '710 KB', type: 'xlsx' },
-  { id: 'doc2-2', productionId: 'prod-2', name: 'BAM Harvey Theater Agreement', category: 'contracts', uploadedAt: '2025-09-05', size: '980 KB', type: 'pdf' },
-  { id: 'doc2-3', productionId: 'prod-2', name: 'NEA Grant Award Letter', category: 'legal', uploadedAt: '2025-07-08', size: '220 KB', type: 'pdf' },
+  { id: 'doc2-2', productionId: 'prod-2', name: 'Bluma Appel Theatre Agreement', category: 'contracts', uploadedAt: '2025-09-05', size: '980 KB', type: 'pdf' },
+  { id: 'doc2-3', productionId: 'prod-2', name: 'Canada Council for the Arts Grant Award Letter', category: 'legal', uploadedAt: '2025-07-08', size: '220 KB', type: 'pdf' },
   { id: 'doc2-4', productionId: 'prod-2', name: 'Commission Agreement — Amara Osei', category: 'contracts', uploadedAt: '2025-08-02', size: '1.1 MB', type: 'pdf' },
 
   { id: 'doc3-1', productionId: 'prod-3', name: 'Echoes Tour — Master Budget', category: 'budgets', uploadedAt: '2025-07-01', size: '1.8 MB', type: 'xlsx' },
@@ -305,7 +305,7 @@ export const DOCUMENTS: Document[] = [
   // prod-2 reports
   { id: 'doc2-5', productionId: 'prod-2', name: "Pre-Production Budget Memo — November 2025", category: 'reports', uploadedAt: '2025-11-15', size: '145 KB', type: 'pdf' },
   { id: 'doc2-6', productionId: 'prod-2', name: "Advance Sales Summary — January 2026", category: 'reports', uploadedAt: '2026-01-31', size: '180 KB', type: 'pdf' },
-  { id: 'doc2-7', productionId: 'prod-2', name: "NEA Grant Progress Report — Q4 2025", category: 'reports', uploadedAt: '2025-12-20', size: '320 KB', type: 'pdf' },
+  { id: 'doc2-7', productionId: 'prod-2', name: "Canada Council Grant Progress Report — Q4 2025", category: 'reports', uploadedAt: '2025-12-20', size: '320 KB', type: 'pdf' },
 
   // prod-3 reports
   { id: 'doc3-6', productionId: 'prod-3', name: "Tour Revenue Report — September 2025", category: 'reports', uploadedAt: '2025-09-30', size: '245 KB', type: 'pdf' },
@@ -320,18 +320,18 @@ export const MARKETING_BUDGET_LINES: MarketingBudgetLine[] = [
   // prod-1: A Winter's Dream
   { id: 'mb1-1', productionId: 'prod-1', channel: 'digital_social', lineItem: 'Facebook & Instagram Ads', budgeted: 45000, actual: 48200, notes: 'Holiday push exceeded budget' },
   { id: 'mb1-2', productionId: 'prod-1', channel: 'paid_search', lineItem: 'Google Search Ads', budgeted: 22000, actual: 21500, notes: '' },
-  { id: 'mb1-3', productionId: 'prod-1', channel: 'print', lineItem: 'NY Times & Playbill Ads', budgeted: 38000, actual: 37200, notes: '' },
-  { id: 'mb1-4', productionId: 'prod-1', channel: 'ooh', lineItem: 'NYC Subway & Bus Shelter', budgeted: 55000, actual: 57800, notes: '2-week holiday extension added' },
+  { id: 'mb1-3', productionId: 'prod-1', channel: 'print', lineItem: 'Globe and Mail & Playbill Canada Ads', budgeted: 38000, actual: 37200, notes: '' },
+  { id: 'mb1-4', productionId: 'prod-1', channel: 'ooh', lineItem: 'TTC Subway & Bus Shelter', budgeted: 55000, actual: 57800, notes: '2-week holiday extension added' },
   { id: 'mb1-5', productionId: 'prod-1', channel: 'email', lineItem: 'Email Campaigns', budgeted: 4000, actual: 3600, notes: '' },
   { id: 'mb1-6', productionId: 'prod-1', channel: 'pr_press', lineItem: 'Press Representative', budgeted: 22000, actual: 22000, notes: '' },
   { id: 'mb1-7', productionId: 'prod-1', channel: 'photography_video', lineItem: 'Production Photography & Trailer', budgeted: 18000, actual: 17400, notes: '' },
-  { id: 'mb1-8', productionId: 'prod-1', channel: 'agency_fees', lineItem: 'Agency Retainer (SpotCo)', budgeted: 16000, actual: 16000, notes: '' },
+  { id: 'mb1-8', productionId: 'prod-1', channel: 'agency_fees', lineItem: 'Agency Retainer (Theatrical)', budgeted: 16000, actual: 16000, notes: '' },
   { id: 'mb1-9', productionId: 'prod-1', channel: 'other', lineItem: 'Group Sales Incentives', budgeted: 8000, actual: 6300, notes: '' },
 
   // prod-2: The Silence Between
   { id: 'mb2-1', productionId: 'prod-2', channel: 'digital_social', lineItem: 'Social Media Ads', budgeted: 12000, actual: 8500, notes: 'Campaign starts Dec' },
-  { id: 'mb2-2', productionId: 'prod-2', channel: 'print', lineItem: 'New Yorker & WQXR Print', budgeted: 14000, actual: 10200, notes: '' },
-  { id: 'mb2-3', productionId: 'prod-2', channel: 'email', lineItem: 'BAM Subscriber Emails', budgeted: 2500, actual: 2500, notes: 'Via BAM partnership' },
+  { id: 'mb2-2', productionId: 'prod-2', channel: 'print', lineItem: 'Globe and Mail & CBC Music Print', budgeted: 14000, actual: 10200, notes: '' },
+  { id: 'mb2-3', productionId: 'prod-2', channel: 'email', lineItem: 'Bluma Appel Subscriber Emails', budgeted: 2500, actual: 2500, notes: 'Via Bluma Appel partnership' },
   { id: 'mb2-4', productionId: 'prod-2', channel: 'pr_press', lineItem: 'Press Representative', budgeted: 15000, actual: 10500, notes: 'Through opening night' },
   { id: 'mb2-5', productionId: 'prod-2', channel: 'photography_video', lineItem: 'Rehearsal Photography', budgeted: 6000, actual: 3800, notes: '' },
   { id: 'mb2-6', productionId: 'prod-2', channel: 'agency_fees', lineItem: 'Design & Print Production', budgeted: 9500, actual: 7200, notes: '' },
@@ -355,18 +355,18 @@ export const MARKETING_CAMPAIGNS: MarketingCampaign[] = [
   // prod-1: A Winter's Dream
   { id: 'mc1-1', productionId: 'prod-1', title: 'On-Sale Announcement', channel: 'digital_social', startDate: '2025-09-15', endDate: '2025-09-22', status: 'completed', budget: 8000, notes: 'Initial on-sale push' },
   { id: 'mc1-2', productionId: 'prod-1', title: 'Early Bird Campaign', channel: 'email', startDate: '2025-09-23', endDate: '2025-10-15', status: 'completed', budget: 1200, notes: 'Subscriber discount offer' },
-  { id: 'mc1-3', productionId: 'prod-1', title: 'NYC Subway Takeover', channel: 'ooh', startDate: '2025-10-27', endDate: '2025-12-27', status: 'completed', budget: 57800, notes: '8-week run, full car cards + station domination' },
+  { id: 'mc1-3', productionId: 'prod-1', title: 'TTC Subway Takeover', channel: 'ooh', startDate: '2025-10-27', endDate: '2025-12-27', status: 'completed', budget: 57800, notes: '8-week run, full car cards + station domination' },
   { id: 'mc1-4', productionId: 'prod-1', title: 'Holiday Push — Digital', channel: 'digital_social', startDate: '2025-11-24', endDate: '2025-12-24', status: 'completed', budget: 24000, notes: 'Thanksgiving–Christmas sprint' },
-  { id: 'mc1-5', productionId: 'prod-1', title: 'NY Times Full Page', channel: 'print', startDate: '2025-12-07', endDate: '2025-12-07', status: 'completed', budget: 18000, notes: 'Sunday Arts section' },
+  { id: 'mc1-5', productionId: 'prod-1', title: 'Globe and Mail Full Page', channel: 'print', startDate: '2025-12-07', endDate: '2025-12-07', status: 'completed', budget: 18000, notes: 'Saturday Arts section' },
   { id: 'mc1-6', productionId: 'prod-1', title: 'Closing Week Urgency', channel: 'digital_social', startDate: '2025-12-29', endDate: '2026-01-04', status: 'completed', budget: 5000, notes: 'Last chance messaging' },
 
   // prod-2: The Silence Between
   { id: 'mc2-1', productionId: 'prod-2', title: 'World Premiere Announcement', channel: 'pr_press', startDate: '2025-10-01', endDate: '2025-10-15', status: 'completed', budget: 3000, notes: 'Press release + media outreach' },
-  { id: 'mc2-2', productionId: 'prod-2', title: 'BAM Season Brochure Feature', channel: 'print', startDate: '2025-10-15', endDate: '2025-10-15', status: 'completed', budget: 0, notes: 'Included in BAM season materials' },
-  { id: 'mc2-3', productionId: 'prod-2', title: 'Composer Profile — New Yorker', channel: 'pr_press', startDate: '2025-12-01', endDate: '2025-12-31', status: 'active', budget: 0, notes: 'Pitching feature on Amara Osei' },
+  { id: 'mc2-2', productionId: 'prod-2', title: 'Bluma Appel Season Brochure Feature', channel: 'print', startDate: '2025-10-15', endDate: '2025-10-15', status: 'completed', budget: 0, notes: 'Included in Bluma Appel season materials' },
+  { id: 'mc2-3', productionId: 'prod-2', title: 'Composer Profile — Globe and Mail', channel: 'pr_press', startDate: '2025-12-01', endDate: '2025-12-31', status: 'active', budget: 0, notes: 'Pitching feature on Amara Osei' },
   { id: 'mc2-4', productionId: 'prod-2', title: 'Digital Launch Campaign', channel: 'digital_social', startDate: '2025-12-20', endDate: '2026-01-20', status: 'planned', budget: 12000, notes: '4-week pre-opening push' },
   { id: 'mc2-5', productionId: 'prod-2', title: 'Opening Night Press Campaign', channel: 'pr_press', startDate: '2026-02-14', endDate: '2026-02-25', status: 'planned', budget: 4000, notes: 'Reviews + feature placement' },
-  { id: 'mc2-6', productionId: 'prod-2', title: 'WQXR Radio Spots', channel: 'radio', startDate: '2026-01-15', endDate: '2026-02-21', status: 'planned', budget: 8500, notes: '5-week drive-time schedule' },
+  { id: 'mc2-6', productionId: 'prod-2', title: 'CBC Music Radio Spots', channel: 'radio', startDate: '2026-01-15', endDate: '2026-02-21', status: 'planned', budget: 8500, notes: '5-week drive-time schedule' },
 
   // prod-3: Echoes Tour
   { id: 'mc3-1', productionId: 'prod-3', title: 'Tour Announcement', channel: 'digital_social', startDate: '2025-06-01', endDate: '2025-06-14', status: 'completed', budget: 12000, notes: 'National tour announcement across all channels' },
@@ -381,10 +381,10 @@ export const MARKETING_CAMPAIGNS: MarketingCampaign[] = [
 // ─── CUSTOM EVENTS ────────────────────────────────────────────────────────────
 
 export const CUSTOM_EVENTS: CustomEvent[] = [
-  { id: 'ce1-1', productionId: 'prod-1', title: 'Investor Cocktail Reception', date: '2025-11-20', color: '#6366f1', category: 'Investor Relations', notes: 'St. James green room — 40 guests' },
+  { id: 'ce1-1', productionId: 'prod-1', title: 'Investor Cocktail Reception', date: '2025-11-20', color: '#6366f1', category: 'Investor Relations', notes: 'Princess of Wales Theatre green room — 40 guests' },
   { id: 'ce1-2', productionId: 'prod-1', title: 'Production Photography', date: '2025-11-22', color: '#0891b2', category: 'Marketing', notes: 'Full company call, 10am–2pm' },
   { id: 'ce1-3', productionId: 'prod-1', title: 'Holiday Gala Benefit Performance', date: '2025-12-18', color: '#e11d48', category: 'Special Event', notes: 'Fundraiser, post-show reception' },
-  { id: 'ce2-1', productionId: 'prod-2', title: 'Donor Cultivation Dinner', date: '2026-01-18', color: '#059669', category: 'Development', notes: 'BAM Fisher Building, board + major donors' },
+  { id: 'ce2-1', productionId: 'prod-2', title: 'Donor Cultivation Dinner', date: '2026-01-18', color: '#059669', category: 'Development', notes: 'Bluma Appel Theatre, board + major donors' },
   { id: 'ce2-2', productionId: 'prod-2', title: 'Composer Talk-Back', date: '2026-02-22', color: '#7c3aed', category: 'Audience Engagement', notes: 'Post-show, Amara Osei on stage' },
   { id: 'ce3-1', productionId: 'prod-3', title: 'Meet & Greet — Chicago', date: '2025-10-26', color: '#d97706', category: 'Fan Event', notes: 'VIP package holders only, backstage' },
   { id: 'ce3-2', productionId: 'prod-3', title: 'Tour Documentary Shoot', date: '2025-11-15', color: '#7c3aed', category: 'Media', notes: 'Follows 3 tour dates — crew of 4' },
@@ -393,21 +393,21 @@ export const CUSTOM_EVENTS: CustomEvent[] = [
   // prod-1 additional
   { id: 'ce1-4', productionId: 'prod-1', title: 'Sitzprobe', date: '2025-11-01', color: '#7c3aed', category: 'Music', notes: 'First rehearsal with full 10-piece orchestra' },
   { id: 'ce1-5', productionId: 'prod-1', title: 'Invited Dress Rehearsal', date: '2025-11-08', color: '#6366f1', category: 'Rehearsal', notes: 'Friends & family preview, notes session to follow' },
-  { id: 'ce1-6', productionId: 'prod-1', title: 'Opening Night', date: '2025-11-15', color: '#d97706', category: 'Special Event', notes: 'Opening night celebration — St. James green room' },
+  { id: 'ce1-6', productionId: 'prod-1', title: 'Opening Night', date: '2025-11-15', color: '#d97706', category: 'Special Event', notes: 'Opening night celebration — Princess of Wales Theatre green room' },
   { id: 'ce1-7', productionId: 'prod-1', title: 'Press Night', date: '2025-11-18', color: '#e11d48', category: 'Press', notes: 'All major critics in attendance' },
   { id: 'ce1-8', productionId: 'prod-1', title: 'Group Sales Block', date: '2025-12-03', color: '#059669', category: 'Sales', notes: 'Large group buyer event — 200 seats reserved' },
   { id: 'ce1-9', productionId: 'prod-1', title: 'Cast Recording', date: '2025-12-09', color: '#7c3aed', category: 'Recording', notes: 'Original cast album — 2-day session' },
 
   // prod-2 additional
-  { id: 'ce2-3', productionId: 'prod-2', title: 'First Day of Rehearsal', date: '2026-01-12', color: '#0891b2', category: 'Rehearsal', notes: 'BAM studio space — company meet and read-through' },
+  { id: 'ce2-3', productionId: 'prod-2', title: 'First Day of Rehearsal', date: '2026-01-12', color: '#0891b2', category: 'Rehearsal', notes: 'Bluma Appel Theatre studio space — company meet and read-through' },
   { id: 'ce2-4', productionId: 'prod-2', title: 'Sitzprobe', date: '2026-02-01', color: '#7c3aed', category: 'Music', notes: 'First rehearsal with chamber orchestra' },
   { id: 'ce2-5', productionId: 'prod-2', title: 'Designer Run-Through', date: '2026-02-05', color: '#0891b2', category: 'Rehearsal', notes: 'Creative team observes first full run' },
   { id: 'ce2-6', productionId: 'prod-2', title: 'Production Photography', date: '2026-02-09', color: '#0891b2', category: 'Marketing', notes: 'Rehearsal photography shoot' },
   { id: 'ce2-7', productionId: 'prod-2', title: 'First Preview', date: '2026-02-14', color: '#d97706', category: 'Performance', notes: 'Valentine\'s Day opening preview' },
-  { id: 'ce2-8', productionId: 'prod-2', title: 'Opening Night', date: '2026-02-21', color: '#e11d48', category: 'Special Event', notes: 'Press night same evening — BAM Fisher reception to follow' },
+  { id: 'ce2-8', productionId: 'prod-2', title: 'Opening Night', date: '2026-02-21', color: '#e11d48', category: 'Special Event', notes: 'Press night same evening — Bluma Appel Theatre lobby reception to follow' },
 
   // prod-3 additional
-  { id: 'ce3-4', productionId: 'prod-3', title: 'Tour Kickoff — New York', date: '2025-09-05', color: '#059669', category: 'Performance', notes: 'Madison Square Garden — 2 nights' },
+  { id: 'ce3-4', productionId: 'prod-3', title: 'Tour Kickoff — Toronto', date: '2025-09-05', color: '#059669', category: 'Performance', notes: 'Scotiabank Arena, Toronto — 2 nights' },
   { id: 'ce3-5', productionId: 'prod-3', title: 'Press Roundtable — Chicago', date: '2025-10-21', color: '#e11d48', category: 'Press', notes: 'Media availability at venue' },
   { id: 'ce3-6', productionId: 'prod-3', title: 'VIP Fan Package — Atlanta', date: '2025-11-08', color: '#d97706', category: 'Fan Event', notes: 'Pre-show soundcheck access for 50 VIP holders' },
   { id: 'ce3-7', productionId: 'prod-3', title: 'Label Industry Showcase — LA', date: '2026-01-10', color: '#0891b2', category: 'Industry', notes: 'Private performance for industry guests' },
@@ -441,7 +441,7 @@ export const OBLIGATIONS: ContractObligation[] = [
     confidence: 'high', createdAt: '2026-01-06T09:00:00Z',
   },
   {
-    id: 'obl-1-4', productionId: 'prod-1', contractId: 'c1-6', partyName: 'St. James Theatre',
+    id: 'obl-1-4', productionId: 'prod-1', contractId: 'c1-6', partyName: 'Princess of Wales Theatre',
     type: 'payment_due', description: 'Final venue settlement — post-run reconciliation and closing balance',
     dueDate: '2026-01-20', amount: 28000, status: 'completed', owner: 'Finance', risk: 'low',
     source: 'manual', notes: 'Settled Jan 18 — confirmed', syncedToCalendar: true, syncedToCashFlow: true,
@@ -451,7 +451,7 @@ export const OBLIGATIONS: ContractObligation[] = [
   // prod-2: The Silence Between — rehearsal/pre-opening + post-run
   {
     id: 'obl-2-1', productionId: 'prod-2', contractId: 'c2-2', partyName: 'Thomas Kline (Tenor)',
-    type: 'signature_required', description: 'AGMA male lead contract — sent Oct 15, awaiting counter-signature',
+    type: 'signature_required', description: 'CAEA male lead contract — sent Oct 15, awaiting counter-signature',
     dueDate: '2025-11-30', amount: 38000, status: 'not_started', owner: 'Casting', risk: 'critical',
     source: 'ai_extracted', notes: 'No response since Oct 15 — escalate immediately', syncedToCalendar: true, syncedToCashFlow: false,
     confidence: 'high', createdAt: '2025-10-15T09:00:00Z',
@@ -464,8 +464,8 @@ export const OBLIGATIONS: ContractObligation[] = [
     confidence: 'high', createdAt: '2025-10-15T09:00:00Z',
   },
   {
-    id: 'obl-2-3', productionId: 'prod-2', contractId: 'c2-6', partyName: 'NEA Grant Agreement',
-    type: 'report_due', description: 'NEA final programmatic report — outcomes, attendance, budget reconciliation',
+    id: 'obl-2-3', productionId: 'prod-2', contractId: 'c2-6', partyName: 'Canada Council for the Arts Grant',
+    type: 'report_due', description: 'Canada Council final programmatic report — outcomes, attendance, budget reconciliation',
     dueDate: '2026-03-30', amount: 0, status: 'completed', owner: 'GM', risk: 'low',
     source: 'ai_extracted', notes: 'Submitted Mar 28 — confirmed received', syncedToCalendar: true, syncedToCashFlow: false,
     confidence: 'high', createdAt: '2025-10-15T09:00:00Z',
@@ -479,7 +479,7 @@ export const OBLIGATIONS: ContractObligation[] = [
   },
   {
     id: 'obl-2-5', productionId: 'prod-2', contractId: 'c2-8', partyName: 'Chamber Orchestra (8)',
-    type: 'tax_form_required', description: 'W-9 / tax forms for all AFM musicians prior to first payroll run',
+    type: 'tax_form_required', description: 'TD1 tax forms for all AFM Local 149 musicians prior to first payroll run',
     dueDate: '2026-01-10', amount: 0, status: 'in_progress', owner: 'Finance', risk: 'medium',
     source: 'manual', notes: '6 of 8 forms received', syncedToCalendar: false, syncedToCashFlow: false,
     createdAt: '2025-11-01T09:00:00Z',
@@ -531,7 +531,7 @@ export const OBLIGATIONS: ContractObligation[] = [
 ]
 
 export const PERFORMANCE_DATES: PerformanceDate[] = [
-  // A Winter's Dream — St. James Theatre (Sep 15 2026 – Nov 5 2026)
+  // A Winter's Dream — Princess of Wales Theatre, Toronto (Sep 15 2026 – Nov 5 2026)
   { id: 'perf-1-1',  productionId: 'prod-1', date: '2026-09-15', time: '20:00', status: 'scheduled', notes: 'Opening Night' },
   { id: 'perf-1-2',  productionId: 'prod-1', date: '2026-09-16', time: '14:00', status: 'scheduled', notes: 'Matinee' },
   { id: 'perf-1-3',  productionId: 'prod-1', date: '2026-09-18', time: '19:00', status: 'scheduled', notes: '' },
@@ -550,7 +550,7 @@ export const PERFORMANCE_DATES: PerformanceDate[] = [
   { id: 'perf-1-16', productionId: 'prod-1', date: '2026-11-04', time: '15:00', status: 'scheduled', notes: 'Penultimate performance' },
   { id: 'perf-1-17', productionId: 'prod-1', date: '2026-11-05', time: '15:00', status: 'scheduled', notes: 'Closing Performance' },
 
-  // The Silence Between — BAM Harvey Theater (Oct 14 2026 – Nov 8 2026)
+  // The Silence Between — Bluma Appel Theatre, Toronto (Oct 14 2026 – Nov 8 2026)
   { id: 'perf-2-1',  productionId: 'prod-2', date: '2026-10-14', time: '19:30', status: 'scheduled', notes: 'World Premiere — Opening Night' },
   { id: 'perf-2-2',  productionId: 'prod-2', date: '2026-10-15', time: '15:00', status: 'scheduled', notes: 'Sunday Matinee' },
   { id: 'perf-2-3',  productionId: 'prod-2', date: '2026-10-18', time: '19:30', status: 'scheduled', notes: '' },
@@ -566,8 +566,8 @@ export const PERFORMANCE_DATES: PerformanceDate[] = [
   { id: 'perf-2-13', productionId: 'prod-2', date: '2026-11-08', time: '15:00', status: 'scheduled', notes: 'Closing Night' },
 
   // Echoes: The Concert — National Tour (Sep 2026 – Apr 2027)
-  { id: 'perf-3-1',  productionId: 'prod-3', date: '2026-09-05', time: '20:00', status: 'scheduled', notes: 'Tour Opener — Madison Square Garden' },
-  { id: 'perf-3-2',  productionId: 'prod-3', date: '2026-09-06', time: '20:00', status: 'scheduled', notes: 'MSG Night 2' },
+  { id: 'perf-3-1',  productionId: 'prod-3', date: '2026-09-05', time: '20:00', status: 'scheduled', notes: 'Tour Opener — Scotiabank Arena, Toronto' },
+  { id: 'perf-3-2',  productionId: 'prod-3', date: '2026-09-06', time: '20:00', status: 'scheduled', notes: 'Scotiabank Arena Night 2' },
   { id: 'perf-3-3',  productionId: 'prod-3', date: '2026-09-12', time: '20:00', status: 'scheduled', notes: 'United Center, Chicago' },
   { id: 'perf-3-4',  productionId: 'prod-3', date: '2026-09-14', time: '19:00', status: 'scheduled', notes: 'Chicago Night 2' },
   { id: 'perf-3-5',  productionId: 'prod-3', date: '2026-10-03', time: '20:00', status: 'scheduled', notes: 'The Forum, Los Angeles' },
@@ -581,5 +581,5 @@ export const PERFORMANCE_DATES: PerformanceDate[] = [
   { id: 'perf-3-13', productionId: 'prod-3', date: '2027-03-06', time: '20:00', status: 'scheduled', notes: 'Ball Arena, Denver' },
   { id: 'perf-3-14', productionId: 'prod-3', date: '2027-04-10', time: '20:00', status: 'scheduled', notes: 'KeyBank Center, Buffalo' },
   { id: 'perf-3-15', productionId: 'prod-3', date: '2027-04-18', time: '20:00', status: 'scheduled', notes: 'PPG Paints Arena, Pittsburgh' },
-  { id: 'perf-3-16', productionId: 'prod-3', date: '2027-04-20', time: '20:00', status: 'scheduled', notes: 'Tour Closing — Barclays Center, Brooklyn' },
+  { id: 'perf-3-16', productionId: 'prod-3', date: '2027-04-20', time: '20:00', status: 'scheduled', notes: 'Tour Closing — Scotiabank Arena, Toronto' },
 ]

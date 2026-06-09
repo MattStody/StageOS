@@ -97,6 +97,8 @@ export default function DashboardPage() {
 
   // ── Budget variance ──────────────────────────────────────────────────────
   const portfolioBudgetVariance = totalBudget - totalActual  // positive = under budget
+  const budgetVariantPct = totalBudget > 0 ? (portfolioBudgetVariance / totalBudget) * 100 : 0
+  const budgetVariant = portfolioBudgetVariance < 0 ? 'danger' : budgetVariantPct < 10 ? 'warn' : 'success'
 
   // ── Sales Pulse ──────────────────────────────────────────────────────────
   const activeProds = productions.filter((p) => p.status !== 'closed')
@@ -138,7 +140,14 @@ export default function DashboardPage() {
     const isProfitable  = p.totalBudget > 0 && cumGross >= p.totalBudget
     const profitPct     = isProfitable ? Math.round(((cumGross - p.totalBudget) / p.totalBudget) * 100) : 0
 
-    return { prod: p, totalTickets, lastWeek, pacing, breakEvenCap, isProfitable, profitPct }
+    // Avg tickets per performance — computed from all performance weeks, not just lastWeek
+    const perfWeeks = allWeeks.filter((w) => w.performances > 0)
+    const avgTicketsPerPerf = perfWeeks.length > 0
+      ? Math.round(perfWeeks.reduce((s, w) => s + w.ticketsSold, 0) / perfWeeks.reduce((s, w) => s + w.performances, 0))
+      : null
+    const hasPerformances = perfWeeks.length > 0
+
+    return { prod: p, totalTickets, lastWeek, pacing, breakEvenCap, isProfitable, profitPct, avgTicketsPerPerf, hasPerformances }
   })
 
   // ── Build attention items ────────────────────────────────────────────────
@@ -298,38 +307,38 @@ export default function DashboardPage() {
 
     for (const { prod: p, pacing, breakEvenCap, isProfitable, profitPct } of salesPulse) {
       if (isProfitable) {
-        strengths.push(`${p.name} is ${profitPct}% above breakeven`)
+        strengths.push(`${p.name} is ${profitPct}% above breakeven — looking strong`)
       } else if (pacing === 'ahead') {
-        strengths.push(`${p.name} advance sales pacing ahead of target`)
+        strengths.push(`${p.name} advance sales are running ahead of pace`)
       }
       if (!isProfitable && breakEvenCap !== null && breakEvenCap > 50) {
-        watches.push(`${p.name} needs ${Math.ceil(breakEvenCap)}% avg capacity to recoup`)
+        watches.push(`${p.name} needs ${Math.ceil(breakEvenCap)}% avg capacity to recoup — worth a close look`)
       } else if (!isProfitable && pacing === 'behind') {
-        watches.push(`${p.name} is pacing behind target`)
+        watches.push(`${p.name} is pacing behind — may need a push`)
       }
     }
 
     if (portfolioBudgetVariance < -100000) {
-      watches.push(`Portfolio is ${fmt(Math.abs(portfolioBudgetVariance))} over budget`)
+      watches.push(`You're ${fmt(Math.abs(portfolioBudgetVariance))} over budget across the portfolio`)
     } else if (portfolioBudgetVariance > 300000) {
-      strengths.push(`Portfolio is ${fmt(portfolioBudgetVariance)} under budget`)
+      strengths.push(`You're ${fmt(portfolioBudgetVariance)} under budget — nice cushion`)
     }
 
     const unsignedTotal = contracts.filter(c => c.status !== 'signed' && c.status !== 'expired').length
-    if (unsignedTotal > 0) watches.push(`${unsignedTotal} contract${unsignedTotal > 1 ? 's' : ''} still need signing`)
+    if (unsignedTotal > 0) watches.push(`${unsignedTotal} contract${unsignedTotal > 1 ? 's' : ''} still need${unsignedTotal === 1 ? 's' : ''} a signature`)
 
-    if (criticalCount > 0) watches.push(`${criticalCount} critical item${criticalCount > 1 ? 's' : ''} need immediate attention`)
+    if (criticalCount > 0) watches.push(`${criticalCount} critical item${criticalCount > 1 ? 's' : ''} need${criticalCount === 1 ? 's' : ''} your attention now`)
 
     const profitableCount = salesPulse.filter(s => s.isProfitable).length
     let headline = ''
     if (profitableCount === activeProds.length && activeProds.length > 0) {
-      headline = `All ${activeProds.length} productions are tracking profitably. Portfolio is in a strong position.`
+      headline = `All ${activeProds.length} of your shows are tracking profitably. Your portfolio is in great shape right now.`
     } else if (profitableCount > 0) {
       const names = salesPulse.filter(s => s.isProfitable).map(s => s.prod.name)
       const notYet = salesPulse.filter(s => !s.isProfitable).map(s => s.prod.name)
-      headline = `${names.join(' and ')} ${names.length === 1 ? 'is' : 'are'} above breakeven.${notYet.length > 0 ? ` ${notYet.join(' and ')} ${notYet.length === 1 ? 'is' : 'are'} still working toward recoupment.` : ''}`
+      headline = `${names.join(' and ')} ${names.length === 1 ? "is" : "are"} above breakeven — that's great news.${notYet.length > 0 ? ` ${notYet.join(' and ')} ${notYet.length === 1 ? "is" : "are"} still working toward recoupment.` : ''}`
     } else {
-      headline = `No productions have reached breakeven yet — advance sales and pacing are the priority.`
+      headline = `None of your shows have hit breakeven yet — let's keep the focus on advance sales and pacing.`
     }
 
     return { headline, strengths: strengths.slice(0, 3), watches: watches.slice(0, 3) }
@@ -404,8 +413,8 @@ export default function DashboardPage() {
   return (
     <div>
       <PageHeader
-        title={`Hello, ${firstName}`}
-        subtitle={`${activeCount} active production${activeCount !== 1 ? 's' : ''} · ${undismissed.length} item${undismissed.length !== 1 ? 's' : ''} need${undismissed.length === 1 ? 's' : ''} attention today`}
+        title={`Good to see you, ${firstName}`}
+        subtitle={`You've got ${activeCount} active show${activeCount !== 1 ? 's' : ''}${undismissed.length > 0 ? ` · ${undismissed.length} thing${undismissed.length !== 1 ? 's' : ''} need${undismissed.length === 1 ? 's' : ''} your attention` : ' · all clear today'}`}
         actions={
           <button
             onClick={() => setSnapOpen(true)}
@@ -421,13 +430,13 @@ export default function DashboardPage() {
       <div className="mb-6 rounded-xl border border-stone-800 bg-stone-950 px-6 py-5">
         <div className="flex items-center gap-2 mb-3">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-          <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">Portfolio Briefing</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">Today's Briefing</p>
         </div>
         <p className="text-sm font-medium text-white leading-relaxed mb-4">{briefing.headline}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
           <div>
             {briefing.strengths.length > 0 && (
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-500 mb-1.5">Strengths</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-500 mb-1.5">What's working</p>
             )}
             {briefing.strengths.map((s, i) => (
               <div key={i} className="flex items-start gap-2 text-xs text-stone-300 mb-1">
@@ -438,7 +447,7 @@ export default function DashboardPage() {
           </div>
           <div>
             {briefing.watches.length > 0 && (
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-500 mb-1.5">Watch</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-500 mb-1.5">Keep an eye on</p>
             )}
             {briefing.watches.map((w, i) => (
               <div key={i} className="flex items-start gap-2 text-xs text-stone-300 mb-1">
@@ -461,9 +470,9 @@ export default function DashboardPage() {
         <StatCard
           label="Budget Variance"
           value={portfolioBudgetVariance >= 0 ? `+${fmt(portfolioBudgetVariance)}` : `-${fmt(Math.abs(portfolioBudgetVariance))}`}
-          sub={portfolioBudgetVariance >= 0 ? 'under budget — on track' : 'over budget — review required'}
+          sub={portfolioBudgetVariance < 0 ? 'over budget — review required' : budgetVariantPct < 10 ? 'approaching budget — watch spend' : 'under budget — on track'}
           trend={portfolioBudgetVariance >= 0 ? 'up' : 'down'}
-          alert={portfolioBudgetVariance < 0}
+          variant={budgetVariant as 'success' | 'warn' | 'danger'}
         />
         <StatCard
           label="Tickets Sold"
@@ -484,7 +493,7 @@ export default function DashboardPage() {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Sales Pulse</CardTitle>
-            <p className="text-xs text-stone-500 mt-0.5">Weekly ticket performance across active productions.</p>
+            <p className="text-xs text-stone-500 mt-0.5">Here's how your shows are selling right now.</p>
           </CardHeader>
           <CardBody className="p-0">
             <div className="overflow-x-auto">
@@ -499,11 +508,8 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-100">
-                  {salesPulse.map(({ prod: p, totalTickets, lastWeek, pacing }) => {
+                  {salesPulse.map(({ prod: p, totalTickets, lastWeek, pacing, avgTicketsPerPerf, hasPerformances }) => {
                     const pacingCfg = PACING_CFG[pacing]
-                    const avgTicketsPerPerf = lastWeek && lastWeek.performances > 0
-                      ? Math.round(lastWeek.ticketsSold / lastWeek.performances)
-                      : null
                     return (
                       <tr key={p.id} className="hover:bg-stone-50/60 transition-colors">
                         <td className="px-5 py-3.5">
@@ -517,7 +523,11 @@ export default function DashboardPage() {
                           {lastWeek ? fmt(lastWeek.grossRevenue) : <span className="text-stone-300">—</span>}
                         </td>
                         <td className="px-5 py-3.5 tabular-nums text-stone-700">
-                          {avgTicketsPerPerf !== null ? avgTicketsPerPerf.toLocaleString() : <span className="text-stone-300">—</span>}
+                          {avgTicketsPerPerf !== null
+                            ? avgTicketsPerPerf.toLocaleString()
+                            : !hasPerformances
+                              ? <span className="text-stone-400 text-xs">Pre-opening</span>
+                              : <span className="text-stone-300">—</span>}
                         </td>
                         <td className="px-5 py-3.5 tabular-nums text-stone-700">
                           {lastWeek ? fmt(lastWeek.avgTicketPrice, 2) : <span className="text-stone-300">—</span>}
@@ -548,7 +558,7 @@ export default function DashboardPage() {
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
                 <CardTitle>Needs Attention Today</CardTitle>
-                <p className="text-xs text-stone-500 mt-0.5">Critical production risks and operational items requiring action.</p>
+                <p className="text-xs text-stone-500 mt-0.5">Things that need your eyes on them today.</p>
               </div>
               {/* Summary counts */}
               <div className="flex items-center gap-3 text-xs shrink-0">
