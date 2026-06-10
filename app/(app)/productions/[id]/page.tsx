@@ -663,10 +663,10 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
 
               {/* Live Spektrix iframe */}
               {ticketTab === 'live' && liveUrl && (
-                <div>
+                <div className="-mx-6 -mb-5">
                   {!iframeBlocked ? (
-                    <div className="relative">
-                      <div className="h-[calc(85vh-140px)] rounded-lg overflow-hidden border border-stone-200 bg-stone-50">
+                    <div>
+                      <div className="h-[calc(85vh-120px)] overflow-hidden border-t border-stone-100">
                         <iframe
                           src={liveUrl}
                           className="w-full h-full"
@@ -675,12 +675,12 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                         />
                       </div>
-                      <p className="text-[10px] text-stone-400 mt-1.5 text-right">
+                      <p className="text-[10px] text-stone-400 py-2 px-6 text-right border-t border-stone-100">
                         Powered by Spektrix · instance {ticketPerf.spektrixInstanceId}
                       </p>
                     </div>
                   ) : (
-                    <div className="h-64 flex flex-col items-center justify-center gap-3 rounded-lg border border-stone-200 bg-stone-50">
+                    <div className="h-64 flex flex-col items-center justify-center gap-3 border-t border-stone-100 bg-stone-50 px-6">
                       <AlertCircle size={24} className="text-amber-500" />
                       <p className="text-sm font-medium text-stone-700">Seat map blocked by browser security policy</p>
                       <p className="text-xs text-stone-400 text-center max-w-sm">
