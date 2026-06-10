@@ -9,9 +9,48 @@ import { fmt, fmtPct, formatDate, statusLabel, budgetUsedPct } from '@/lib/utils
 import Link from 'next/link'
 import { ArrowRight, Plus, Theater, LayoutGrid, List } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Production, ProductionStatus } from '@/lib/types'
+import type { Production, ProductionStatus, BudgetLine } from '@/lib/types'
 
 const PROD_COLORS = ['#6366f1', '#0891b2', '#059669', '#d97706', '#dc2626', '#9333ea', '#0f172a', '#be185d']
+
+const BUDGET_TEMPLATE: { category: string; lineItem: string; pct: number; notes?: string }[] = [
+  { category: 'General Management', lineItem: 'GM Fee',                    pct: 0.030 },
+  { category: 'General Management', lineItem: 'Office & Admin',            pct: 0.005 },
+  { category: 'Cast',               lineItem: 'Principal Salaries',        pct: 0.120, notes: 'CAEA contracts' },
+  { category: 'Cast',               lineItem: 'Ensemble Salaries',         pct: 0.070 },
+  { category: 'Cast',               lineItem: 'Understudies',              pct: 0.018 },
+  { category: 'Creative Team',      lineItem: 'Director Fee',              pct: 0.028 },
+  { category: 'Creative Team',      lineItem: 'Choreographer',             pct: 0.020 },
+  { category: 'Creative Team',      lineItem: 'Music Director',            pct: 0.015 },
+  { category: 'Musicians',          lineItem: 'Orchestra / Band',          pct: 0.038, notes: 'AFM Local 149' },
+  { category: 'Production Staff',   lineItem: 'Production Manager',        pct: 0.015 },
+  { category: 'Stage Management',   lineItem: 'Stage Management Team',     pct: 0.020 },
+  { category: 'Set',                lineItem: 'Scenic Design & Build',     pct: 0.070 },
+  { category: 'Costumes',           lineItem: 'Costume Design & Build',    pct: 0.045 },
+  { category: 'Lighting',           lineItem: 'Lighting Design & Equipment', pct: 0.035 },
+  { category: 'Sound',              lineItem: 'Sound Design & Equipment',  pct: 0.032 },
+  { category: 'Venue Rental',       lineItem: 'Theatre Rental',            pct: 0.120 },
+  { category: 'Insurance',          lineItem: 'Production Insurance',      pct: 0.012 },
+  { category: 'Marketing & Advertising', lineItem: 'Digital & Print Ads', pct: 0.080 },
+  { category: 'Press',              lineItem: 'Press Representative',      pct: 0.010 },
+  { category: 'Ticketing Fees',     lineItem: 'Box Office Fees',           pct: 0.018 },
+  { category: 'Royalties',          lineItem: 'Author/Composer Royalties', pct: 0.040 },
+  { category: 'Legal',              lineItem: 'Legal Fees',                pct: 0.014 },
+  { category: 'Travel & Housing',   lineItem: 'Cast Travel & Housing',     pct: 0.016 },
+  { category: 'Contingency',        lineItem: 'Contingency Reserve',       pct: 0.025 },
+]
+
+function generateBudgetLines(productionId: string, totalBudget: number): Omit<BudgetLine, 'id'>[] {
+  return BUDGET_TEMPLATE.map((t) => ({
+    productionId,
+    category: t.category,
+    lineItem: t.lineItem,
+    budgeted: totalBudget > 0 ? Math.round(totalBudget * t.pct) : 0,
+    committed: 0,
+    actual: 0,
+    notes: t.notes ?? '',
+  }))
+}
 
 const STATUS_OPTIONS: ProductionStatus[] = ['pre_production', 'in_rehearsal', 'in_performance', 'closing', 'closed']
 
@@ -99,7 +138,7 @@ function ProductionPoster({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ProductionsPage() {
-  const { productions, contracts, deadlines, revenueWeeks, addProduction } = useStore()
+  const { productions, contracts, deadlines, revenueWeeks, addProduction, addBudgetLine } = useStore()
   const { isAdmin } = useAuth()
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -115,11 +154,10 @@ export default function ProductionsPage() {
 
   function handleSave() {
     if (!form.name.trim()) return
-    addProduction({
-      ...form,
-      id: `prod-${Date.now()}`,
-      imageUrl: imagePreview.trim() || undefined,
-    })
+    const newId = `prod-${Date.now()}`
+    addProduction({ ...form, id: newId, imageUrl: imagePreview.trim() || undefined })
+    const lines = generateBudgetLines(newId, form.totalBudget)
+    lines.forEach((line, i) => addBudgetLine({ ...line, id: `${newId}-b${i}` }))
     setModalOpen(false)
   }
 
