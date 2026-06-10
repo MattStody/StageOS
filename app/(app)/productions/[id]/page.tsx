@@ -897,11 +897,23 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                       const d = new Date(p.date + 'T12:00:00')
                       const wk = weekForPerf(p.date)
                       const perfsInWeek = wk ? perfs.filter((pp) => weekForPerf(pp.date)?.weekEnding === wk.weekEnding && pp.status !== 'cancelled').length : 0
-                      const { soldMult, atpMult } = perfMultipliers(p.id, p.date, p.time)
-                      const ticketsPerPerf = wk && perfsInWeek > 0 ? Math.round((wk.ticketsSold / perfsInWeek) * soldMult) : null
-                      const atp            = wk && perfsInWeek > 0 ? Math.round(wk.avgTicketPrice * atpMult) : null
-                      const grossPerPerf   = ticketsPerPerf != null && atp != null ? ticketsPerPerf * atp : null
-                      const soldPct        = ticketsPerPerf != null && wk ? Math.round((ticketsPerPerf / wk.totalSeats) * 100) : null
+                      const hasLiveData = p.ticketsSold != null
+                      let ticketsPerPerf: number | null
+                      let atp: number | null
+                      let grossPerPerf: number | null
+                      let soldPct: number | null
+                      if (hasLiveData) {
+                        ticketsPerPerf = p.ticketsSold!
+                        atp = p.avgTicketPrice ?? null
+                        grossPerPerf = p.grossRevenue ?? null
+                        soldPct = p.capacityPct ?? (p.totalSeats ? Math.round((p.ticketsSold! / p.totalSeats) * 100) : null)
+                      } else {
+                        const { soldMult, atpMult } = perfMultipliers(p.id, p.date, p.time)
+                        ticketsPerPerf = wk && perfsInWeek > 0 ? Math.round((wk.ticketsSold / perfsInWeek) * soldMult) : null
+                        atp = wk && perfsInWeek > 0 ? Math.round(wk.avgTicketPrice * atpMult) : null
+                        grossPerPerf = ticketsPerPerf != null && atp != null ? ticketsPerPerf * atp : null
+                        soldPct = ticketsPerPerf != null && wk ? Math.round((ticketsPerPerf / wk.totalSeats) * 100) : null
+                      }
                       return (
                         <tr
                           key={p.id}
@@ -919,9 +931,16 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                           <td className="px-4 py-2.5 text-right">
                             {ticketsPerPerf !== null ? (
                               <div>
-                                <span className={`text-xs font-medium tabular-nums ${soldPct !== null && soldPct >= 85 ? 'text-emerald-700' : soldPct !== null && soldPct >= 65 ? 'text-stone-700' : 'text-amber-700'}`}>
-                                  {ticketsPerPerf.toLocaleString()}
-                                </span>
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <span className={`text-xs font-medium tabular-nums ${soldPct !== null && soldPct >= 85 ? 'text-emerald-700' : soldPct !== null && soldPct >= 65 ? 'text-stone-700' : 'text-amber-700'}`}>
+                                    {ticketsPerPerf.toLocaleString()}
+                                  </span>
+                                  {hasLiveData ? (
+                                    <span className="text-[9px] px-1 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium leading-none">Live</span>
+                                  ) : (
+                                    <span className="text-[9px] px-1 py-0.5 rounded bg-stone-50 text-stone-400 border border-stone-200 font-medium leading-none">Est.</span>
+                                  )}
+                                </div>
                                 {soldPct !== null && (
                                   <p className="text-[10px] text-stone-400 leading-none mt-0.5">{soldPct.toFixed(0)}% cap</p>
                                 )}
@@ -944,18 +963,25 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                           </td>
                           <td className="px-4 py-2.5 text-xs text-stone-400 max-w-xs truncate">{p.notes || '—'}</td>
                           <td className="px-4 py-2.5">
-                            <div className="flex gap-1.5 items-center justify-end">
-                              {p.spektrixInstanceId && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
-                                  Spx
-                                </span>
-                              )}
-                              <Ticket size={11} className="text-stone-300 group-hover:text-stone-500 transition-colors" />
-                              {isAdmin && (
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                                  <button onClick={() => openEditPerf(p)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>
-                                  <button onClick={() => deletePerformanceDate(p.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>
-                                </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <div className="flex gap-1.5 items-center">
+                                {p.spektrixInstanceId && !hasLiveData && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">
+                                    Spx
+                                  </span>
+                                )}
+                                <Ticket size={11} className="text-stone-300 group-hover:text-stone-500 transition-colors" />
+                                {isAdmin && (
+                                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                    <button onClick={() => openEditPerf(p)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>
+                                    <button onClick={() => deletePerformanceDate(p.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>
+                                  </div>
+                                )}
+                              </div>
+                              {p.spektrixSyncedAt && (
+                                <p className="text-[9px] text-stone-300 leading-none">
+                                  synced {new Date(p.spektrixSyncedAt).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}
+                                </p>
                               )}
                             </div>
                           </td>

@@ -158,6 +158,12 @@ export interface PerformanceDate {
   notes: string
   status: PerformanceStatus
   spektrixInstanceId?: string
+  ticketsSold?: number
+  grossRevenue?: number
+  capacityPct?: number
+  totalSeats?: number
+  avgTicketPrice?: number
+  spektrixSyncedAt?: string
 }
 
 // ── Contract Obligations ────────────────────────────────────────────────────
