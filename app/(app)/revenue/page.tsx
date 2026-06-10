@@ -11,8 +11,34 @@ import { Plus, Trash2, Pencil } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import type { RevenueWeek } from '@/lib/types'
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
+  ComposedChart, Area, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts'
+
+function generateProjectionWeeks(
+  startDate: string,
+  closingDate: string,
+  projectedGross: number,
+): Array<{ weekDate: string; label: string; projected: number }> {
+  const rawStart = new Date(startDate + 'T12:00:00')
+  const close = new Date(closingDate + 'T12:00:00')
+  const daysToSun = rawStart.getDay() === 0 ? 0 : 7 - rawStart.getDay()
+  const firstSun = new Date(rawStart)
+  firstSun.setDate(rawStart.getDate() + daysToSun)
+  const totalMs = Math.max(1, close.getTime() - rawStart.getTime())
+  const result: Array<{ weekDate: string; label: string; projected: number }> = []
+  const d = new Date(firstSun)
+  while (d <= close) {
+    const elapsed = Math.max(0, Math.min(1, (d.getTime() - rawStart.getTime()) / totalMs))
+    const projPct = elapsed * elapsed * (3 - 2 * elapsed) // smoothstep S-curve
+    result.push({
+      weekDate: d.toISOString().slice(0, 10),
+      label: d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }),
+      projected: Math.round(projectedGross * projPct),
+    })
+    d.setDate(d.getDate() + 7)
+  }
+  return result
+}
 
 const blank = (productionId: string): Omit<RevenueWeek, 'id'> => ({
   productionId,
@@ -48,15 +74,49 @@ export default function RevenuePage() {
   const avgCap = weeks.length ? weeks.reduce((s, w) => s + w.capacityPct, 0) / weeks.length : 0
   const avgATP = totalTickets > 0 ? totalGross / totalTickets : 0
 
-  // Chart data
-  let cum = 0
-  const chartData = weeks.map((w) => {
-    cum += w.grossRevenue
+  // Build projection + actual chart data
+  let runningCum = 0
+  const actualByWeek = new Map<string, { gross: number; net: number; cumulative: number; capacity: number }>()
+  weeks.forEach((w) => {
+    runningCum += w.grossRevenue
+    actualByWeek.set(w.weekEnding, { gross: w.grossRevenue, net: w.netRevenue, cumulative: runningCum, capacity: w.capacityPct })
+  })
+
+  const projectionSeries = prod && prod.projectedGross > 0
+    ? generateProjectionWeeks(prod.onSaleDate || prod.openingDate, prod.closingDate, prod.projectedGross)
+    : []
+
+  const tickInterval = Math.max(1, Math.ceil(projectionSeries.length / 8))
+
+  const chartData = projectionSeries.map(({ weekDate, label, projected }) => {
+    const actual = actualByWeek.get(weekDate)
+    return {
+      week: label,
+      weekDate,
+      projected,
+      cumulative: actual?.cumulative ?? null,
+      gross: actual?.gross ?? null,
+      net: actual?.net ?? null,
+    }
+  })
+
+  const lastProjectedForActual = weeks.length > 0
+    ? (chartData.find((d) => d.weekDate === weeks[weeks.length - 1].weekEnding)?.projected ?? 0)
+    : 0
+  const paceGap = runningCum - lastProjectedForActual
+  const paceText = runningCum > 0 && lastProjectedForActual > 0
+    ? paceGap >= 0 ? `${fmt(paceGap)} ahead of pace` : `${fmt(-paceGap)} behind pace`
+    : null
+
+  // Bar chart uses only actual weeks
+  let cum2 = 0
+  const weeklyChartData = weeks.map((w) => {
+    cum2 += w.grossRevenue
     return {
       week: formatDate(w.weekEnding).replace(', 2025', '').replace(', 2026', ''),
       gross: w.grossRevenue,
       net: w.netRevenue,
-      cumulative: cum,
+      cumulative: cum2,
       capacity: w.capacityPct,
     }
   })
@@ -122,24 +182,37 @@ export default function RevenuePage() {
       </div>
 
       {/* Charts */}
-      {weeks.length > 0 && (
+      {(weeks.length > 0 || projectionSeries.length > 0) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
           <Card>
-            <CardHeader><CardTitle>Cumulative Gross</CardTitle></CardHeader>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Cumulative Gross vs. Projection</CardTitle>
+                {paceText && (
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${paceGap >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>
+                    {paceText}
+                  </span>
+                )}
+              </div>
+            </CardHeader>
             <CardBody>
               <ResponsiveContainer width="100%" height={180}>
-                <AreaChart data={chartData}>
+                <ComposedChart data={chartData}>
                   <defs>
                     <linearGradient id="cumGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor={prod?.color || '#6366f1'} stopOpacity={0.15} />
                       <stop offset="100%" stopColor={prod?.color || '#6366f1'} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} interval={tickInterval - 1} />
                   <YAxis tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(v) => fmt(Number(v))} contentStyle={{ fontSize: 12, border: '1px solid #e7e5e4', borderRadius: 6 }} />
-                  <Area type="monotone" dataKey="cumulative" stroke={prod?.color || '#6366f1'} strokeWidth={1.5} fill="url(#cumGrad)" name="Cumulative Gross" />
-                </AreaChart>
+                  <Tooltip
+                    formatter={(v, name) => [fmt(Number(v)), name === 'projected' ? 'Projected' : 'Actual']}
+                    contentStyle={{ fontSize: 12, border: '1px solid #e7e5e4', borderRadius: 6 }}
+                  />
+                  <Area type="monotone" dataKey="cumulative" stroke={prod?.color || '#6366f1'} strokeWidth={2} fill="url(#cumGrad)" name="Actual" connectNulls={false} />
+                  <Line type="monotone" dataKey="projected" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="6 3" dot={false} name="Projected" connectNulls />
+                </ComposedChart>
               </ResponsiveContainer>
             </CardBody>
           </Card>
@@ -148,7 +221,7 @@ export default function RevenuePage() {
             <CardHeader><CardTitle>Weekly Gross vs Net</CardTitle></CardHeader>
             <CardBody>
               <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={chartData} barGap={2}>
+                <BarChart data={weeklyChartData} barGap={2}>
                   <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                   <Tooltip formatter={(v) => fmt(Number(v))} contentStyle={{ fontSize: 12, border: '1px solid #e7e5e4', borderRadius: 6 }} />
