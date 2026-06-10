@@ -1,15 +1,18 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useStore } from '@/lib/store'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { fmt, formatDate, daysUntil, statusLabel } from '@/lib/utils'
-import { Plus, Trash2, Pencil, FileText, AlertTriangle, File, Shield, BookOpen, FileCheck2, Check } from 'lucide-react'
+import {
+  Plus, Trash2, Pencil, FileText, AlertTriangle, File, Shield,
+  BookOpen, FileCheck2, Check, Upload, Sparkles, CheckSquare, Square, Loader2,
+} from 'lucide-react'
 import Link from 'next/link'
 import { useAccess } from '@/lib/useAccess'
-import type { Contract, ContractType, ContractStatus, ContractObligation } from '@/lib/types'
+import type { Contract, ContractType, ContractStatus, ContractObligation, ObligationType, ObligationRisk } from '@/lib/types'
 import { UNION_AGREEMENT_TEMPLATES, getTemplatesForType, resolveObligationDate } from '@/lib/unionTemplates'
 
 const CONTRACT_TYPES: ContractType[] = ['cast', 'creative', 'vendor', 'venue', 'rights', 'investor', 'employment']
@@ -39,6 +42,35 @@ const RISK_STYLES: Record<string, string> = {
   low:      'text-stone-500 bg-stone-50 border-stone-200',
 }
 
+const RISK_COLORS: Record<ObligationRisk, string> = {
+  low: 'text-green-700 bg-green-50 border border-green-200',
+  medium: 'text-amber-700 bg-amber-50 border border-amber-200',
+  high: 'text-orange-700 bg-orange-50 border border-orange-200',
+  critical: 'text-red-700 bg-red-50 border border-red-200',
+}
+
+const TYPE_LABELS: Partial<Record<ObligationType, string>> = {
+  signature_required: 'Signature',
+  payment_due: 'Payment',
+  royalty_payment: 'Royalty',
+  royalty_statement: 'Statement',
+  report_due: 'Report',
+  insurance_required: 'Insurance',
+  approval_required: 'Approval',
+  deliverable_due: 'Deliverable',
+  renewal_deadline: 'Renewal',
+  option_deadline: 'Option',
+  expiry_date: 'Expiry',
+  termination_notice: 'Termination',
+  reimbursement_due: 'Reimbursement',
+  tax_form_required: 'Tax Form',
+  rights_restriction: 'Rights',
+  publicity_credit: 'Credit',
+  confidentiality: 'Confidentiality',
+  compliance: 'Compliance',
+  other: 'Other',
+}
+
 function offsetLabel(anchor: string, days: number): string {
   if (days === 0) {
     const name = anchor === 'contract_start' ? 'work start' : anchor === 'opening_date' ? 'opening' : 'closing'
@@ -49,6 +81,20 @@ function offsetLabel(anchor: string, days: number): string {
   const name = anchor === 'contract_start' ? 'work start' : anchor === 'opening_date' ? 'opening' : 'closing'
   return `${abs}d ${dir} ${name}`
 }
+
+interface ExtractedObligation {
+  title: string
+  description: string
+  type: ObligationType
+  dueDate: string | null
+  amount: number | null
+  risk: ObligationRisk
+  owner: string
+  notes: string
+  selected: boolean
+}
+
+type ExtractionStep = 'upload' | 'extracting' | 'review'
 
 export default function ContractsPage() {
   const { productions, contracts, obligations, addContract, updateContract, deleteContract, addObligation } = useStore()
@@ -67,7 +113,14 @@ export default function ContractsPage() {
   const [selectedUnionId, setSelectedUnionId] = useState<string | null>(null)
   const [enabledOblIds, setEnabledOblIds] = useState<Set<string>>(new Set())
 
-  // When union selection changes, reset enabled obligations to the template defaults
+  // AI PDF extraction state
+  const [aiContract, setAiContract] = useState<Contract | null>(null)
+  const [aiStep, setAiStep] = useState<ExtractionStep>('upload')
+  const [aiItems, setAiItems] = useState<ExtractedObligation[]>([])
+  const [aiError, setAiError] = useState('')
+  const [isDemo, setIsDemo] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     if (!selectedUnionId) { setEnabledOblIds(new Set()); return }
     const t = UNION_AGREEMENT_TEMPLATES.find(t => t.id === selectedUnionId)
@@ -101,7 +154,6 @@ export default function ContractsPage() {
       updateContract({ ...form, id: contractId })
     } else {
       addContract({ ...form, id: contractId })
-      // Auto-generate union obligations on new contracts
       if (selectedUnionId && form.startDate) {
         const template = UNION_AGREEMENT_TEMPLATES.find(t => t.id === selectedUnionId)
         const production = productions.find(p => p.id === form.productionId)
@@ -142,7 +194,6 @@ export default function ContractsPage() {
     const toCreate: ContractObligation[] = []
     const now = new Date().toISOString()
 
-    // Unsigned — signature still needed
     if (['draft', 'sent', 'needs_review'].includes(c.status) && c.dueDate) {
       const id = `obl-cs-${c.id}`
       if (!existingIds.has(id)) toCreate.push({
@@ -155,7 +206,6 @@ export default function ContractsPage() {
       })
     }
 
-    // Rights/Licensing — royalty statement 30 days post-closing
     if (c.contractType === 'rights' && c.status === 'signed' && prod?.closingDate) {
       const d = new Date(prod.closingDate + 'T12:00:00')
       d.setDate(d.getDate() + 30)
@@ -170,7 +220,6 @@ export default function ContractsPage() {
       })
     }
 
-    // Venue — settlement 14 days post-closing
     if (c.contractType === 'venue' && c.status === 'signed' && prod?.closingDate) {
       const d = new Date(prod.closingDate + 'T12:00:00')
       d.setDate(d.getDate() + 14)
@@ -185,7 +234,6 @@ export default function ContractsPage() {
       })
     }
 
-    // Investor — closing report 60 days post-closing
     if (c.contractType === 'investor' && c.status === 'signed' && prod?.closingDate) {
       const d = new Date(prod.closingDate + 'T12:00:00')
       d.setDate(d.getDate() + 60)
@@ -200,7 +248,6 @@ export default function ContractsPage() {
       })
     }
 
-    // Cast/Creative/Employment — payroll closeout 7 days post-closing
     if (['cast', 'creative', 'employment'].includes(c.contractType) && c.status === 'signed' && prod?.closingDate) {
       const d = new Date(prod.closingDate + 'T12:00:00')
       d.setDate(d.getDate() + 7)
@@ -220,6 +267,93 @@ export default function ContractsPage() {
       setExtractedIds((prev) => new Set([...prev, c.id]))
       setTimeout(() => setExtractedIds((prev) => { const n = new Set(prev); n.delete(c.id); return n }), 2500)
     }
+  }
+
+  // AI PDF extraction
+  function openAiExtract(c: Contract) {
+    setAiContract(c)
+    setAiStep('upload')
+    setAiItems([])
+    setAiError('')
+    setIsDemo(false)
+  }
+
+  function closeAiExtract() {
+    setAiContract(null)
+    setAiStep('upload')
+    setAiItems([])
+    setAiError('')
+  }
+
+  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !aiContract) return
+    setAiStep('extracting')
+    setAiError('')
+
+    try {
+      const arrayBuffer = await file.arrayBuffer()
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+      const prod = productions.find((p) => p.id === aiContract.productionId)
+
+      const res = await fetch('/api/extract-contract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileBase64: base64,
+          mediaType: file.type || 'application/pdf',
+          contractInfo: {
+            partyName: aiContract.partyName,
+            contractType: aiContract.contractType,
+            productionName: prod?.name ?? '',
+            fee: aiContract.fee,
+          },
+        }),
+      })
+
+      if (!res.ok) throw new Error('Extraction request failed')
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+
+      setAiItems((data.obligations as Omit<ExtractedObligation, 'selected'>[]).map((o) => ({ ...o, selected: true })))
+      setIsDemo(!!data.demo)
+      setAiStep('review')
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'Unknown error')
+      setAiStep('upload')
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  function toggleAiItem(i: number) {
+    setAiItems((prev) => prev.map((item, idx) => idx === i ? { ...item, selected: !item.selected } : item))
+  }
+
+  function handleCreateAiObligations() {
+    if (!aiContract) return
+    aiItems.filter((i) => i.selected).forEach((item) => {
+      addObligation({
+        id: `obl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        productionId: aiContract.productionId,
+        contractId: aiContract.id,
+        partyName: aiContract.partyName,
+        type: item.type,
+        description: item.description,
+        dueDate: item.dueDate ?? '',
+        amount: item.amount ?? undefined,
+        status: 'not_started',
+        owner: item.owner,
+        risk: item.risk,
+        source: 'ai_extracted',
+        notes: item.notes,
+        syncedToCalendar: false,
+        syncedToCashFlow: false,
+        confidence: 'high',
+        createdAt: new Date().toISOString(),
+      })
+    })
+    closeAiExtract()
   }
 
   const statusCounts = CONTRACT_STATUSES.map((s) => ({
@@ -291,7 +425,7 @@ export default function ContractsPage() {
                     <th className="text-right px-4 py-2.5 text-xs font-medium text-stone-500 uppercase tracking-wider">Fee</th>
                     <th className="text-left px-4 py-2.5 text-xs font-medium text-stone-500 uppercase tracking-wider">Key Obligations</th>
                     <th className="text-left px-4 py-2.5 text-xs font-medium text-stone-500 uppercase tracking-wider">Notes</th>
-                    <th className="px-4 py-2.5 w-20" />
+                    <th className="px-4 py-2.5 w-28" />
                   </tr>
                 </thead>
                 <tbody>
@@ -340,9 +474,18 @@ export default function ContractsPage() {
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end items-center">
                             {canEdit && (
                               <button
+                                onClick={() => openAiExtract(c)}
+                                title="Upload PDF & extract obligations with AI"
+                                className="p-1 text-stone-400 hover:text-indigo-600 cursor-pointer"
+                              >
+                                <Sparkles size={12} />
+                              </button>
+                            )}
+                            {canEdit && (
+                              <button
                                 onClick={(e) => { e.stopPropagation(); extractObligations(c) }}
                                 className="p-1 text-stone-400 hover:text-emerald-600 cursor-pointer"
-                                title="Extract obligations"
+                                title="Quick-extract obligations (rule-based)"
                               >
                                 {extractedIds.has(c.id) ? <Check size={12} className="text-emerald-600" /> : <FileCheck2 size={12} />}
                               </button>
@@ -361,7 +504,7 @@ export default function ContractsPage() {
         )
       })}
 
-      {/* Modal */}
+      {/* Add/Edit Contract Modal */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Contract' : 'Add Contract'} className="max-w-2xl">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
@@ -425,7 +568,7 @@ export default function ContractsPage() {
                       onChange={(e) => setForm({ ...form, startDate: e.target.value })}
                       className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500"
                     />
-                    <p className="text-[10px] text-stone-400 mt-1">First rehearsal or engagement day — used to calculate obligation due dates</p>
+                    <p className="text-[10px] text-stone-400 mt-1">First rehearsal or engagement day</p>
                   </div>
                 )}
               </div>
@@ -483,7 +626,7 @@ export default function ContractsPage() {
                   })}
                 </div>
                 <div className="px-4 py-2 bg-stone-50 border-t border-stone-100">
-                  <p className="text-[10px] text-stone-400">Obligations are created immediately on save. Edit dates, owners, or notes from the contract detail page.</p>
+                  <p className="text-[10px] text-stone-400">Obligations are created immediately on save. Edit from the contract detail page.</p>
                 </div>
               </div>
             )
@@ -519,6 +662,119 @@ export default function ContractsPage() {
             <Button onClick={handleSave}>{editing ? 'Save Changes' : 'Add Contract'}</Button>
           </div>
         </div>
+      </Modal>
+
+      {/* AI PDF Extraction Modal */}
+      <Modal
+        open={!!aiContract}
+        onClose={closeAiExtract}
+        title={
+          aiStep === 'upload' ? 'Extract Obligations from PDF'
+          : aiStep === 'extracting' ? 'Analyzing Contract…'
+          : 'Review Extracted Obligations'
+        }
+        className="max-w-2xl"
+      >
+        {aiStep === 'upload' && (
+          <div className="space-y-5">
+            <p className="text-sm text-stone-600">
+              Upload the signed PDF for <span className="font-semibold text-stone-800">{aiContract?.partyName}</span>. Claude AI will read it and identify all obligations, deadlines, and payment requirements.
+            </p>
+            {aiError && (
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                <AlertTriangle size={14} className="shrink-0" />
+                {aiError}
+              </div>
+            )}
+            <div
+              className="border-2 border-dashed border-stone-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload size={28} className="mx-auto mb-3 text-stone-400" />
+              <p className="text-sm font-medium text-stone-700">Click to upload PDF</p>
+              <p className="text-xs text-stone-400 mt-1">PDF, JPG, or PNG — max 20 MB</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,image/jpeg,image/png"
+                className="hidden"
+                onChange={handleFileSelected}
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button variant="secondary" onClick={closeAiExtract}>Cancel</Button>
+            </div>
+          </div>
+        )}
+
+        {aiStep === 'extracting' && (
+          <div className="py-12 flex flex-col items-center gap-4 text-center">
+            <Loader2 size={32} className="animate-spin text-indigo-500" />
+            <p className="text-sm font-medium text-stone-700">Claude is reading your contract…</p>
+            <p className="text-xs text-stone-400">Identifying obligations, deadlines, and payment terms</p>
+          </div>
+        )}
+
+        {aiStep === 'review' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-stone-600">
+                Found <span className="font-semibold text-stone-800">{aiItems.length}</span> obligation{aiItems.length !== 1 ? 's' : ''}.
+                {isDemo && <span className="ml-2 text-xs text-amber-600">(Demo — AI key not configured)</span>}
+              </p>
+              <div className="flex gap-2 text-xs">
+                <button onClick={() => setAiItems((p) => p.map((i) => ({ ...i, selected: true })))} className="text-indigo-600 hover:underline">Select all</button>
+                <span className="text-stone-300">·</span>
+                <button onClick={() => setAiItems((p) => p.map((i) => ({ ...i, selected: false })))} className="text-stone-500 hover:underline">Deselect all</button>
+              </div>
+            </div>
+
+            <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+              {aiItems.map((item, i) => (
+                <div
+                  key={i}
+                  onClick={() => toggleAiItem(i)}
+                  className={`flex gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${item.selected ? 'bg-indigo-50 border-indigo-200' : 'bg-stone-50 border-stone-200 opacity-60'}`}
+                >
+                  <div className="mt-0.5 shrink-0 text-indigo-500">
+                    {item.selected ? <CheckSquare size={15} /> : <Square size={15} className="text-stone-400" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-medium text-stone-800 leading-snug">{item.title}</p>
+                      <span className={`shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded ${RISK_COLORS[item.risk]}`}>
+                        {item.risk}
+                      </span>
+                    </div>
+                    <p className="text-xs text-stone-500 mt-0.5 leading-snug">{item.description}</p>
+                    <div className="flex items-center gap-3 mt-1.5 text-[10px] text-stone-400">
+                      <span className="bg-stone-100 px-1.5 py-0.5 rounded">{TYPE_LABELS[item.type] ?? item.type}</span>
+                      {item.dueDate && <span>Due {formatDate(item.dueDate)}</span>}
+                      {item.amount != null && <span>{fmt(item.amount)}</span>}
+                      <span>→ {item.owner}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-between items-center pt-2 border-t border-stone-100">
+              <p className="text-xs text-stone-400">
+                {aiItems.filter((i) => i.selected).length} of {aiItems.length} selected
+              </p>
+              <div className="flex gap-2">
+                <Button variant="secondary" onClick={closeAiExtract}>Cancel</Button>
+                <Button
+                  onClick={handleCreateAiObligations}
+                  disabled={aiItems.filter((i) => i.selected).length === 0}
+                >
+                  <Sparkles size={13} />
+                  Create {aiItems.filter((i) => i.selected).length} Obligation{aiItems.filter((i) => i.selected).length !== 1 ? 's' : ''}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   )
