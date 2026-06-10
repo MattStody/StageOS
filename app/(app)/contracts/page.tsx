@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { fmt, formatDate, daysUntil, statusLabel } from '@/lib/utils'
-import { Plus, Trash2, Pencil, FileText, AlertTriangle, File, Shield, BookOpen } from 'lucide-react'
+import { Plus, Trash2, Pencil, FileText, AlertTriangle, File, Shield, BookOpen, FileCheck2, Check } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
-import type { Contract, ContractType, ContractStatus } from '@/lib/types'
+import type { Contract, ContractType, ContractStatus, ContractObligation } from '@/lib/types'
 import { UNION_AGREEMENT_TEMPLATES, getTemplatesForType, resolveObligationDate } from '@/lib/unionTemplates'
 
 const CONTRACT_TYPES: ContractType[] = ['cast', 'creative', 'vendor', 'venue', 'rights', 'investor', 'employment']
@@ -60,6 +60,8 @@ export default function ContractsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Contract | null>(null)
   const [form, setForm] = useState<Omit<Contract, 'id'>>(blank(productions[0]?.id || ''))
+
+  const [extractedIds, setExtractedIds] = useState<Set<string>>(new Set())
 
   // Union template state — only relevant for new contracts
   const [selectedUnionId, setSelectedUnionId] = useState<string | null>(null)
@@ -132,6 +134,92 @@ export default function ContractsPage() {
       }
     }
     setModalOpen(false)
+  }
+
+  function extractObligations(c: Contract) {
+    const existingIds = new Set(obligations.filter((o) => o.contractId === c.id).map((o) => o.id))
+    const prod = productions.find((p) => p.id === c.productionId)
+    const toCreate: ContractObligation[] = []
+    const now = new Date().toISOString()
+
+    // Unsigned — signature still needed
+    if (['draft', 'sent', 'needs_review'].includes(c.status) && c.dueDate) {
+      const id = `obl-cs-${c.id}`
+      if (!existingIds.has(id)) toCreate.push({
+        id, productionId: c.productionId, contractId: c.id,
+        partyName: c.partyName, type: 'signature_required',
+        description: `Signature required — ${c.partyName}`,
+        dueDate: c.dueDate, status: 'not_started',
+        owner: 'GM', risk: 'high', source: 'manual', notes: '',
+        syncedToCalendar: false, syncedToCashFlow: false, createdAt: now,
+      })
+    }
+
+    // Rights/Licensing — royalty statement 30 days post-closing
+    if (c.contractType === 'rights' && c.status === 'signed' && prod?.closingDate) {
+      const d = new Date(prod.closingDate + 'T12:00:00')
+      d.setDate(d.getDate() + 30)
+      const id = `obl-cr-${c.id}`
+      if (!existingIds.has(id)) toCreate.push({
+        id, productionId: c.productionId, contractId: c.id,
+        partyName: c.partyName, type: 'royalty_statement',
+        description: `Royalty statement — ${c.partyName}`,
+        dueDate: d.toISOString().slice(0, 10), status: 'not_started',
+        owner: 'GM', risk: 'high', source: 'manual', notes: '',
+        syncedToCalendar: false, syncedToCashFlow: false, createdAt: now,
+      })
+    }
+
+    // Venue — settlement 14 days post-closing
+    if (c.contractType === 'venue' && c.status === 'signed' && prod?.closingDate) {
+      const d = new Date(prod.closingDate + 'T12:00:00')
+      d.setDate(d.getDate() + 14)
+      const id = `obl-cve-${c.id}`
+      if (!existingIds.has(id)) toCreate.push({
+        id, productionId: c.productionId, contractId: c.id,
+        partyName: c.partyName, type: 'payment_due',
+        description: `Venue settlement — ${c.partyName}`,
+        dueDate: d.toISOString().slice(0, 10), status: 'not_started',
+        owner: 'Finance', risk: 'high', source: 'manual', notes: '',
+        syncedToCalendar: false, syncedToCashFlow: false, createdAt: now,
+      })
+    }
+
+    // Investor — closing report 60 days post-closing
+    if (c.contractType === 'investor' && c.status === 'signed' && prod?.closingDate) {
+      const d = new Date(prod.closingDate + 'T12:00:00')
+      d.setDate(d.getDate() + 60)
+      const id = `obl-ci-${c.id}`
+      if (!existingIds.has(id)) toCreate.push({
+        id, productionId: c.productionId, contractId: c.id,
+        partyName: c.partyName, type: 'report_due',
+        description: `Investor closing report — ${c.partyName}`,
+        dueDate: d.toISOString().slice(0, 10), status: 'not_started',
+        owner: 'GM', risk: 'medium', source: 'manual', notes: '',
+        syncedToCalendar: false, syncedToCashFlow: false, createdAt: now,
+      })
+    }
+
+    // Cast/Creative/Employment — payroll closeout 7 days post-closing
+    if (['cast', 'creative', 'employment'].includes(c.contractType) && c.status === 'signed' && prod?.closingDate) {
+      const d = new Date(prod.closingDate + 'T12:00:00')
+      d.setDate(d.getDate() + 7)
+      const id = `obl-cp-${c.id}`
+      if (!existingIds.has(id)) toCreate.push({
+        id, productionId: c.productionId, contractId: c.id,
+        partyName: c.partyName, type: 'payment_due',
+        description: `Final payment / closeout — ${c.partyName}`,
+        dueDate: d.toISOString().slice(0, 10), status: 'not_started',
+        owner: 'Finance', risk: 'medium', source: 'manual', notes: '',
+        syncedToCalendar: false, syncedToCashFlow: false, createdAt: now,
+      })
+    }
+
+    toCreate.forEach((o) => addObligation(o))
+    if (toCreate.length > 0 || existingIds.size > 0) {
+      setExtractedIds((prev) => new Set([...prev, c.id]))
+      setTimeout(() => setExtractedIds((prev) => { const n = new Set(prev); n.delete(c.id); return n }), 2500)
+    }
   }
 
   const statusCounts = CONTRACT_STATUSES.map((s) => ({
@@ -249,7 +337,16 @@ export default function ContractsPage() {
                         <td className="px-4 py-3 text-xs text-stone-500 max-w-xs truncate">{c.keyObligations}</td>
                         <td className="px-4 py-3 text-xs text-stone-400 max-w-xs truncate">{c.notes}</td>
                         <td className="px-4 py-3">
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end items-center">
+                            {isAdmin && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); extractObligations(c) }}
+                                className="p-1 text-stone-400 hover:text-emerald-600 cursor-pointer"
+                                title="Extract obligations"
+                              >
+                                {extractedIds.has(c.id) ? <Check size={12} className="text-emerald-600" /> : <FileCheck2 size={12} />}
+                              </button>
+                            )}
                             {isAdmin && <button onClick={() => openEdit(c)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
                             {isAdmin && <button onClick={() => deleteContract(c.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
                           </div>
