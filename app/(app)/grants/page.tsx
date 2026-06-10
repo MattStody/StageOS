@@ -5,8 +5,8 @@ import { Card, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { useStore } from '@/lib/store'
 import { fmt, formatDate, daysUntil } from '@/lib/utils'
-import type { Grant, GrantStatus, GrantType } from '@/lib/types'
-import { Plus, X, AlertCircle, Clock, CheckCircle2, ChevronDown } from 'lucide-react'
+import type { Grant, GrantStatus, GrantType, ContractObligation } from '@/lib/types'
+import { Plus, X, ChevronDown, FileCheck2, Check } from 'lucide-react'
 
 // ── Config ─────────────────────────────────────────────────────────────────────
 
@@ -48,13 +48,60 @@ const EMPTY_FORM: Omit<Grant, 'id'> = {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function GrantsPage() {
-  const { grants, productions, addGrant, updateGrant, deleteGrant } = useStore()
+  const { grants, productions, obligations, addGrant, updateGrant, deleteGrant, addObligation } = useStore()
 
   const [filterStatus, setFilterStatus] = useState<GrantStatus | 'all'>('all')
   const [modalOpen, setModalOpen]       = useState(false)
   const [editing, setEditing]           = useState<Grant | null>(null)
   const [form, setForm]                 = useState<Omit<Grant, 'id'>>(EMPTY_FORM)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [extractedIds, setExtractedIds]   = useState<Set<string>>(new Set())
+
+  function extractObligations(g: Grant) {
+    const existingIds = new Set(obligations.filter(o => o.contractId === g.id).map(o => o.id))
+    const fallbackProdId = g.productionId ?? productions[0]?.id ?? ''
+    const toCreate: ContractObligation[] = []
+
+    if (g.applicationDeadline && ['identified', 'drafting', 'submitted'].includes(g.status)) {
+      const id = `obl-ga-${g.id}`
+      if (!existingIds.has(id)) {
+        toCreate.push({
+          id, productionId: fallbackProdId, contractId: g.id,
+          partyName: g.funder, type: 'deliverable_due',
+          description: `Submit grant application — ${g.programName}`,
+          dueDate: g.applicationDeadline, status: 'not_started',
+          owner: 'GM', risk: 'medium', source: 'manual', notes: '',
+          syncedToCalendar: false, syncedToCashFlow: false,
+          createdAt: new Date().toISOString(),
+        })
+      }
+    }
+
+    if (g.reportDeadline && ['awarded', 'report_due', 'report_submitted'].includes(g.status)) {
+      const id = `obl-gr-${g.id}`
+      if (!existingIds.has(id)) {
+        toCreate.push({
+          id, productionId: fallbackProdId, contractId: g.id,
+          partyName: g.funder, type: 'report_due',
+          description: `Final report — ${g.programName}, ${g.funder}`,
+          dueDate: g.reportDeadline, status: 'not_started',
+          owner: 'GM', risk: 'high', source: 'manual', notes: '',
+          syncedToCalendar: false, syncedToCashFlow: false,
+          createdAt: new Date().toISOString(),
+        })
+      }
+    }
+
+    toCreate.forEach(o => addObligation(o))
+    if (toCreate.length > 0 || existingIds.size > 0) {
+      setExtractedIds(prev => new Set([...prev, g.id]))
+      setTimeout(() => setExtractedIds(prev => { const n = new Set(prev); n.delete(g.id); return n }), 2500)
+    }
+  }
+
+  function oblCount(g: Grant) {
+    return obligations.filter(o => o.contractId === g.id).length
+  }
 
   function openNew() {
     setEditing(null)
@@ -252,7 +299,24 @@ export default function GrantsPage() {
                           </span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {(g.applicationDeadline || g.reportDeadline) && (
+                              extractedIds.has(g.id) ? (
+                                <span className="inline-flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                                  <Check size={11} />
+                                  {oblCount(g) > 0 ? `${oblCount(g)} obligation${oblCount(g) !== 1 ? 's' : ''}` : 'Done'}
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => extractObligations(g)}
+                                  title="Extract obligations to tracker"
+                                  className="inline-flex items-center gap-1 text-xs text-stone-400 hover:text-indigo-600 transition-colors"
+                                >
+                                  <FileCheck2 size={12} />
+                                  {oblCount(g) > 0 ? `${oblCount(g)} obl.` : 'Obligations'}
+                                </button>
+                              )
+                            )}
                             <button
                               onClick={() => openEdit(g)}
                               className="text-xs text-stone-400 hover:text-stone-700 transition-colors"

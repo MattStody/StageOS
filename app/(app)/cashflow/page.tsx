@@ -11,7 +11,7 @@ import { fmt, formatDate } from '@/lib/utils'
 import { Plus, Trash2, Pencil } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import type { CashFlowRow } from '@/lib/types'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, Legend } from 'recharts'
 
 const blank = (productionId: string): Omit<CashFlowRow, 'id'> => ({
   productionId,
@@ -37,22 +37,47 @@ export default function CashFlowPage() {
   const [editing, setEditing] = useState<CashFlowRow | null>(null)
   const [form, setForm] = useState<Omit<CashFlowRow, 'id'>>(blank(selectedProd))
 
+  const isAll = selectedProd === 'all'
   const prod = productions.find((p) => p.id === selectedProd)
-  const rows = cashFlowRows
-    .filter((r) => r.productionId === selectedProd)
-    .sort((a, b) => new Date(a.weekOf).getTime() - new Date(b.weekOf).getTime())
 
+  const rows = isAll
+    ? cashFlowRows.slice().sort((a, b) => new Date(a.weekOf).getTime() - new Date(b.weekOf).getTime())
+    : cashFlowRows
+        .filter((r) => r.productionId === selectedProd)
+        .sort((a, b) => new Date(a.weekOf).getTime() - new Date(b.weekOf).getTime())
+
+  // Single-production stats
   const lastRow = rows[rows.length - 1]
-  const totalInflows = rows.reduce((s, r) => s + r.ticketRevenue + r.otherInflows, 0)
+  const totalInflows  = rows.reduce((s, r) => s + r.ticketRevenue + r.otherInflows, 0)
   const totalOutflows = rows.reduce((s, r) => s + r.payroll + r.venueCosts + r.marketing + r.royalties + r.vendorPayments + r.otherOutflows, 0)
   const lowestBalance = rows.length ? Math.min(...rows.map((r) => r.closingCash)) : 0
 
+  // All-productions: latest cash per production
+  const currentBalanceAll = productions.reduce((sum, p) => {
+    const prodRows = cashFlowRows
+      .filter((r) => r.productionId === p.id)
+      .sort((a, b) => new Date(a.weekOf).getTime() - new Date(b.weekOf).getTime())
+    return sum + (prodRows.at(-1)?.closingCash ?? p.cashOnHand)
+  }, 0)
+
+  // Single-production chart
   const chartData = rows.map((r) => ({
     week: formatDate(r.weekOf).replace(', 2025', '').replace(', 2026', ''),
     balance: r.closingCash,
-    inflows: r.ticketRevenue + r.otherInflows,
-    outflows: r.payroll + r.venueCosts + r.marketing + r.royalties + r.vendorPayments + r.otherOutflows,
   }))
+
+  // All-productions chart — one entry per unique week date, one key per production
+  const allWeekDates = [...new Set(cashFlowRows.map((r) => r.weekOf))].sort()
+  const allChartData = allWeekDates.map((weekOf) => {
+    const entry: Record<string, string | number> = {
+      week: formatDate(weekOf).replace(', 2025', '').replace(', 2026', ''),
+    }
+    for (const p of productions) {
+      const row = cashFlowRows.find((r) => r.productionId === p.id && r.weekOf === weekOf)
+      if (row) entry[p.id] = row.closingCash
+    }
+    return entry
+  })
 
   function calcClosing(f: typeof form) {
     const inflows = f.ticketRevenue + f.otherInflows
@@ -93,11 +118,17 @@ export default function CashFlowPage() {
       <PageHeader
         title="Cash Flow Forecast"
         subtitle="Weekly inflows, outflows, and projected balance"
-        actions={isAdmin ? <Button onClick={openAdd} size="sm"><Plus size={13} /> Add Week</Button> : undefined}
+        actions={isAdmin && !isAll ? <Button onClick={openAdd} size="sm"><Plus size={13} /> Add Week</Button> : undefined}
       />
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 mb-6">
+        <button
+          onClick={() => setSelectedProd('all')}
+          className={`px-3 py-1.5 rounded text-sm transition-colors ${isAll ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-400'}`}
+        >
+          All Productions
+        </button>
         {productions.map((p) => (
           <button key={p.id} onClick={() => setSelectedProd(p.id)}
             className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-colors ${selectedProd === p.id ? 'bg-stone-900 text-white' : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-400'}`}>
@@ -116,25 +147,35 @@ export default function CashFlowPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Current Balance" value={fmt(lastRow?.closingCash || prod?.cashOnHand || 0)} trend="neutral" />
+        <StatCard label="Current Balance" value={fmt(isAll ? currentBalanceAll : (lastRow?.closingCash || prod?.cashOnHand || 0))} trend="neutral" />
         <StatCard label="Total Inflows" value={fmt(totalInflows)} trend="up" />
         <StatCard label="Total Outflows" value={fmt(totalOutflows)} trend="down" />
         <StatCard label="Lowest Balance" value={fmt(lowestBalance)} alert={lowestBalance < 0} />
       </div>
 
       {/* Chart */}
-      {rows.length > 0 && (
+      {(isAll ? allChartData.length > 0 : rows.length > 0) && (
         <Card className="mb-6">
-          <CardHeader><CardTitle>Projected Cash Balance</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{isAll ? 'Cash Balance by Production' : 'Projected Cash Balance'}</CardTitle></CardHeader>
           <CardBody>
             <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={chartData}>
+              <LineChart data={isAll ? allChartData : chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" />
                 <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v) => fmt(Number(v))} contentStyle={{ fontSize: 12, border: '1px solid #e7e5e4', borderRadius: 6 }} />
+                <Tooltip
+                  formatter={(v, name) => [fmt(Number(v)), isAll ? (productions.find(p => p.id === name)?.name ?? name) : 'Cash Balance']}
+                  contentStyle={{ fontSize: 12, border: '1px solid #e7e5e4', borderRadius: 6 }}
+                />
                 <ReferenceLine y={0} stroke="#ef4444" strokeDasharray="4 4" strokeOpacity={0.5} />
-                <Line type="monotone" dataKey="balance" stroke={prod?.color || '#6366f1'} strokeWidth={2} dot={{ r: 3, fill: prod?.color || '#6366f1' }} name="Cash Balance" />
+                {isAll ? (
+                  productions.map((p) => (
+                    <Line key={p.id} type="monotone" dataKey={p.id} stroke={p.color} strokeWidth={2} dot={{ r: 2, fill: p.color }} name={p.name} connectNulls={false} />
+                  ))
+                ) : (
+                  <Line type="monotone" dataKey="balance" stroke={prod?.color || '#6366f1'} strokeWidth={2} dot={{ r: 3, fill: prod?.color || '#6366f1' }} name="Cash Balance" />
+                )}
+                {isAll && <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />}
               </LineChart>
             </ResponsiveContainer>
           </CardBody>
@@ -146,6 +187,7 @@ export default function CashFlowPage() {
         <table className="w-full text-sm min-w-max">
           <thead>
             <tr className="border-b border-stone-100 bg-stone-50">
+              {isAll && <th className="text-left px-4 py-3 text-xs font-medium text-stone-500 uppercase tracking-wider">Production</th>}
               <th className="text-left px-4 py-3 text-xs font-medium text-stone-500 uppercase tracking-wider">Week</th>
               <th className="text-right px-4 py-3 text-xs font-medium text-stone-500 uppercase tracking-wider">Starting Cash</th>
               <th className="text-right px-4 py-3 text-xs font-medium text-stone-500 uppercase tracking-wider bg-emerald-50/50">Tickets</th>
@@ -162,14 +204,23 @@ export default function CashFlowPage() {
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={12} className="px-4 py-8 text-center text-sm text-stone-400">No cash flow data yet. Add a week to get started.</td></tr>
+              <tr><td colSpan={isAll ? 13 : 12} className="px-4 py-8 text-center text-sm text-stone-400">No cash flow data yet. Add a week to get started.</td></tr>
             ) : (
               rows.map((r) => {
                 const inflows = r.ticketRevenue + r.otherInflows
                 const outflows = r.payroll + r.venueCosts + r.marketing + r.royalties + r.vendorPayments + r.otherOutflows
                 const net = inflows - outflows
+                const rowProd = isAll ? productions.find(p => p.id === r.productionId) : null
                 return (
                   <tr key={r.id} className="border-b border-stone-100 hover:bg-stone-50/50 group">
+                    {isAll && (
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: rowProd?.color || '#a8a29e' }} />
+                          <span className="text-xs text-stone-600">{rowProd?.name ?? '—'}</span>
+                        </div>
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-stone-700 whitespace-nowrap">{formatDate(r.weekOf)}</td>
                     <td className="text-right px-4 py-3 text-stone-600">{fmt(r.startingCash)}</td>
                     <td className="text-right px-4 py-3 text-emerald-700 bg-emerald-50/30">{r.ticketRevenue > 0 ? fmt(r.ticketRevenue) : '—'}</td>

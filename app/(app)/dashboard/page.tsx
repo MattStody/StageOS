@@ -458,31 +458,31 @@ export default function DashboardPage() {
       />
 
       {/* ── Portfolio Briefing ───────────────────────────────────────────── */}
-      <div className="mb-6 rounded-xl border border-stone-800 bg-stone-950 px-6 py-5">
+      <div className="mb-6 rounded-xl border border-stone-200 bg-white px-6 py-5">
         <div className="flex items-center gap-2 mb-3">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-          <p className="text-xs font-semibold uppercase tracking-widest text-stone-400">Today's Briefing</p>
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <p className="text-xs font-semibold uppercase tracking-widest text-stone-500">Today's Briefing</p>
         </div>
-        <p className="text-sm font-medium text-white leading-relaxed mb-4">{briefing.headline}</p>
+        <p className="text-sm font-medium text-stone-900 leading-relaxed mb-4">{briefing.headline}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1">
           <div>
             {briefing.strengths.length > 0 && (
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-500 mb-1.5">What's working</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-700 mb-1.5">What's working</p>
             )}
             {briefing.strengths.map((s, i) => (
-              <div key={i} className="flex items-start gap-2 text-xs text-stone-300 mb-1">
-                <span className="text-emerald-400 shrink-0 mt-px">↑</span>
+              <div key={i} className="flex items-start gap-2 text-xs text-stone-600 mb-1">
+                <span className="text-emerald-600 shrink-0 mt-px">↑</span>
                 {s}
               </div>
             ))}
           </div>
           <div>
             {briefing.watches.length > 0 && (
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-500 mb-1.5">Keep an eye on</p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-700 mb-1.5">Keep an eye on</p>
             )}
             {briefing.watches.map((w, i) => (
-              <div key={i} className="flex items-start gap-2 text-xs text-stone-300 mb-1">
-                <span className="text-amber-400 shrink-0 mt-px">!</span>
+              <div key={i} className="flex items-start gap-2 text-xs text-stone-600 mb-1">
+                <span className="text-amber-600 shrink-0 mt-px">!</span>
                 {w}
               </div>
             ))}
