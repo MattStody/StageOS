@@ -91,7 +91,8 @@ export async function POST(req: NextRequest) {
       ],
     })
 
-    const text = response.content.find((b) => b.type === 'text')?.text ?? '[]'
+    const textBlock = response.content.find((b) => b.type === 'text')
+    const text = (textBlock && 'text' in textBlock ? textBlock.text : null) ?? '[]'
     let obligations: ExtractedObligation[] = []
     try {
       const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()

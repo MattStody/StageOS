@@ -256,6 +256,49 @@ export interface UnionAgreementTemplate {
   obligations: ObligationTemplate[]
 }
 
+// ── Actor Profiles ────────────────────────────────────────────────────────────
+
+export interface ActorMeasurements {
+  height: string
+  weight: string
+  chestBust: string
+  waist: string
+  hips: string
+  inseam: string
+  dressSuitSize: string
+  shoeSize: string
+  hatSize: string
+  wardrobeNotes: string
+}
+
+export type PaymentScheduleItem = 'deposit_on_signing' | 'weekly' | 'closing_night_bonus'
+
+export interface ActorProfile {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  measurements: ActorMeasurements
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ActorEngagement {
+  id: string
+  actorProfileId: string
+  productionId: string
+  productionName: string
+  role: string
+  startDate: string
+  endDate: string
+  weeklyRate: number
+  paymentSchedule: PaymentScheduleItem[]
+  notes: string
+  tasksCreated: number
+  createdAt: string
+}
+
 // ── Production Tasks ──────────────────────────────────────────────────────────
 
 export type TaskPhase = 'pre_production' | 'rehearsal' | 'tech' | 'run' | 'closeout'

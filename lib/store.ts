@@ -1,7 +1,7 @@
 'use client'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate, Grant, ProductionTask } from './types'
+import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate, Grant, ProductionTask, ActorProfile, ActorEngagement } from './types'
 import {
   PRODUCTIONS,
   BUDGET_LINES,
@@ -87,6 +87,13 @@ interface StageOpsState {
   updateTask: (task: ProductionTask) => void
   deleteTask: (id: string) => void
 
+  actorProfiles: ActorProfile[]
+  addActorProfile: (profile: ActorProfile) => void
+  updateActorProfile: (profile: ActorProfile) => void
+
+  actorEngagements: ActorEngagement[]
+  addActorEngagement: (engagement: ActorEngagement) => void
+
   spektrixBaseUrl: string
   setSpektrixBaseUrl: (url: string) => void
 
@@ -163,6 +170,19 @@ export const useStore = create<StageOpsState>()(
       addTask: (task) => set((s) => ({ tasks: [...s.tasks, task] })),
       updateTask: (task) => set((s) => ({ tasks: s.tasks.map((t) => (t.id === task.id ? task : t)) })),
       deleteTask: (id) => set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) })),
+
+      actorProfiles: [],
+      addActorProfile: (profile) => set((s) => ({
+        actorProfiles: s.actorProfiles.some((p) => p.id === profile.id)
+          ? s.actorProfiles.map((p) => (p.id === profile.id ? profile : p))
+          : [...s.actorProfiles, profile],
+      })),
+      updateActorProfile: (profile) => set((s) => ({
+        actorProfiles: s.actorProfiles.map((p) => (p.id === profile.id ? profile : p)),
+      })),
+
+      actorEngagements: [],
+      addActorEngagement: (engagement) => set((s) => ({ actorEngagements: [...s.actorEngagements, engagement] })),
 
       setSpektrixBaseUrl: (url) => set(() => ({ spektrixBaseUrl: url })),
 
