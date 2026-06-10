@@ -1,6 +1,7 @@
 'use client'
 import { use, useState } from 'react'
 import { useStore } from '@/lib/store'
+import { cn } from '@/lib/cn'
 import { StatCard } from '@/components/ui/StatCard'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
@@ -9,7 +10,7 @@ import { Modal } from '@/components/ui/Modal'
 import { fmt, fmtPct, formatDate, formatDateShort, daysUntil, statusLabel, budgetUsedPct } from '@/lib/utils'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon, Sparkles, Theater, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Ticket, ExternalLink, AlertCircle, Info } from 'lucide-react'
+import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon, Sparkles, Theater, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Ticket, ExternalLink, AlertCircle, Info, CheckSquare } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ComposedChart, Line, ReferenceLine } from 'recharts'
 import {
   computeCoreForecast,
@@ -20,7 +21,7 @@ import {
   type RiskLevel,
 } from '@/lib/forecasting'
 import { useAccess } from '@/lib/useAccess'
-import type { PerformanceDate, PerformanceStatus } from '@/lib/types'
+import type { PerformanceDate, PerformanceStatus, ProductionTask, TaskPhase, TaskStatus, TaskPriority } from '@/lib/types'
 import { generateTicketMap, getVenueSections } from '@/lib/spektrix'
 import type { TicketMapData } from '@/lib/spektrix'
 import { SeatMap } from '@/components/ui/SeatMap'
@@ -79,6 +80,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
   const { id } = use(params)
   const { productions, budgetLines, revenueWeeks, contracts, deadlines, cashFlowRows, updateProduction,
     performanceDates, addPerformanceDate, updatePerformanceDate, deletePerformanceDate,
+    tasks, addTask, updateTask, deleteTask,
     spektrixBaseUrl } = useStore()
   const { canEdit } = useAccess()
 
@@ -101,6 +103,22 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
   }
   const FC_RISK_LABEL: Record<RiskLevel, string> = { healthy: 'Healthy', watch: 'Watch', at_risk: 'At Risk', critical: 'Critical' }
 
+  const TASK_PHASE_LABELS: Record<TaskPhase, string> = {
+    pre_production: 'Pre-Prod', rehearsal: 'Rehearsal', tech: 'Tech', run: 'Run', closeout: 'Closeout',
+  }
+  const TASK_STATUS_LABELS: Record<TaskStatus, string> = { todo: 'To Do', in_progress: 'In Progress', done: 'Done' }
+  const TASK_STATUS_DOT: Record<TaskStatus, string> = { todo: 'bg-stone-400', in_progress: 'bg-amber-400', done: 'bg-emerald-400' }
+  const TASK_PRIORITY_BAR: Record<TaskPriority, string> = {
+    low: 'bg-stone-300', normal: 'bg-sky-400', high: 'bg-amber-400', urgent: 'bg-red-500',
+  }
+  const TASK_PHASE_CHIP: Record<TaskPhase, string> = {
+    pre_production: 'text-violet-700 bg-violet-50 border-violet-200',
+    rehearsal: 'text-sky-700 bg-sky-50 border-sky-200',
+    tech: 'text-amber-700 bg-amber-50 border-amber-200',
+    run: 'text-emerald-700 bg-emerald-50 border-emerald-200',
+    closeout: 'text-rose-700 bg-rose-50 border-rose-200',
+  }
+
   const [editImageOpen, setEditImageOpen] = useState(false)
   const [imageDraft, setImageDraft] = useState('')
   const [perfModalOpen, setPerfModalOpen] = useState(false)
@@ -117,6 +135,12 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
   const [ticketMapData, setTicketMapData] = useState<TicketMapData | null>(null)
   const [ticketTab, setTicketTab] = useState<'live' | 'analytics'>('live')
   const [iframeBlocked, setIframeBlocked] = useState(false)
+  const [taskModalOpen, setTaskModalOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState<ProductionTask | null>(null)
+  const [taskForm, setTaskForm] = useState<Omit<ProductionTask, 'id'>>({
+    productionId: id, title: '', description: '', phase: 'pre_production', status: 'todo', priority: 'normal', assignedTo: '', dueDate: '', notes: '',
+  })
+  const [taskPhaseFilter, setTaskPhaseFilter] = useState<TaskPhase | 'all'>('all')
 
   const prod = productions.find((p) => p.id === id)
   if (!prod) return notFound()
@@ -178,6 +202,29 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
       addPerformanceDate({ ...perfForm, id: `perf-${id}-${Date.now()}` })
     }
     setPerfModalOpen(false)
+  }
+
+  const prodTasks = tasks.filter((t) => t.productionId === id)
+  const filteredTasks = taskPhaseFilter === 'all' ? prodTasks : prodTasks.filter((t) => t.phase === taskPhaseFilter)
+
+  function openAddTask(status: TaskStatus = 'todo') {
+    setEditingTask(null)
+    setTaskForm({ productionId: id, title: '', description: '', phase: 'pre_production', status, priority: 'normal', assignedTo: '', dueDate: '', notes: '' })
+    setTaskModalOpen(true)
+  }
+  function openEditTask(t: ProductionTask) {
+    setEditingTask(t)
+    setTaskForm({ ...t })
+    setTaskModalOpen(true)
+  }
+  function saveTask() {
+    if (!taskForm.title.trim()) return
+    if (editingTask) {
+      updateTask({ ...taskForm, id: editingTask.id })
+    } else {
+      addTask({ ...taskForm, id: `task-${id}-${Date.now()}` })
+    }
+    setTaskModalOpen(false)
   }
 
   // Map a performance date to its revenue week (week-ending Sunday)
@@ -841,6 +888,191 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                 Save
               </Button>
             </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ── Task Board ──────────────────────────────────────────────────────── */}
+      <Card className="mb-5">
+        <CardHeader className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <CheckSquare size={14} className="text-stone-400" />
+              <CardTitle>Tasks</CardTitle>
+              <span className="text-xs text-stone-400 ml-1">{prodTasks.length} total</span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {(['all', 'pre_production', 'rehearsal', 'tech', 'run', 'closeout'] as const).map((ph) => (
+                <button
+                  key={ph}
+                  onClick={() => setTaskPhaseFilter(ph)}
+                  className={cn(
+                    'text-[10px] px-2 py-0.5 rounded-full border transition-colors',
+                    taskPhaseFilter === ph
+                      ? 'bg-stone-900 text-white border-stone-900'
+                      : 'text-stone-500 border-stone-200 hover:border-stone-400'
+                  )}
+                >
+                  {ph === 'all' ? 'All' : TASK_PHASE_LABELS[ph]}
+                </button>
+              ))}
+            </div>
+          </div>
+          {canEdit && (
+            <Button size="sm" variant="secondary" onClick={() => openAddTask()}>
+              <Plus size={12} /> Add Task
+            </Button>
+          )}
+        </CardHeader>
+        <CardBody className="p-0">
+          {prodTasks.length === 0 ? (
+            <div className="px-6 py-8 text-center">
+              <CheckSquare size={24} className="mx-auto text-stone-300 mb-2" />
+              <p className="text-sm text-stone-400 mb-3">No tasks yet for this production</p>
+              {canEdit && <Button size="sm" onClick={() => openAddTask()}>Add First Task</Button>}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-stone-100">
+              {(['todo', 'in_progress', 'done'] as const).map((status) => {
+                const colTasks = filteredTasks.filter((t) => t.status === status)
+                return (
+                  <div key={status} className="p-4 min-h-[100px]">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className={cn('w-2 h-2 rounded-full shrink-0', TASK_STATUS_DOT[status])} />
+                      <span className="text-xs font-semibold text-stone-600 uppercase tracking-wider">{TASK_STATUS_LABELS[status]}</span>
+                      <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-stone-100 text-stone-500 font-medium">{colTasks.length}</span>
+                    </div>
+                    <div className="space-y-2">
+                      {colTasks.map((task) => (
+                        <div key={task.id} className="group bg-white border border-stone-200 rounded-md px-3 py-2.5 hover:border-stone-300 hover:shadow-sm transition-all">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start gap-2 min-w-0">
+                              <div className={cn('w-1 h-4 rounded-full shrink-0 mt-0.5', TASK_PRIORITY_BAR[task.priority])} />
+                              <p className="text-xs font-medium text-stone-800 leading-snug">{task.title}</p>
+                            </div>
+                            {canEdit && (
+                              <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => openEditTask(task)} className="text-stone-400 hover:text-stone-600 cursor-pointer"><Pencil size={10} /></button>
+                                <button onClick={() => deleteTask(task.id)} className="text-stone-400 hover:text-red-500 cursor-pointer"><Trash2 size={10} /></button>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            <span className={cn('text-[9px] px-1.5 py-0.5 rounded-full font-medium border', TASK_PHASE_CHIP[task.phase])}>
+                              {TASK_PHASE_LABELS[task.phase]}
+                            </span>
+                            {task.assignedTo && (
+                              <span className="text-[10px] text-stone-400 truncate max-w-[80px]">{task.assignedTo}</span>
+                            )}
+                            {task.dueDate && (
+                              <span className={cn('text-[10px] ml-auto shrink-0', new Date(task.dueDate + 'T12:00:00') < new Date() && task.status !== 'done' ? 'text-red-500 font-medium' : 'text-stone-400')}>
+                                {formatDateShort(task.dueDate)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      {canEdit && (
+                        <button
+                          onClick={() => openAddTask(status)}
+                          className="w-full text-left text-[11px] text-stone-400 hover:text-stone-600 py-1.5 px-2 rounded hover:bg-stone-50 transition-colors cursor-pointer"
+                        >
+                          + Add task
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      {/* Task modal */}
+      <Modal open={taskModalOpen} onClose={() => setTaskModalOpen(false)} title={editingTask ? 'Edit Task' : 'Add Task'}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-stone-700 mb-1">Title</label>
+            <input
+              className="w-full border border-stone-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-stone-400"
+              value={taskForm.title}
+              onChange={(e) => setTaskForm((f) => ({ ...f, title: e.target.value }))}
+              placeholder="Task title"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-stone-700 mb-1">Phase</label>
+              <select
+                className="w-full border border-stone-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-stone-400"
+                value={taskForm.phase}
+                onChange={(e) => setTaskForm((f) => ({ ...f, phase: e.target.value as TaskPhase }))}
+              >
+                {(['pre_production', 'rehearsal', 'tech', 'run', 'closeout'] as const).map((p) => (
+                  <option key={p} value={p}>{TASK_PHASE_LABELS[p]}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-stone-700 mb-1">Priority</label>
+              <select
+                className="w-full border border-stone-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-stone-400"
+                value={taskForm.priority}
+                onChange={(e) => setTaskForm((f) => ({ ...f, priority: e.target.value as TaskPriority }))}
+              >
+                <option value="low">Low</option>
+                <option value="normal">Normal</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-stone-700 mb-1">Status</label>
+              <select
+                className="w-full border border-stone-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-stone-400"
+                value={taskForm.status}
+                onChange={(e) => setTaskForm((f) => ({ ...f, status: e.target.value as TaskStatus }))}
+              >
+                {(['todo', 'in_progress', 'done'] as const).map((s) => (
+                  <option key={s} value={s}>{TASK_STATUS_LABELS[s]}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-stone-700 mb-1">Due Date</label>
+              <input
+                type="date"
+                className="w-full border border-stone-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-stone-400"
+                value={taskForm.dueDate}
+                onChange={(e) => setTaskForm((f) => ({ ...f, dueDate: e.target.value }))}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-stone-700 mb-1">Assigned To</label>
+            <input
+              className="w-full border border-stone-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-stone-400"
+              value={taskForm.assignedTo}
+              onChange={(e) => setTaskForm((f) => ({ ...f, assignedTo: e.target.value }))}
+              placeholder="Name or role"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-stone-700 mb-1">Notes</label>
+            <textarea
+              className="w-full border border-stone-200 rounded px-3 py-2 text-sm resize-none focus:outline-none focus:border-stone-400"
+              rows={2}
+              value={taskForm.notes}
+              onChange={(e) => setTaskForm((f) => ({ ...f, notes: e.target.value }))}
+              placeholder="Optional notes"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="secondary" onClick={() => setTaskModalOpen(false)}>Cancel</Button>
+            <Button onClick={saveTask} disabled={!taskForm.title.trim()}>{editingTask ? 'Save Changes' : 'Add Task'}</Button>
           </div>
         </div>
       </Modal>

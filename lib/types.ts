@@ -255,3 +255,22 @@ export interface UnionAgreementTemplate {
   expiryDate?: string
   obligations: ObligationTemplate[]
 }
+
+// ── Production Tasks ──────────────────────────────────────────────────────────
+
+export type TaskPhase = 'pre_production' | 'rehearsal' | 'tech' | 'run' | 'closeout'
+export type TaskStatus = 'todo' | 'in_progress' | 'done'
+export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent'
+
+export interface ProductionTask {
+  id: string
+  productionId: string
+  title: string
+  description: string
+  phase: TaskPhase
+  status: TaskStatus
+  priority: TaskPriority
+  assignedTo: string
+  dueDate: string
+  notes: string
+}

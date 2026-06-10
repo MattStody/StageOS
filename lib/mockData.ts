@@ -1,4 +1,4 @@
-import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate, Grant } from './types'
+import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate, Grant, ProductionTask } from './types'
 
 export const PRODUCTIONS: Production[] = [
   {
@@ -732,3 +732,27 @@ export const GRANTS: Grant[] = [
   },
 ]
 
+export const TASKS: ProductionTask[] = [
+  // A Winter's Dream — in rehearsal
+  { id: 'task-1-1', productionId: 'prod-1', title: 'Finalize CAEA union agreements', description: '', phase: 'pre_production', status: 'in_progress', priority: 'high', assignedTo: 'GM', dueDate: '2026-07-15', notes: '' },
+  { id: 'task-1-2', productionId: 'prod-1', title: 'Approve set design drawings', description: '', phase: 'pre_production', status: 'done', priority: 'normal', assignedTo: 'Director', dueDate: '2026-06-20', notes: '' },
+  { id: 'task-1-3', productionId: 'prod-1', title: 'Insurance certificate — venue', description: '', phase: 'pre_production', status: 'done', priority: 'high', assignedTo: 'GM', dueDate: '2026-06-01', notes: '' },
+  { id: 'task-1-4', productionId: 'prod-1', title: 'Costume fittings — leads', description: '', phase: 'rehearsal', status: 'todo', priority: 'high', assignedTo: 'Wardrobe', dueDate: '2026-07-28', notes: '' },
+  { id: 'task-1-5', productionId: 'prod-1', title: 'Block Act 1 dream sequence', description: '', phase: 'rehearsal', status: 'in_progress', priority: 'normal', assignedTo: 'Director', dueDate: '2026-08-10', notes: '' },
+  { id: 'task-1-6', productionId: 'prod-1', title: 'Full orchestra music rehearsal', description: '', phase: 'rehearsal', status: 'todo', priority: 'normal', assignedTo: 'MD', dueDate: '2026-08-15', notes: '' },
+  { id: 'task-1-7', productionId: 'prod-1', title: 'Tech rehearsal schedule', description: '', phase: 'tech', status: 'todo', priority: 'urgent', assignedTo: 'Stage Manager', dueDate: '2026-09-01', notes: '' },
+
+  // The Silence Between — pre-production
+  { id: 'task-2-1', productionId: 'prod-2', title: 'Venue deposit payment', description: '', phase: 'pre_production', status: 'done', priority: 'high', assignedTo: 'GM', dueDate: '2026-05-01', notes: '' },
+  { id: 'task-2-2', productionId: 'prod-2', title: 'Submit Canada Council grant', description: '', phase: 'pre_production', status: 'done', priority: 'high', assignedTo: 'Development', dueDate: '2026-04-30', notes: '' },
+  { id: 'task-2-3', productionId: 'prod-2', title: 'Auditions — principal cast', description: '', phase: 'pre_production', status: 'in_progress', priority: 'urgent', assignedTo: 'Casting Director', dueDate: '2026-07-20', notes: '' },
+  { id: 'task-2-4', productionId: 'prod-2', title: 'Hire Production Stage Manager', description: '', phase: 'pre_production', status: 'todo', priority: 'high', assignedTo: 'Producer', dueDate: '2026-07-01', notes: '' },
+  { id: 'task-2-5', productionId: 'prod-2', title: 'Commission score revisions', description: '', phase: 'pre_production', status: 'todo', priority: 'normal', assignedTo: 'Composer', dueDate: '2026-08-01', notes: '' },
+
+  // Echoes: The Concert — touring/run
+  { id: 'task-3-1', productionId: 'prod-3', title: 'Bus & truck permits — Montreal leg', description: '', phase: 'pre_production', status: 'done', priority: 'high', assignedTo: 'Touring Office', dueDate: '2026-08-15', notes: '' },
+  { id: 'task-3-2', productionId: 'prod-3', title: 'Rehearse encore setlist', description: '', phase: 'rehearsal', status: 'in_progress', priority: 'normal', assignedTo: 'Musical Director', dueDate: '2026-08-20', notes: '' },
+  { id: 'task-3-3', productionId: 'prod-3', title: 'Sound check — Toronto venue', description: '', phase: 'tech', status: 'todo', priority: 'urgent', assignedTo: 'Tour SM', dueDate: '2026-09-03', notes: '' },
+  { id: 'task-3-4', productionId: 'prod-3', title: 'Merch inventory audit', description: '', phase: 'run', status: 'todo', priority: 'low', assignedTo: 'Tour Manager', dueDate: '2026-09-08', notes: '' },
+  { id: 'task-3-5', productionId: 'prod-3', title: 'Weekly company meeting', description: '', phase: 'run', status: 'todo', priority: 'normal', assignedTo: 'Company Manager', dueDate: '2026-09-10', notes: '' },
+]

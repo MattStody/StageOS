@@ -1,7 +1,7 @@
 'use client'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate, Grant } from './types'
+import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate, Grant, ProductionTask } from './types'
 import {
   PRODUCTIONS,
   BUDGET_LINES,
@@ -16,6 +16,7 @@ import {
   OBLIGATIONS,
   PERFORMANCE_DATES,
   GRANTS,
+  TASKS,
 } from './mockData'
 import type { ScenarioData } from './demoScenarios'
 
@@ -81,6 +82,11 @@ interface StageOpsState {
   updateGrant: (grant: Grant) => void
   deleteGrant: (id: string) => void
 
+  tasks: ProductionTask[]
+  addTask: (task: ProductionTask) => void
+  updateTask: (task: ProductionTask) => void
+  deleteTask: (id: string) => void
+
   spektrixBaseUrl: string
   setSpektrixBaseUrl: (url: string) => void
 
@@ -104,6 +110,7 @@ export const useStore = create<StageOpsState>()(
       obligations: OBLIGATIONS,
       performanceDates: PERFORMANCE_DATES,
       grants: GRANTS,
+      tasks: TASKS,
       spektrixBaseUrl: '',
 
       addBudgetLine: (line) => set((s) => ({ budgetLines: [...s.budgetLines, line] })),
@@ -153,6 +160,10 @@ export const useStore = create<StageOpsState>()(
       updateGrant: (grant) => set((s) => ({ grants: s.grants.map((g) => (g.id === grant.id ? grant : g)) })),
       deleteGrant: (id) => set((s) => ({ grants: s.grants.filter((g) => g.id !== id) })),
 
+      addTask: (task) => set((s) => ({ tasks: [...s.tasks, task] })),
+      updateTask: (task) => set((s) => ({ tasks: s.tasks.map((t) => (t.id === task.id ? task : t)) })),
+      deleteTask: (id) => set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) })),
+
       setSpektrixBaseUrl: (url) => set(() => ({ spektrixBaseUrl: url })),
 
       loadScenario: (data) => set(() => ({
@@ -167,8 +178,9 @@ export const useStore = create<StageOpsState>()(
         marketingCampaigns: data.marketingCampaigns,
         customEvents: data.customEvents,
         obligations: OBLIGATIONS,
-        performanceDates: data.performanceDates,
+        performanceDates: data.performanceDates ?? PERFORMANCE_DATES,
         grants: GRANTS,
+        tasks: TASKS,
       })),
 
       resetToDefaults: () => set(() => ({
@@ -185,6 +197,7 @@ export const useStore = create<StageOpsState>()(
         obligations: OBLIGATIONS,
         performanceDates: PERFORMANCE_DATES,
         grants: GRANTS,
+        tasks: TASKS,
       })),
     }),
     { name: 'stageops-store' }
