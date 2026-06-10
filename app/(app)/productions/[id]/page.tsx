@@ -49,6 +49,28 @@ function fmt12(time: string) {
   return `${h12}:${String(m).padStart(2, '0')}${ampm}`
 }
 
+// Deterministic per-performance multipliers based on day-of-week and time slot
+function perfMultipliers(perfId: string, date: string, time: string): { soldMult: number; atpMult: number } {
+  const d = new Date(date + 'T12:00:00')
+  const day = d.getDay()
+  const hour = parseInt(time?.split(':')[0] ?? '20', 10)
+  const isMat = hour < 17
+  // Base sold/ATP multipliers by day (0=Sun … 6=Sat)
+  const SOLD = [1.05, 0.85, 0.88, 0.90, 0.95, 1.12, isMat ? 1.08 : 1.22]
+  const ATP  = [1.00, 0.90, 0.92, 0.95, 0.98, 1.12, isMat ? 1.06 : 1.22]
+  // Matinee discount on non-Saturday days
+  const matAdj = isMat && day !== 6 ? 0.82 : 1.0
+  const atpMatAdj = isMat && day !== 6 ? 0.92 : 1.0
+  // Deterministic jitter ±6% from perf ID hash
+  let h = 0
+  for (let i = 0; i < perfId.length; i++) h = (h * 31 + perfId.charCodeAt(i)) & 0xffff
+  const j = ((h % 120) - 60) / 1000 // –0.06 … +0.06
+  return {
+    soldMult: Math.max(0.45, (SOLD[day] ?? 1.0) * matAdj + j),
+    atpMult:  Math.max(0.70, (ATP[day]  ?? 1.0) * atpMatAdj + j * 0.5),
+  }
+}
+
 function blankPerf(productionId: string): Omit<PerformanceDate, 'id'> {
   return { productionId, date: '', time: '20:00', notes: '', status: 'scheduled', spektrixInstanceId: '' }
 }
@@ -167,15 +189,23 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
     return weeks.find((w) => w.weekEnding === sun.toISOString().slice(0, 10))
   }
 
-  // Chart data
+  // Chart data — use month labels when there are many weeks
+  const useMonthLabels = weeks.length > 16
+  const spansYears = weeks.length > 0 &&
+    new Date(weeks[0].weekEnding).getFullYear() !== new Date(weeks[weeks.length - 1].weekEnding).getFullYear()
   let cumulative = 0
   const chartData = weeks.map((w) => {
     cumulative += w.grossRevenue
-    return {
-      week: formatDate(w.weekEnding).replace(', 2025', '').replace(', 2026', ''),
-      weekly: w.grossRevenue,
-      cumulative,
+    const d = new Date(w.weekEnding + 'T12:00:00')
+    let label: string
+    if (!useMonthLabels) {
+      label = formatDate(w.weekEnding).replace(', 2025', '').replace(', 2026', '').replace(', 2027', '')
+    } else if (spansYears) {
+      label = d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+    } else {
+      label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     }
+    return { week: label, weekly: w.grossRevenue, cumulative }
   })
 
   // Reference line markers: on-sale, 6 weeks BEFORE opening, and opening night week
@@ -309,7 +339,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                       <stop offset="100%" stopColor={prod.color} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} />
+                  <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} interval={weeks.length > 16 ? Math.max(1, Math.floor(weeks.length / 9)) : 0} />
                   <YAxis tick={{ fontSize: 10, fill: '#a8a29e' }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                   <Tooltip formatter={(v) => fmt(Number(v))} contentStyle={{ fontSize: 12, border: '1px solid #e7e5e4', borderRadius: 6 }} />
                   <Area type="monotone" dataKey="weekly" stroke={prod.color} strokeWidth={1.5} fill={`url(#grad-${id})`} name="Weekly Gross" />
@@ -867,10 +897,11 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                       const d = new Date(p.date + 'T12:00:00')
                       const wk = weekForPerf(p.date)
                       const perfsInWeek = wk ? perfs.filter((pp) => weekForPerf(pp.date)?.weekEnding === wk.weekEnding && pp.status !== 'cancelled').length : 0
-                      const ticketsPerPerf = wk && perfsInWeek > 0 ? Math.round(wk.ticketsSold / perfsInWeek) : null
-                      const soldPct        = wk && perfsInWeek > 0 ? wk.capacityPct : null
-                      const atp            = wk && perfsInWeek > 0 ? wk.avgTicketPrice : null
-                      const grossPerPerf   = wk && perfsInWeek > 0 ? Math.round(wk.grossRevenue / perfsInWeek) : null
+                      const { soldMult, atpMult } = perfMultipliers(p.id, p.date, p.time)
+                      const ticketsPerPerf = wk && perfsInWeek > 0 ? Math.round((wk.ticketsSold / perfsInWeek) * soldMult) : null
+                      const atp            = wk && perfsInWeek > 0 ? Math.round(wk.avgTicketPrice * atpMult) : null
+                      const grossPerPerf   = ticketsPerPerf != null && atp != null ? ticketsPerPerf * atp : null
+                      const soldPct        = ticketsPerPerf != null && wk ? Math.round((ticketsPerPerf / wk.totalSeats) * 100) : null
                       return (
                         <tr
                           key={p.id}

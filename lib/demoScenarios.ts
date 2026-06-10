@@ -200,6 +200,7 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
     subtitle: e.subtitle || '',
     status: e.status,
     venue: e.venue || '',
+    onSaleDate: '2026-06-08',
     openingDate: e.openingDate || '',
     closingDate: e.closingDate || '',
     totalBudget: budget,
@@ -225,57 +226,88 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
     { id: `${prodId}-bl-11`, productionId: prodId, category: 'General & Administrative', lineItem: 'Legal & Insurance', budgeted: Math.round(budget * 0.03), committed: Math.round(budget * 0.03), actual: Math.round(budget * 0.028), notes: '' },
   ]
 
-  // Advance ticket sales for pre_production (3 weeks) and in_rehearsal (6 weeks)
-  const advanceWeeks = e.status === 'pre_production' ? 3 : e.status === 'in_rehearsal' ? 6 : 0
-  const advanceSaleRows: RevenueWeek[] = Array.from({ length: advanceWeeks }, (_, w) => {
-    const weeksOut = advanceWeeks - w  // furthest first
-    const capFraction = e.status === 'pre_production'
-      ? [0.06, 0.11, 0.18][w]
-      : [0.08, 0.14, 0.20, 0.28, 0.36, 0.45][w]
-    const sold = Math.round(totalSeats * capFraction)
-    const avg = 82 + seed * 3
-    const gross = sold * avg
-    const weekEndDate = prevSunday(e.openingDate || new Date().toISOString().split('T')[0], weeksOut)
-    return {
-      id: `${prodId}-rw-adv-${w}`,
-      productionId: prodId,
-      weekEnding: weekEndDate,
-      performances: 0,
-      ticketsSold: sold,
-      grossRevenue: gross,
-      avgTicketPrice: avg,
-      capacityPct: Math.round(capFraction * 100),
-      comps: 0,
-      discounts: Math.round(gross * 0.04),
-      netRevenue: Math.round(gross * 0.96),
-      totalSeats,
-    }
-  })
+  // Full revenue curve: on-sale Jun 8 → closing date
+  // Generates one row per week (Sunday week-endings) with realistic S-curve advance
+  // sales leading to opening, then per-week performance grosses through closing.
+  const DEMO_ON_SALE = '2026-06-08'
+  const openingDateStr = e.openingDate || new Date().toISOString().split('T')[0]
+  const closingDateStr = e.closingDate || addDays(openingDateStr, 84)
+  const baseATP = 82 + seed * 3
 
-  // Post-opening performance rows (in_performance, closing, closed)
-  const perfSaleRows: RevenueWeek[] = weeksPlayed > 0 ? Array.from({ length: Math.min(weeksPlayed, 4) }, (_, w) => {
-    const cap = 0.78 + w * 0.04 + seed * 0.01
-    const sold = Math.round(totalSeats * Math.min(cap, 0.98))
-    const avg = 78 + seed * 4 + w * 2
-    const gross = sold * avg
-    const weekEndDate = toNextSunday(addDays(e.openingDate || new Date().toISOString().split('T')[0], w * 7))
-    return {
-      id: `${prodId}-rw-${w}`,
-      productionId: prodId,
-      weekEnding: weekEndDate,
-      performances: 8,
-      ticketsSold: sold,
-      grossRevenue: gross,
-      avgTicketPrice: avg,
-      capacityPct: Math.round((sold / totalSeats) * 100),
-      comps: Math.round(sold * 0.03),
-      discounts: Math.round(gross * 0.06),
-      netRevenue: Math.round(gross * 0.91),
-      totalSeats,
-    }
-  }) : []
+  const onSaleD  = new Date(DEMO_ON_SALE + 'T12:00:00Z')
+  const openingD = new Date(openingDateStr + 'T12:00:00Z')
+  const closingD = new Date(closingDateStr + 'T12:00:00Z')
 
-  const revenueWeeks: RevenueWeek[] = [...advanceSaleRows, ...perfSaleRows]
+  // First Sunday on or after on-sale date
+  const firstSun = new Date(onSaleD)
+  if (firstSun.getUTCDay() !== 0) firstSun.setUTCDate(firstSun.getUTCDate() + (7 - firstSun.getUTCDay()))
+
+  // Count pre-opening weeks to calibrate the S-curve
+  const preOpeningWeeks = Math.max(1, Math.round((openingD.getTime() - firstSun.getTime()) / (7 * 86_400_000)))
+  const totalPerfWeeks  = Math.max(1, Math.round((closingD.getTime() - openingD.getTime()) / (7 * 86_400_000)))
+
+  const revenueWeeks: RevenueWeek[] = []
+  const cur = new Date(firstSun)
+  let idx = 0
+
+  while (cur <= closingD) {
+    const weekEndStr = cur.toISOString().split('T')[0]
+    const isPerf = cur > openingD
+
+    if (!isPerf) {
+      // Advance / pre-opening week — S-curve from slow to fast
+      const progress = idx / preOpeningWeeks // 0 → 1
+      // Accelerating curve: near-zero at first, picks up in final 6 weeks
+      const rawRate = Math.pow(progress, 1.8) * 0.18
+      const sold  = Math.round(totalSeats * rawRate)
+      const atp   = Math.round(baseATP * (0.88 + progress * 0.14))
+      const gross = sold * atp
+      revenueWeeks.push({
+        id: `${prodId}-rw-pre-${idx}`,
+        productionId: prodId,
+        weekEnding: weekEndStr,
+        performances: 0,
+        ticketsSold: sold,
+        grossRevenue: gross,
+        avgTicketPrice: atp,
+        capacityPct: Math.round(rawRate * 100),
+        comps: 0,
+        discounts: Math.round(gross * 0.04),
+        netRevenue: Math.round(gross * 0.96),
+        totalSeats,
+      })
+    } else {
+      // Performance week
+      const weeksIn  = Math.round((cur.getTime() - openingD.getTime()) / (7 * 86_400_000))
+      const progress = weeksIn / totalPerfWeeks
+      // Capacity arc: ramps up in first quarter, holds, slight fade at end
+      let cap: number
+      if      (progress < 0.15) cap = 0.72 + progress / 0.15 * 0.23      // 72→95% over first 15%
+      else if (progress < 0.70) cap = 0.95 + Math.sin(progress * Math.PI) * 0.03
+      else                      cap = 0.95 - (progress - 0.70) / 0.30 * 0.18
+      cap = Math.min(0.99, Math.max(0.55, cap + (seed % 5) * 0.01))
+      const sold  = Math.round(totalSeats * cap)
+      const atp   = Math.round(baseATP * (1.00 + Math.sin(weeksIn * 0.4) * 0.05 + (seed % 3) * 0.01))
+      const gross = sold * atp
+      revenueWeeks.push({
+        id: `${prodId}-rw-${idx}`,
+        productionId: prodId,
+        weekEnding: weekEndStr,
+        performances: 8,
+        ticketsSold: sold,
+        grossRevenue: gross,
+        avgTicketPrice: atp,
+        capacityPct: Math.round(cap * 100),
+        comps: Math.round(sold * 0.03),
+        discounts: Math.round(gross * 0.06),
+        netRevenue: Math.round(gross * 0.91),
+        totalSeats,
+      })
+    }
+
+    idx++
+    cur.setUTCDate(cur.getUTCDate() + 7)
+  }
 
   const contracts: Contract[] = [
     { id: `${prodId}-ct-1`, productionId: prodId, partyName: `${director} (Director)`, contractType: 'creative', status: 'signed', dueDate: addDays(e.openingDate || new Date().toISOString().split('T')[0], -80), fee: 28000 + seed * 2000, keyObligations: 'Direction of production, approval rights over design elements', notes: '', hasFile: true },
@@ -294,7 +326,7 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
   const preCfRows: CashFlowRow[] = Array.from({ length: preOpeningCfWeeks }, (_, w) => {
     const weeksOut = preOpeningCfWeeks - w
     const weekStart = addDays(e.openingDate || new Date().toISOString().split('T')[0], -(weeksOut * 7))
-    const advRev = advanceSaleRows[w]?.grossRevenue ?? 0
+    const advRev = revenueWeeks.filter(r => r.performances === 0)[w]?.grossRevenue ?? 0
     const startCash = cashOnHand - (preOpeningCfWeeks - w) * 18000
     return {
       id: `${prodId}-cf-pre-${w}`,
@@ -314,7 +346,7 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
   })
 
   const perfCfRows: CashFlowRow[] = weeksPlayed > 0 ? Array.from({ length: Math.min(weeksPlayed, 4) }, (_, w) => {
-    const rev = perfSaleRows[w]?.grossRevenue ?? weeklyGross
+    const rev = revenueWeeks.filter(r => r.performances > 0)[w]?.grossRevenue ?? weeklyGross
     const start = cashOnHand + (w === 0 ? 0 : rev * w * 0.3)
     return {
       id: `${prodId}-cf-${w}`,

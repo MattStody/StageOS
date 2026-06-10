@@ -346,9 +346,11 @@ export default function DashboardPage() {
 
   // ── Spotlight production ─────────────────────────────────────────────────
   const spotlightProd = (() => {
-    const playing = activeProds.filter(p => p.status === 'in_performance' || p.status === 'closing')
-    if (playing.length > 0) return playing.sort((a, b) => b.currentGross - a.currentGross)[0]
-    return [...activeProds].sort((a, b) => new Date(a.openingDate).getTime() - new Date(b.openingDate).getTime())[0] ?? null
+    if (activeProds.length === 0) return null
+    const now = Date.now()
+    return [...activeProds].sort((a, b) =>
+      Math.abs(new Date(a.openingDate).getTime() - now) - Math.abs(new Date(b.openingDate).getTime() - now)
+    )[0]
   })()
   const spotlightEntry = spotlightProd ? (salesPulse.find(s => s.prod.id === spotlightProd.id) ?? null) : null
   const spotlightWeeks = spotlightProd
