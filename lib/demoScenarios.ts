@@ -1,11 +1,11 @@
 import type { DemoScenario, DemoProductionOverride, DemoExtraProduction } from './demo'
 import type {
   Production, BudgetLine, RevenueWeek, Contract,
-  CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent,
+  CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, PerformanceDate,
 } from './types'
 import {
   PRODUCTIONS, BUDGET_LINES, REVENUE_WEEKS, CONTRACTS,
-  CASH_FLOW_ROWS, DEADLINES, DOCUMENTS, MARKETING_BUDGET_LINES, MARKETING_CAMPAIGNS, CUSTOM_EVENTS,
+  CASH_FLOW_ROWS, DEADLINES, DOCUMENTS, MARKETING_BUDGET_LINES, MARKETING_CAMPAIGNS, CUSTOM_EVENTS, PERFORMANCE_DATES,
 } from './mockData'
 
 export interface ScenarioData {
@@ -19,6 +19,7 @@ export interface ScenarioData {
   marketingBudgetLines: MarketingBudgetLine[]
   marketingCampaigns: MarketingCampaign[]
   customEvents: CustomEvent[]
+  performanceDates: PerformanceDate[]
 }
 
 const SCENARIO_PROD_IDS: Record<DemoScenario, string[]> = {
@@ -41,6 +42,7 @@ export function getScenarioData(scenario: DemoScenario): ScenarioData {
     marketingBudgetLines: MARKETING_BUDGET_LINES.filter((m) => ids.includes(m.productionId)),
     marketingCampaigns: MARKETING_CAMPAIGNS.filter((m) => ids.includes(m.productionId)),
     customEvents: CUSTOM_EVENTS.filter((e) => ids.includes(e.productionId)),
+    performanceDates: PERFORMANCE_DATES.filter((p) => ids.includes(p.productionId)),
   }
 }
 
@@ -109,6 +111,54 @@ const INVESTOR_GROUPS = [
 
 function pick<T>(arr: T[], idx: number): T { return arr[idx % arr.length] }
 
+// Standard 8-show/week schedule anchored to Tuesday of each week
+const SHOW_SCHEDULE: Array<{ dayOffset: number; time: string }> = [
+  { dayOffset: 0, time: '19:30' }, // Tuesday evening
+  { dayOffset: 1, time: '14:00' }, // Wednesday matinee
+  { dayOffset: 1, time: '19:30' }, // Wednesday evening
+  { dayOffset: 2, time: '19:30' }, // Thursday evening
+  { dayOffset: 3, time: '20:00' }, // Friday evening
+  { dayOffset: 4, time: '14:00' }, // Saturday matinee
+  { dayOffset: 4, time: '20:00' }, // Saturday evening
+  { dayOffset: 5, time: '14:00' }, // Sunday matinee
+]
+
+function generatePerformanceDates(prodId: string, openingDate: string, closingDate: string): PerformanceDate[] {
+  if (!openingDate || !closingDate) return []
+  const opening = new Date(openingDate + 'T12:00:00Z')
+  const closing = new Date(closingDate + 'T12:00:00Z')
+  const today   = new Date()
+  if (opening > closing) return []
+
+  // Find first Tuesday on or after opening
+  const firstTuesday = new Date(opening)
+  const dow = firstTuesday.getUTCDay()
+  firstTuesday.setUTCDate(firstTuesday.getUTCDate() + (dow <= 2 ? 2 - dow : 9 - dow))
+
+  const results: PerformanceDate[] = []
+  let weekStart = new Date(firstTuesday)
+  let idx = 0
+
+  while (weekStart <= closing) {
+    for (const { dayOffset, time } of SHOW_SCHEDULE) {
+      const d = new Date(weekStart)
+      d.setUTCDate(d.getUTCDate() + dayOffset)
+      if (d < opening || d > closing) continue
+      results.push({
+        id: `${prodId}-p-${idx++}`,
+        productionId: prodId,
+        date: d.toISOString().split('T')[0],
+        time,
+        notes: '',
+        status: d < today ? 'completed' : 'scheduled',
+      })
+    }
+    weekStart.setUTCDate(weekStart.getUTCDate() + 7)
+  }
+
+  return results
+}
+
 function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
   production: Production
   budgetLines: BudgetLine[]
@@ -120,6 +170,7 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
   marketingCampaigns: MarketingCampaign[]
   documents: Document[]
   customEvents: CustomEvent[]
+  performanceDates: PerformanceDate[]
 } {
   const seed = i + 1
   const budget = 480000 + seed * 55000
@@ -351,7 +402,9 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
     { id: `${prodId}-ce-6`, productionId: prodId, title: 'Donor Cultivation Evening', date: addDays(base, 42), color: '#e11d48', category: 'Development', notes: 'Major donor post-show reception' },
   ]
 
-  return { production, budgetLines, revenueWeeks, contracts, cashFlowRows, deadlines, marketingBudgetLines, marketingCampaigns, documents, customEvents }
+  const performanceDates = generatePerformanceDates(prodId, e.openingDate, e.closingDate)
+
+  return { production, budgetLines, revenueWeeks, contracts, cashFlowRows, deadlines, marketingBudgetLines, marketingCampaigns, documents, customEvents, performanceDates }
 }
 
 export function stripBaseProductions(data: ScenarioData): ScenarioData {
@@ -367,6 +420,7 @@ export function stripBaseProductions(data: ScenarioData): ScenarioData {
     marketingBudgetLines: [],
     marketingCampaigns: [],
     customEvents: [],
+    performanceDates: [],
   }
 }
 
@@ -378,7 +432,7 @@ export function applyExtraProductions(
   const result = { ...data }
   extras.forEach((e, i) => {
     const prodId = `demo-extra-${i}`
-    const { production, budgetLines, revenueWeeks, contracts, cashFlowRows, deadlines, marketingBudgetLines, marketingCampaigns, documents, customEvents } = boilerplate(prodId, e, i)
+    const { production, budgetLines, revenueWeeks, contracts, cashFlowRows, deadlines, marketingBudgetLines, marketingCampaigns, documents, customEvents, performanceDates } = boilerplate(prodId, e, i)
     result.productions = [...result.productions, production]
     result.budgetLines = [...result.budgetLines, ...budgetLines]
     result.revenueWeeks = [...result.revenueWeeks, ...revenueWeeks]
@@ -389,6 +443,7 @@ export function applyExtraProductions(
     result.marketingCampaigns = [...result.marketingCampaigns, ...marketingCampaigns]
     result.documents = [...result.documents, ...documents]
     result.customEvents = [...result.customEvents, ...customEvents]
+    result.performanceDates = [...result.performanceDates, ...performanceDates]
   })
   return result
 }

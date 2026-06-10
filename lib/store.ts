@@ -167,7 +167,7 @@ export const useStore = create<StageOpsState>()(
         marketingCampaigns: data.marketingCampaigns,
         customEvents: data.customEvents,
         obligations: OBLIGATIONS,
-        performanceDates: PERFORMANCE_DATES,
+        performanceDates: data.performanceDates,
         grants: GRANTS,
       })),
 
