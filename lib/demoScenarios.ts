@@ -402,7 +402,8 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
     { id: `${prodId}-ce-6`, productionId: prodId, title: 'Donor Cultivation Evening', date: addDays(base, 42), color: '#e11d48', category: 'Development', notes: 'Major donor post-show reception' },
   ]
 
-  const performanceDates = generatePerformanceDates(prodId, e.openingDate, e.closingDate)
+  const perfClosing = e.closingDate || addDays(base, 84)
+  const performanceDates = generatePerformanceDates(prodId, base, perfClosing)
 
   return { production, budgetLines, revenueWeeks, contracts, cashFlowRows, deadlines, marketingBudgetLines, marketingCampaigns, documents, customEvents, performanceDates }
 }
