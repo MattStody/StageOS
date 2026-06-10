@@ -287,7 +287,9 @@ export default function BoardReportPage() {
       if (now > open && close > open) {
         const pctElapsed  = Math.min(1, (now - open) / (close - open))
         const pctCaptured = Math.min(grossToDate / p.projectedGross, 2)
-        pacing = pctCaptured - pctElapsed > 0.05 ? 'ahead' : pctCaptured - pctElapsed < -0.10 ? 'behind' : 'on-pace'
+        const raw = pctCaptured - pctElapsed > 0.05 ? 'ahead' : pctCaptured - pctElapsed < -0.10 ? 'behind' : 'on-pace'
+        const aboveBreakEven = p.totalBudget > 0 && grossToDate >= p.totalBudget
+        pacing = (raw === 'behind' && aboveBreakEven) ? 'on-pace' : raw
       }
     }
 

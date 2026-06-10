@@ -309,6 +309,16 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
     cur.setUTCDate(cur.getUTCDate() + 7)
   }
 
+  // Derive currentGross and projectedGross from the generated revenue data
+  const nowD = new Date()
+  production.currentGross = revenueWeeks
+    .filter(r => new Date(r.weekEnding + 'T12:00:00') <= nowD)
+    .reduce((s, r) => s + r.grossRevenue, 0)
+  const perfWeekGross = revenueWeeks
+    .filter(r => r.performances > 0)
+    .reduce((s, r) => s + r.grossRevenue, 0)
+  production.projectedGross = perfWeekGross || projectedGross
+
   const contracts: Contract[] = [
     { id: `${prodId}-ct-1`, productionId: prodId, partyName: `${director} (Director)`, contractType: 'creative', status: 'signed', dueDate: addDays(e.openingDate || new Date().toISOString().split('T')[0], -80), fee: 28000 + seed * 2000, keyObligations: 'Direction of production, approval rights over design elements', notes: '', hasFile: true },
     { id: `${prodId}-ct-2`, productionId: prodId, partyName: e.venue || 'Venue Partner', contractType: 'venue', status: 'signed', dueDate: addDays(e.openingDate || new Date().toISOString().split('T')[0], -75), fee: Math.round(budget * 0.18), keyObligations: 'Exclusive venue use per agreed schedule', notes: '', hasFile: true },

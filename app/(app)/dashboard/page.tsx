@@ -127,6 +127,9 @@ export default function DashboardPage() {
       }
     }
 
+    const isProfitableEarly = p.totalBudget > 0 && cumGross >= p.totalBudget
+    if (isProfitableEarly && pacing === 'behind') pacing = 'on-pace'
+
     // Break-even (totalSeats is per-week, so no avgPerfsPerWk in denominator)
     const avgATPsp      = allWeeks.length > 0 ? allWeeks.reduce((s, w) => s + w.avgTicketPrice, 0) / allWeeks.length : 0
     const seatsSp       = allWeeks.length > 0 ? Math.max(...allWeeks.map(w => w.totalSeats)) : 0

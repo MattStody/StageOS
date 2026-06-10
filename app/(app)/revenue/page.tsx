@@ -29,7 +29,7 @@ const blank = (productionId: string): Omit<RevenueWeek, 'id'> => ({
 })
 
 export default function RevenuePage() {
-  const { productions, revenueWeeks, addRevenueWeek, updateRevenueWeek, deleteRevenueWeek } = useStore()
+  const { productions, revenueWeeks, performanceDates, addRevenueWeek, updateRevenueWeek, deleteRevenueWeek } = useStore()
   const { isAdmin } = useAuth()
 
   const [selectedProd, setSelectedProd] = useState(productions[0]?.id || '')
@@ -218,6 +218,68 @@ export default function RevenuePage() {
           )}
         </table>
       </div>
+
+      {/* Performance Summary — all productions */}
+      {productions.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-sm font-semibold text-stone-700 uppercase tracking-wider mb-3">Performance Schedule Summary</h2>
+          <div className="bg-white border border-stone-200 rounded-lg overflow-x-auto">
+            <table className="w-full min-w-[700px] text-sm">
+              <thead>
+                <tr className="border-b border-stone-100 bg-stone-50">
+                  {['Production', 'Scheduled', 'Completed', 'Cancelled', 'Total Performances', 'Avg Tickets/Show', 'Avg ATP', 'Total Gross'].map((h) => (
+                    <th key={h} className="text-right first:text-left px-4 py-3 text-xs font-medium text-stone-500 uppercase tracking-wider">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {productions.map((p) => {
+                  const pPerfs = performanceDates.filter(d => d.productionId === p.id)
+                  const scheduled  = pPerfs.filter(d => d.status === 'scheduled').length
+                  const completed  = pPerfs.filter(d => d.status === 'completed').length
+                  const cancelled  = pPerfs.filter(d => d.status === 'cancelled').length
+                  const pWeeks = revenueWeeks.filter(w => w.productionId === p.id && w.performances > 0)
+                  const totalPerfs = pWeeks.reduce((s, w) => s + w.performances, 0)
+                  const totalTix   = pWeeks.reduce((s, w) => s + w.ticketsSold, 0)
+                  const totalGrossP = pWeeks.reduce((s, w) => s + w.grossRevenue, 0)
+                  const avgTix = totalPerfs > 0 ? Math.round(totalTix / totalPerfs) : null
+                  const avgATPP = totalTix > 0 ? totalGrossP / totalTix : null
+                  return (
+                    <tr key={p.id} className={`border-b border-stone-100 hover:bg-stone-50/50 ${p.id === selectedProd ? 'bg-stone-50' : ''}`}
+                      onClick={() => setSelectedProd(p.id)} style={{ cursor: 'pointer' }}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+                          <span className="font-medium text-stone-800">{p.name}</span>
+                        </div>
+                      </td>
+                      <td className="text-right px-4 py-3 text-blue-700 font-medium">{scheduled || '—'}</td>
+                      <td className="text-right px-4 py-3 text-emerald-700 font-medium">{completed || '—'}</td>
+                      <td className="text-right px-4 py-3 text-red-600">{cancelled || '—'}</td>
+                      <td className="text-right px-4 py-3 text-stone-700">{totalPerfs || '—'}</td>
+                      <td className="text-right px-4 py-3 text-stone-600">{avgTix != null ? fmtNum(avgTix) : '—'}</td>
+                      <td className="text-right px-4 py-3 text-stone-600">{avgATPP != null ? fmt(avgATPP, 0) : '—'}</td>
+                      <td className="text-right px-4 py-3 font-medium text-stone-800">{totalGrossP > 0 ? fmt(totalGrossP) : '—'}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-stone-200 bg-stone-50">
+                  <td className="px-4 py-3 font-semibold text-stone-800">All Productions</td>
+                  <td className="text-right px-4 py-3 font-semibold text-stone-800">{performanceDates.filter(d => d.status === 'scheduled').length || '—'}</td>
+                  <td className="text-right px-4 py-3 font-semibold text-stone-800">{performanceDates.filter(d => d.status === 'completed').length || '—'}</td>
+                  <td className="text-right px-4 py-3 font-semibold text-stone-800">{performanceDates.filter(d => d.status === 'cancelled').length || '—'}</td>
+                  <td className="text-right px-4 py-3 font-semibold text-stone-800">{revenueWeeks.filter(w => w.performances > 0).reduce((s, w) => s + w.performances, 0) || '—'}</td>
+                  <td className="text-right px-4 py-3 text-stone-500">—</td>
+                  <td className="text-right px-4 py-3 text-stone-500">—</td>
+                  <td className="text-right px-4 py-3 font-semibold text-stone-800">{fmt(revenueWeeks.filter(w => w.performances > 0).reduce((s, w) => s + w.grossRevenue, 0))}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Modal */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Revenue Week' : 'Add Revenue Week'}>

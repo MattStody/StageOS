@@ -82,7 +82,7 @@ export default function ReportsPage() {
       </div>
 
       {!generated ? (
-        <div className="max-w-2xl">
+        <div>
           <Card>
             <CardBody className="p-8 text-center">
               <FileBarChart size={32} className="text-stone-300 mx-auto mb-4" />
@@ -91,7 +91,7 @@ export default function ReportsPage() {
                 Select a report type and generate a producer-ready summary from your live production data.
               </p>
               {/* Featured reports */}
-              <div className="space-y-2 mb-4 max-w-xs mx-auto">
+              <div className="space-y-2 mb-4 max-w-lg mx-auto">
                 <Link href="/reports/board" className="block">
                   <div className="flex items-start gap-3 p-4 rounded-lg border-2 border-stone-900 bg-stone-900 text-white cursor-pointer hover:bg-stone-800 transition-colors">
                     <Users size={18} className="text-stone-300 mt-0.5 shrink-0" />
@@ -112,7 +112,7 @@ export default function ReportsPage() {
                 </Link>
               </div>
 
-              <div className="grid grid-cols-1 gap-2 mb-6 text-left max-w-xs mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6 text-left max-w-lg mx-auto">
                 {([
                   ['weekly', 'Weekly Producer Report', 'Full operational overview with risks and actions'],
                   ['monthly_pl', 'Monthly P&L Summary', 'Revenue, costs, and variance by category'],
@@ -136,7 +136,7 @@ export default function ReportsPage() {
           </Card>
         </div>
       ) : (
-        <div className="max-w-3xl">
+        <div>
           {/* Report header */}
           <div className="bg-white border border-stone-200 rounded-lg overflow-hidden mb-0">
             <div className="bg-stone-900 px-8 py-6 text-white">
