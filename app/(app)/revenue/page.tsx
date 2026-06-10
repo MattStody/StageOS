@@ -8,7 +8,7 @@ import { StatCard } from '@/components/ui/StatCard'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { fmt, fmtPct, fmtNum, formatDate } from '@/lib/utils'
 import { Plus, Trash2, Pencil } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAccess } from '@/lib/useAccess'
 import type { RevenueWeek } from '@/lib/types'
 import {
   ComposedChart, Area, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -56,7 +56,7 @@ const blank = (productionId: string): Omit<RevenueWeek, 'id'> => ({
 
 export default function RevenuePage() {
   const { productions, revenueWeeks, performanceDates, addRevenueWeek, updateRevenueWeek, deleteRevenueWeek } = useStore()
-  const { isAdmin } = useAuth()
+  const { canEdit } = useAccess()
 
   const [selectedProd, setSelectedProd] = useState(productions[0]?.id || '')
   const [modalOpen, setModalOpen] = useState(false)
@@ -151,7 +151,7 @@ export default function RevenuePage() {
       <PageHeader
         title="Revenue Tracker"
         subtitle="Weekly ticket sales and cumulative gross"
-        actions={isAdmin ? <Button onClick={openAdd} size="sm"><Plus size={13} /> Add Week</Button> : undefined}
+        actions={canEdit ? <Button onClick={openAdd} size="sm"><Plus size={13} /> Add Week</Button> : undefined}
       />
 
       {/* Production tabs */}
@@ -265,8 +265,8 @@ export default function RevenuePage() {
                   <td className="text-right px-4 py-3 text-stone-800 font-medium">{fmt(w.netRevenue)}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                      {isAdmin && <button onClick={() => openEdit(w)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
-                      {isAdmin && <button onClick={() => deleteRevenueWeek(w.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
+                      {canEdit && <button onClick={() => openEdit(w)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
+                      {canEdit && <button onClick={() => deleteRevenueWeek(w.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
                     </div>
                   </td>
                 </tr>

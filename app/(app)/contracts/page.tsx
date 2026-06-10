@@ -8,7 +8,7 @@ import { Modal } from '@/components/ui/Modal'
 import { fmt, formatDate, daysUntil, statusLabel } from '@/lib/utils'
 import { Plus, Trash2, Pencil, FileText, AlertTriangle, File, Shield, BookOpen, FileCheck2, Check } from 'lucide-react'
 import Link from 'next/link'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAccess } from '@/lib/useAccess'
 import type { Contract, ContractType, ContractStatus, ContractObligation } from '@/lib/types'
 import { UNION_AGREEMENT_TEMPLATES, getTemplatesForType, resolveObligationDate } from '@/lib/unionTemplates'
 
@@ -52,7 +52,7 @@ function offsetLabel(anchor: string, days: number): string {
 
 export default function ContractsPage() {
   const { productions, contracts, obligations, addContract, updateContract, deleteContract, addObligation } = useStore()
-  const { isAdmin } = useAuth()
+  const { canEdit } = useAccess()
 
   const [selectedProd, setSelectedProd] = useState('all')
   const [filterStatus, setFilterStatus] = useState<ContractStatus | 'all'>('all')
@@ -232,7 +232,7 @@ export default function ContractsPage() {
       <PageHeader
         title="Contract Tracker"
         subtitle="Manage all production agreements"
-        actions={isAdmin ? <Button onClick={openAdd} size="sm"><Plus size={13} /> Add Contract</Button> : undefined}
+        actions={canEdit ? <Button onClick={openAdd} size="sm"><Plus size={13} /> Add Contract</Button> : undefined}
       />
 
       {/* Status summary */}
@@ -338,7 +338,7 @@ export default function ContractsPage() {
                         <td className="px-4 py-3 text-xs text-stone-400 max-w-xs truncate">{c.notes}</td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end items-center">
-                            {isAdmin && (
+                            {canEdit && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); extractObligations(c) }}
                                 className="p-1 text-stone-400 hover:text-emerald-600 cursor-pointer"
@@ -347,8 +347,8 @@ export default function ContractsPage() {
                                 {extractedIds.has(c.id) ? <Check size={12} className="text-emerald-600" /> : <FileCheck2 size={12} />}
                               </button>
                             )}
-                            {isAdmin && <button onClick={() => openEdit(c)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
-                            {isAdmin && <button onClick={() => deleteContract(c.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
+                            {canEdit && <button onClick={() => openEdit(c)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
+                            {canEdit && <button onClick={() => deleteContract(c.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
                           </div>
                         </td>
                       </tr>

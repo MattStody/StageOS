@@ -19,7 +19,7 @@ import {
   type ScenarioConfig,
   type RiskLevel,
 } from '@/lib/forecasting'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAccess } from '@/lib/useAccess'
 import type { PerformanceDate, PerformanceStatus } from '@/lib/types'
 import { generateTicketMap, getVenueSections } from '@/lib/spektrix'
 import type { TicketMapData } from '@/lib/spektrix'
@@ -80,7 +80,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
   const { productions, budgetLines, revenueWeeks, contracts, deadlines, cashFlowRows, updateProduction,
     performanceDates, addPerformanceDate, updatePerformanceDate, deletePerformanceDate,
     spektrixBaseUrl } = useStore()
-  const { isAdmin } = useAuth()
+  const { canEdit } = useAccess()
 
   type FcScenarioType = 'base' | 'downside' | 'upside' | 'marketing_push' | 'labour_increase' | 'early_close' | 'extension'
   const FC_SCENARIOS: { type: FcScenarioType; label: string }[] = [
@@ -277,7 +277,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
               <div className="flex items-center gap-3 mb-0.5 flex-wrap">
                 <h1 className="text-2xl font-semibold text-stone-900">{prod.name}</h1>
                 <Badge variant={prod.status}>{statusLabel(prod.status)}</Badge>
-                {isAdmin && (
+                {canEdit && (
                   <button
                     onClick={() => { setImageDraft(prod.imageUrl || ''); setEditImageOpen(true) }}
                     className="p-1.5 text-stone-400 hover:text-stone-600 rounded hover:bg-stone-100 transition-colors"
@@ -863,7 +863,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
               )}
             </div>
           </div>
-          {isAdmin && (
+          {canEdit && (
             <Button size="sm" variant="secondary" onClick={openAddPerf}>
               <Plus size={12} /> Add Performance
             </Button>
@@ -874,7 +874,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
             <div className="px-6 py-8 text-center">
               <Theater size={24} className="mx-auto text-stone-300 mb-2" />
               <p className="text-sm text-stone-500 mb-3">No performances scheduled yet</p>
-              {isAdmin && <Button size="sm" onClick={openAddPerf}><Plus size={12} /> Add Performance</Button>}
+              {canEdit && <Button size="sm" onClick={openAddPerf}><Plus size={12} /> Add Performance</Button>}
             </div>
           ) : (
             <>
@@ -889,7 +889,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                       <th className="text-right px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Tickets Sold</th>
                       <th className="text-right px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Avg Ticket Price</th>
                       <th className="text-left px-4 py-2 text-xs font-medium text-stone-500 uppercase tracking-wider">Notes</th>
-                      {isAdmin && <th className="px-4 py-2 w-16" />}
+                      {canEdit && <th className="px-4 py-2 w-16" />}
                     </tr>
                   </thead>
                   <tbody>
@@ -971,7 +971,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
                                   </span>
                                 )}
                                 <Ticket size={11} className="text-stone-300 group-hover:text-stone-500 transition-colors" />
-                                {isAdmin && (
+                                {canEdit && (
                                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                                     <button onClick={() => openEditPerf(p)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>
                                     <button onClick={() => deletePerformanceDate(p.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>

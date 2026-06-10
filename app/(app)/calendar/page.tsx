@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { formatDate, daysUntil, statusLabel } from '@/lib/utils'
 import { Plus, Trash2, Pencil, AlertTriangle, CalendarDays } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAccess } from '@/lib/useAccess'
 import type { Deadline, DeadlineType, DeadlineStatus, CustomEvent } from '@/lib/types'
 
 const DEADLINE_TYPES: DeadlineType[] = [
@@ -76,7 +76,7 @@ function HexColorInput({ value, onChange }: { value: string; onChange: (v: strin
 
 export default function CalendarPage() {
   const { productions, deadlines, addDeadline, updateDeadline, deleteDeadline, customEvents, addCustomEvent, updateCustomEvent, deleteCustomEvent } = useStore()
-  const { isAdmin } = useAuth()
+  const { canEdit } = useAccess()
 
   const [tab, setTab] = useState<'deadlines' | 'events' | 'calendar'>('deadlines')
   const [selectedProd, setSelectedProd] = useState('all')
@@ -196,8 +196,8 @@ export default function CalendarPage() {
           </div>
           <Badge variant={d.status} className="hidden sm:inline-flex">{statusLabel(d.status)}</Badge>
           <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-            {isAdmin && <button onClick={() => openEditDeadline(d)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
-            {isAdmin && <button onClick={() => deleteDeadline(d.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
+            {canEdit && <button onClick={() => openEditDeadline(d)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
+            {canEdit && <button onClick={() => deleteDeadline(d.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
           </div>
         </div>
       </div>
@@ -238,8 +238,8 @@ export default function CalendarPage() {
             </p>
           </div>
           <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-            {isAdmin && <button onClick={() => openEditEvent(e)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
-            {isAdmin && <button onClick={() => deleteCustomEvent(e.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
+            {canEdit && <button onClick={() => openEditEvent(e)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
+            {canEdit && <button onClick={() => deleteCustomEvent(e.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
           </div>
         </div>
       </div>
@@ -274,7 +274,7 @@ export default function CalendarPage() {
     return { dl, ev }
   }
 
-  const addAction = isAdmin
+  const addAction = canEdit
     ? tab === 'deadlines'
       ? <Button onClick={openAddDeadline} size="sm"><Plus size={13} /> Add Deadline</Button>
       : tab === 'events' ? <Button onClick={openAddEvent} size="sm"><Plus size={13} /> Add Event</Button>
@@ -360,7 +360,7 @@ export default function CalendarPage() {
           {filteredEvents.length === 0 ? (
             <div className="bg-white border border-stone-200 rounded-lg py-12 text-center">
               <p className="text-sm text-stone-400">No custom events yet.</p>
-              {isAdmin && <p className="text-xs text-stone-400 mt-1">Click &quot;Add Event&quot; to create one.</p>}
+              {canEdit && <p className="text-xs text-stone-400 mt-1">Click &quot;Add Event&quot; to create one.</p>}
             </div>
           ) : (
             <div className="bg-white border border-stone-200 rounded-lg overflow-hidden">

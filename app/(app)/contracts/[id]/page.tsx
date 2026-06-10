@@ -11,7 +11,7 @@ import {
   AlertTriangle, CheckCircle2, Clock, Sparkles, Plus, Pencil, Trash2,
   FileText, ChevronLeft, Calendar, DollarSign, Shield, RefreshCw, BookOpen,
 } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAccess } from '@/lib/useAccess'
 import { extractObligations, type SuggestedObligation } from '@/lib/obligationEngine'
 import type {
   ContractObligation, ObligationType, ObligationStatus, ObligationRisk,
@@ -99,7 +99,7 @@ function blankObligation(contractId: string, productionId: string, partyName: st
 export default function ContractDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const { isAdmin } = useAuth()
+  const { canEdit } = useAccess()
   const { productions, contracts, obligations, addObligation, updateObligation, deleteObligation } = useStore()
 
   const [extractModalOpen, setExtractModalOpen] = useState(false)
@@ -200,12 +200,12 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
             <Button variant="secondary" size="sm" onClick={() => router.back()}>
               <ChevronLeft size={13} /> Back
             </Button>
-            {isAdmin && (
+            {canEdit && (
               <Button size="sm" onClick={openExtract}>
                 <Sparkles size={13} /> Extract Obligations
               </Button>
             )}
-            {isAdmin && (
+            {canEdit && (
               <Button variant="secondary" size="sm" onClick={openAdd}>
                 <Plus size={13} /> Add Obligation
               </Button>
@@ -277,7 +277,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
           <Shield size={28} className="mx-auto text-stone-300 mb-3" />
           <p className="text-sm font-medium text-stone-700 mb-1">No obligations tracked yet</p>
           <p className="text-xs text-stone-400 mb-4">Use Extract Obligations to automatically identify key terms, or add manually.</p>
-          {isAdmin && (
+          {canEdit && (
             <div className="flex gap-2 justify-center">
               <Button size="sm" onClick={openExtract}><Sparkles size={12} /> Extract Obligations</Button>
               <Button variant="secondary" size="sm" onClick={openAdd}><Plus size={12} /> Add Manually</Button>
@@ -296,7 +296,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                 <th className="text-left px-4 py-2.5 text-xs font-medium text-stone-500 uppercase tracking-wider">Risk</th>
                 <th className="text-left px-4 py-2.5 text-xs font-medium text-stone-500 uppercase tracking-wider">Owner</th>
                 <th className="text-left px-4 py-2.5 text-xs font-medium text-stone-500 uppercase tracking-wider">Amount</th>
-                {isAdmin && <th className="px-4 py-2.5 w-16" />}
+                {canEdit && <th className="px-4 py-2.5 w-16" />}
               </tr>
             </thead>
             <tbody>
@@ -344,7 +344,7 @@ export default function ContractDetailPage({ params }: { params: Promise<{ id: s
                     <td className="px-4 py-3 text-xs text-stone-700 font-medium">
                       {o.amount ? fmt(o.amount) : '—'}
                     </td>
-                    {isAdmin && (
+                    {canEdit && (
                       <td className="px-4 py-3">
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
                           <button onClick={() => openEditObl(o)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>

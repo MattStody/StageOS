@@ -8,7 +8,7 @@ import { Modal } from '@/components/ui/Modal'
 import { fmt, fmtPct, formatDate, statusLabel, budgetUsedPct } from '@/lib/utils'
 import Link from 'next/link'
 import { ArrowRight, Plus, Theater, LayoutGrid, List } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAccess } from '@/lib/useAccess'
 import type { Production, ProductionStatus, BudgetLine } from '@/lib/types'
 
 const PROD_COLORS = ['#6366f1', '#0891b2', '#059669', '#d97706', '#dc2626', '#9333ea', '#0f172a', '#be185d']
@@ -139,7 +139,7 @@ function ProductionPoster({
 
 export default function ProductionsPage() {
   const { productions, contracts, deadlines, revenueWeeks, addProduction, addBudgetLine } = useStore()
-  const { isAdmin } = useAuth()
+  const { canEdit } = useAccess()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState<Omit<Production, 'id'>>(blankProduction())
@@ -184,7 +184,7 @@ export default function ProductionsPage() {
                 <List size={14} />
               </button>
             </div>
-            {isAdmin && (
+            {canEdit && (
               <Button onClick={openCreate} size="sm">
                 <Plus size={13} /> New Production
               </Button>

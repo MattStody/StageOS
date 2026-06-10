@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { fmt, fmtPct, variance, variancePct } from '@/lib/utils'
 import { Plus, Trash2, Pencil, ChevronDown, ChevronRight, Upload, AlertCircle, CheckCircle2 } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAccess } from '@/lib/useAccess'
 import type { BudgetLine } from '@/lib/types'
 
 type CsvRow = {
@@ -83,7 +83,7 @@ const blankLine = (productionId: string): Omit<BudgetLine, 'id'> => ({
 
 export default function BudgetPage() {
   const { productions, budgetLines, addBudgetLine, updateBudgetLine, deleteBudgetLine } = useStore()
-  const { isAdmin } = useAuth()
+  const { canEdit } = useAccess()
 
   const [selectedProd, setSelectedProd] = useState(productions[0]?.id || '')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
@@ -166,7 +166,7 @@ export default function BudgetPage() {
       <PageHeader
         title="Production Budget"
         subtitle="Track budgeted, committed, and actual costs"
-        actions={isAdmin ? (
+        actions={canEdit ? (
           <div className="flex items-center gap-2">
             <input
               ref={fileInputRef}
@@ -284,8 +284,8 @@ export default function BudgetPage() {
                       <td className="px-4 py-2.5 text-xs text-stone-400">{line.notes}</td>
                       <td className="px-4 py-2.5">
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                          {isAdmin && <button onClick={() => openEdit(line)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
-                          {isAdmin && <button onClick={() => deleteBudgetLine(line.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
+                          {canEdit && <button onClick={() => openEdit(line)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
+                          {canEdit && <button onClick={() => deleteBudgetLine(line.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
                         </div>
                       </td>
                     </tr>

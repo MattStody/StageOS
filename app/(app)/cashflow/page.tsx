@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/Modal'
 import { RiskAlert } from '@/components/ui/RiskAlert'
 import { fmt, formatDate } from '@/lib/utils'
 import { Plus, Trash2, Pencil } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAccess } from '@/lib/useAccess'
 import type { CashFlowRow } from '@/lib/types'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, Legend } from 'recharts'
 
@@ -30,7 +30,7 @@ const blank = (productionId: string): Omit<CashFlowRow, 'id'> => ({
 
 export default function CashFlowPage() {
   const { productions, cashFlowRows, addCashFlowRow, updateCashFlowRow, deleteCashFlowRow } = useStore()
-  const { isAdmin } = useAuth()
+  const { canEdit } = useAccess()
 
   const [selectedProd, setSelectedProd] = useState(productions[0]?.id || '')
   const [modalOpen, setModalOpen] = useState(false)
@@ -118,7 +118,7 @@ export default function CashFlowPage() {
       <PageHeader
         title="Cash Flow Forecast"
         subtitle="Weekly inflows, outflows, and projected balance"
-        actions={isAdmin && !isAll ? <Button onClick={openAdd} size="sm"><Plus size={13} /> Add Week</Button> : undefined}
+        actions={canEdit && !isAll ? <Button onClick={openAdd} size="sm"><Plus size={13} /> Add Week</Button> : undefined}
       />
 
       {/* Tabs */}
@@ -234,8 +234,8 @@ export default function CashFlowPage() {
                     <td className={`text-right px-4 py-3 font-semibold ${r.closingCash < 0 ? 'text-red-700' : 'text-stone-800'}`}>{fmt(r.closingCash)}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                        {isAdmin && <button onClick={() => openEdit(r)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
-                        {isAdmin && <button onClick={() => deleteCashFlowRow(r.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
+                        {canEdit && <button onClick={() => openEdit(r)} className="p-1 text-stone-400 hover:text-stone-700 cursor-pointer"><Pencil size={12} /></button>}
+                        {canEdit && <button onClick={() => deleteCashFlowRow(r.id)} className="p-1 text-stone-400 hover:text-red-600 cursor-pointer"><Trash2 size={12} /></button>}
                       </div>
                     </td>
                   </tr>
