@@ -2,6 +2,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { NextRequest } from 'next/server'
 import type { ObligationType, ObligationRisk } from '@/lib/types'
 
+export const config = { api: { bodyParser: { sizeLimit: '25mb' } } }
+
 interface ExtractedObligation {
   title: string
   description: string
