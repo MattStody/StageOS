@@ -258,7 +258,7 @@ function boilerplate(prodId: string, e: DemoExtraProduction, i: number): {
     const sold = Math.round(totalSeats * Math.min(cap, 0.98))
     const avg = 78 + seed * 4 + w * 2
     const gross = sold * avg
-    const weekEndDate = toNextSunday(addDays(e.openingDate || new Date().toISOString().split('T')[0], (w + 1) * 7))
+    const weekEndDate = toNextSunday(addDays(e.openingDate || new Date().toISOString().split('T')[0], w * 7))
     return {
       id: `${prodId}-rw-${w}`,
       productionId: prodId,

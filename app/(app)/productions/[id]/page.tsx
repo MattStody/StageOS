@@ -158,13 +158,13 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
     setPerfModalOpen(false)
   }
 
-  // Map a performance date to its revenue week (week-ending Saturday)
+  // Map a performance date to its revenue week (week-ending Sunday)
   function weekForPerf(perfDate: string) {
     const d = new Date(perfDate + 'T12:00:00')
-    const daysToSat = d.getDay() === 6 ? 0 : 6 - d.getDay()
-    const sat = new Date(d)
-    sat.setDate(d.getDate() + daysToSat)
-    return weeks.find((w) => w.weekEnding === sat.toISOString().slice(0, 10))
+    const daysToSun = d.getDay() === 0 ? 0 : 7 - d.getDay()
+    const sun = new Date(d)
+    sun.setDate(d.getDate() + daysToSun)
+    return weeks.find((w) => w.weekEnding === sun.toISOString().slice(0, 10))
   }
 
   // Chart data
