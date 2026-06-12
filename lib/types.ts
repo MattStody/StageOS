@@ -256,6 +256,60 @@ export interface UnionAgreementTemplate {
   obligations: ObligationTemplate[]
 }
 
+// ── Workflows ─────────────────────────────────────────────────────────────────
+
+export type WorkflowFieldType =
+  | 'text' | 'email' | 'date' | 'number' | 'currency' | 'select' | 'textarea' | 'checkbox_group'
+
+export interface WorkflowField {
+  id: string
+  label: string
+  type: WorkflowFieldType
+  required?: boolean
+  placeholder?: string
+  options?: string[]
+}
+
+export interface WorkflowStep {
+  id: string
+  title: string
+  description?: string
+  fields: WorkflowField[]
+}
+
+export interface WorkflowAutoTask {
+  title: string
+  description: string
+  department: string
+  priority: TaskPriority
+}
+
+export type WorkflowSource = 'built_in' | 'ai_imported' | 'custom'
+
+export interface WorkflowTemplate {
+  id: string
+  name: string
+  department: string
+  description: string
+  source: WorkflowSource
+  /** Field whose value labels the run (e.g. a person's name) — appended to task titles */
+  labelFieldId?: string
+  steps: WorkflowStep[]
+  autoTasks: WorkflowAutoTask[]
+  createdAt: string
+}
+
+export interface WorkflowRun {
+  id: string
+  templateId: string
+  templateName: string
+  productionId: string
+  label: string
+  values: Record<string, string | string[]>
+  tasksCreated: number
+  createdAt: string
+}
+
 // ── Actor Profiles ────────────────────────────────────────────────────────────
 
 export interface ActorMeasurements {

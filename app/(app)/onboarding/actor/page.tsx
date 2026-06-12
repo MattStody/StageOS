@@ -10,30 +10,7 @@ import {
   AlertTriangle, X,
 } from 'lucide-react'
 import type { ActorProfile, ActorEngagement, ActorMeasurements, PaymentScheduleItem, ProductionTask } from '@/lib/types'
-
-// ── Fake users ────────────────────────────────────────────────────────────────
-
-interface StageUser {
-  id: string
-  name: string
-  title: string
-  initials: string
-  color: string
-}
-
-const STAGE_USERS: StageUser[] = [
-  { id: 'user-1', name: 'Sarah Chen',    title: 'Production Manager', initials: 'SC', color: '#6366f1' },
-  { id: 'user-2', name: 'Marcus Webb',   title: 'Finance Director',   initials: 'MW', color: '#059669' },
-  { id: 'user-3', name: 'Olivia Torres', title: 'Wardrobe Supervisor', initials: 'OT', color: '#d97706' },
-]
-
-// Default assignee per department
-const DEPT_DEFAULT: Record<string, string> = {
-  Finance:    'user-2',
-  Wardrobe:   'user-3',
-  Production: 'user-1',
-  Admin:      'user-1',
-}
+import { STAGE_USERS, defaultAssigneeFor, type StageUser } from '@/lib/team'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -211,7 +188,7 @@ export default function ActorOnboardingPage() {
 
   // Per-task assignee state (index → user id), pre-seeded from dept defaults
   const [assignees, setAssignees] = useState<Record<number, string>>(
-    () => Object.fromEntries(AUTO_TASKS.map((t, i) => [i, DEPT_DEFAULT[t.dept] ?? 'user-1']))
+    () => Object.fromEntries(AUTO_TASKS.map((t, i) => [i, defaultAssigneeFor(t.dept)]))
   )
 
   // AI extraction state (step 1)
@@ -380,7 +357,7 @@ export default function ActorOnboardingPage() {
     setCompletedEngagement(null)
     setAiState('idle')
     setAiError('')
-    setAssignees(Object.fromEntries(AUTO_TASKS.map((t, i) => [i, DEPT_DEFAULT[t.dept] ?? 'user-1'])))
+    setAssignees(Object.fromEntries(AUTO_TASKS.map((t, i) => [i, defaultAssigneeFor(t.dept)])))
   }
 
   // ── Step 1 — Contract Details ─────────────────────────────────────────────

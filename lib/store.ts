@@ -1,7 +1,8 @@
 'use client'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate, Grant, ProductionTask, ActorProfile, ActorEngagement } from './types'
+import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate, Grant, ProductionTask, ActorProfile, ActorEngagement, WorkflowTemplate, WorkflowRun } from './types'
+import { BUILTIN_WORKFLOWS } from './workflowTemplates'
 import {
   PRODUCTIONS,
   BUDGET_LINES,
@@ -94,6 +95,13 @@ interface StageOpsState {
   actorEngagements: ActorEngagement[]
   addActorEngagement: (engagement: ActorEngagement) => void
 
+  workflowTemplates: WorkflowTemplate[]
+  addWorkflowTemplate: (template: WorkflowTemplate) => void
+  deleteWorkflowTemplate: (id: string) => void
+
+  workflowRuns: WorkflowRun[]
+  addWorkflowRun: (run: WorkflowRun) => void
+
   spektrixBaseUrl: string
   setSpektrixBaseUrl: (url: string) => void
 
@@ -183,6 +191,13 @@ export const useStore = create<StageOpsState>()(
 
       actorEngagements: [],
       addActorEngagement: (engagement) => set((s) => ({ actorEngagements: [...s.actorEngagements, engagement] })),
+
+      workflowTemplates: BUILTIN_WORKFLOWS,
+      addWorkflowTemplate: (template) => set((s) => ({ workflowTemplates: [...s.workflowTemplates, template] })),
+      deleteWorkflowTemplate: (id) => set((s) => ({ workflowTemplates: s.workflowTemplates.filter((t) => t.id !== id) })),
+
+      workflowRuns: [],
+      addWorkflowRun: (run) => set((s) => ({ workflowRuns: [...s.workflowRuns, run] })),
 
       setSpektrixBaseUrl: (url) => set(() => ({ spektrixBaseUrl: url })),
 

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Film, DollarSign, TrendingUp, FileText,
-  ArrowRightLeft, CalendarDays, FileBarChart, FolderOpen, Settings, ChevronRight, Megaphone, Wand2, FlaskConical, Plug2, Upload, Landmark, CheckSquare, UserPlus,
+  ArrowRightLeft, CalendarDays, FileBarChart, FolderOpen, Settings, ChevronRight, Megaphone, Wand2, FlaskConical, Plug2, Upload, Landmark, CheckSquare, UserPlus, Workflow,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useStore } from '@/lib/store'
@@ -27,6 +27,7 @@ const navGroups: NavGroup[] = [
       { label: 'Calendar', href: '/calendar', icon: CalendarDays, exact: false },
       { label: 'Contracts', href: '/contracts', icon: FileText, exact: false },
       { label: 'Onboarding', href: '/onboarding/actor', icon: UserPlus, exact: false },
+      { label: 'Workflows', href: '/workflows', icon: Workflow, exact: false },
     ],
   },
   {
