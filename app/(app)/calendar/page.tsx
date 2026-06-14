@@ -75,7 +75,7 @@ function HexColorInput({ value, onChange }: { value: string; onChange: (v: strin
 }
 
 export default function CalendarPage() {
-  const { productions, deadlines, addDeadline, updateDeadline, deleteDeadline, customEvents, addCustomEvent, updateCustomEvent, deleteCustomEvent } = useStore()
+  const { productions, deadlines, addDeadline, updateDeadline, deleteDeadline, customEvents, addCustomEvent, updateCustomEvent, deleteCustomEvent, onboardingChecklists, housingAssignments, people } = useStore()
   const { canEdit } = useAccess()
 
   const [tab, setTab] = useState<'deadlines' | 'events' | 'calendar'>('deadlines')
@@ -266,7 +266,38 @@ export default function CalendarPage() {
   }, [calYear, calMonth])
 
   const calDeadlines = deadlines.filter((d) => selectedProd === 'all' || d.productionId === selectedProd)
-  const calEvents = customEvents.filter((e) => selectedProd === 'all' || e.productionId === selectedProd)
+
+  // Derived calendar events from the Company module — onboarding due dates and
+  // housing check-in / check-out — surfaced read-only on the calendar grid.
+  const companyEvents = useMemo<CustomEvent[]>(() => {
+    const out: CustomEvent[] = []
+    const nameOf = (id: string) => people.find((p) => p.id === id)?.name ?? 'Someone'
+    for (const cl of onboardingChecklists) {
+      for (const item of cl.items) {
+        if (item.completedAt || !item.dueDate) continue
+        out.push({
+          id: `cal-onb-${item.id}`,
+          productionId: cl.productionId,
+          title: `Onboarding: ${item.label} — ${nameOf(cl.personId)}`,
+          date: item.dueDate,
+          color: '#d97706',
+          category: 'Onboarding',
+          notes: '',
+        })
+      }
+    }
+    for (const h of housingAssignments) {
+      if (h.leaseStart) {
+        out.push({ id: `cal-house-in-${h.id}`, productionId: h.productionId, title: `Check-in: ${nameOf(h.personId)}`, date: h.leaseStart, color: '#0891b2', category: 'Housing', notes: h.address ?? '' })
+      }
+      if (h.leaseEnd) {
+        out.push({ id: `cal-house-out-${h.id}`, productionId: h.productionId, title: `Check-out: ${nameOf(h.personId)}`, date: h.leaseEnd, color: '#0891b2', category: 'Housing', notes: h.address ?? '' })
+      }
+    }
+    return out
+  }, [onboardingChecklists, housingAssignments, people])
+
+  const calEvents = [...customEvents, ...companyEvents].filter((e) => selectedProd === 'all' || e.productionId === selectedProd)
 
   function getItemsForDate(dateStr: string) {
     const dl = calDeadlines.filter((d) => d.date === dateStr)

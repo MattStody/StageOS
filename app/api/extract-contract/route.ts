@@ -2,7 +2,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import type { NextRequest } from 'next/server'
 import type { ObligationType, ObligationRisk } from '@/lib/types'
 
-export const config = { api: { bodyParser: { sizeLimit: '25mb' } } }
+// Allow large base64 PDF payloads through the App Router handler
+export const maxDuration = 60
 
 interface ExtractedObligation {
   title: string

@@ -8,8 +8,9 @@ import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel } from '@/lib/utils'
 import Link from 'next/link'
-import { ArrowRight, Shield, ChevronRight, CheckCircle2, Copy, Check } from 'lucide-react'
+import { ArrowRight, Shield, ChevronRight, CheckCircle2, Copy, Check, Users } from 'lucide-react'
 import type { Production } from '@/lib/types'
+import { companySummary } from '@/lib/company'
 
 // ── Config ───────────────────────────────────────────────────────────────────
 
@@ -66,7 +67,9 @@ const PACING_CFG: Record<PacingStatus, { label: string; cls: string }> = {
 
 export default function DashboardPage() {
   const { productions, contracts, deadlines, budgetLines, obligations, revenueWeeks, cashFlowRows,
-    updateObligation, updateContract, updateDeadline } = useStore()
+    updateObligation, updateContract, updateDeadline,
+    onboardingChecklists, housingAssignments, perDiemEntries, caeaReports } = useStore()
+  const company = companySummary(onboardingChecklists, housingAssignments, perDiemEntries, caeaReports)
   const { isDemo, config } = useDemo()
   const firstName = (isDemo && config?.user ? config.user : 'Leon Kay').split(' ')[0]
 
@@ -663,6 +666,66 @@ export default function DashboardPage() {
           trend="neutral"
         />
       </div>
+
+      {/* ── Company Status ───────────────────────────────────────────────── */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users size={15} className="text-stone-400" />
+              <CardTitle>Company Status</CardTitle>
+            </div>
+            <Link href="/company/roster" className="text-xs text-stone-500 hover:text-stone-800 flex items-center gap-1">
+              Open roster <ArrowRight size={12} />
+            </Link>
+          </div>
+          <p className="text-xs text-stone-500 mt-0.5">Getting your people ready to work — onboarding, housing, and payroll compliance.</p>
+        </CardHeader>
+        <CardBody>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {([
+              {
+                href: '/company/onboarding',
+                dot: company.incompleteOnboarding > 0 ? 'bg-red-500' : 'bg-emerald-500',
+                value: company.incompleteOnboarding,
+                label: company.incompleteOnboarding === 1 ? 'person with incomplete onboarding' : 'people with incomplete onboarding',
+              },
+              {
+                href: '/company/housing',
+                dot: company.unconfirmedHousing > 0 ? 'bg-amber-500' : 'bg-emerald-500',
+                value: company.unconfirmedHousing,
+                label: company.unconfirmedHousing === 1 ? 'person without confirmed housing' : 'people without confirmed housing',
+              },
+              {
+                href: '/company/perdiems',
+                dot: company.overduePerDiems > 0 ? 'bg-red-500' : 'bg-emerald-500',
+                value: company.overduePerDiems,
+                label: company.overduePerDiems === 1 ? 'per diem overdue' : 'per diems overdue',
+                sub: company.perDiemOutstandingTotal > 0 ? `${fmt(company.perDiemOutstandingTotal)} outstanding` : undefined,
+              },
+            ] as { href: string; dot: string; value: number; label: string; sub?: string }[]).map((c) => (
+              <Link key={c.href} href={c.href} className="block p-3 rounded-lg border border-stone-200 hover:border-stone-300 hover:bg-stone-50/50 transition-colors">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${c.dot}`} />
+                  <span className="text-2xl font-light text-stone-900">{c.value}</span>
+                </div>
+                <p className="text-xs text-stone-500 mt-1 leading-snug">{c.label}</p>
+                {c.sub && <p className="text-[11px] text-amber-600 mt-0.5">{c.sub}</p>}
+              </Link>
+            ))}
+            {/* CAEA report status */}
+            <Link href="/company/caea" className="block p-3 rounded-lg border border-stone-200 hover:border-stone-300 hover:bg-stone-50/50 transition-colors">
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${company.caeaStatus === 'submitted' ? 'bg-emerald-500' : company.caeaStatus === 'draft' ? 'bg-amber-500' : 'bg-stone-300'}`} />
+                <span className="text-sm font-medium text-stone-900">
+                  {company.caeaStatus === 'submitted' ? 'Submitted' : company.caeaStatus === 'draft' ? 'In progress' : 'Not started'}
+                </span>
+              </div>
+              <p className="text-xs text-stone-500 mt-1 leading-snug">CAEA report — current week</p>
+            </Link>
+          </div>
+        </CardBody>
+      </Card>
 
       {/* ── Sales Pulse ──────────────────────────────────────────────────── */}
       {activeProds.length > 0 && (

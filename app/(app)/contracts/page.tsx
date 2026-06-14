@@ -12,8 +12,20 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useAccess } from '@/lib/useAccess'
-import type { Contract, ContractType, ContractStatus, ContractObligation, ObligationType, ObligationRisk } from '@/lib/types'
+import type { Contract, ContractType, ContractStatus, ContractObligation, ObligationType, ObligationRisk, Person, PersonRoleType, UnionAffiliation } from '@/lib/types'
 import { UNION_AGREEMENT_TEMPLATES, getTemplatesForType, resolveObligationDate } from '@/lib/unionTemplates'
+import { generateOnboardingChecklist } from '@/lib/onboarding'
+
+// Map a contract type to a roster role + default union affiliation
+const CONTRACT_ROLE_MAP: Record<ContractType, { roleType: PersonRoleType; union: UnionAffiliation }> = {
+  cast: { roleType: 'Principal', union: 'CAEA' },
+  creative: { roleType: 'Creative', union: 'CAEA' },
+  employment: { roleType: 'Production Staff', union: 'Non-union' },
+  vendor: { roleType: 'Vendor', union: 'Non-union' },
+  venue: { roleType: 'Vendor', union: 'Non-union' },
+  rights: { roleType: 'Vendor', union: 'Non-union' },
+  investor: { roleType: 'Vendor', union: 'Non-union' },
+}
 
 const CONTRACT_TYPES: ContractType[] = ['cast', 'creative', 'vendor', 'venue', 'rights', 'investor', 'employment']
 const CONTRACT_STATUSES: ContractStatus[] = ['draft', 'sent', 'signed', 'expired', 'needs_review']
@@ -97,7 +109,9 @@ interface ExtractedObligation {
 type ExtractionStep = 'upload' | 'extracting' | 'review'
 
 export default function ContractsPage() {
-  const { productions, contracts, obligations, addContract, updateContract, deleteContract, addObligation } = useStore()
+  const { productions, contracts, obligations, addContract, updateContract, deleteContract, addObligation,
+    people, addPerson, updatePerson, onboardingChecklists, addOnboardingChecklist,
+    housingAssignments, addHousingAssignment, perDiemEntries, addPerDiemEntry } = useStore()
   const { canEdit } = useAccess()
 
   const [selectedProd, setSelectedProd] = useState('all')
@@ -148,12 +162,94 @@ export default function ContractsPage() {
     setModalOpen(true)
   }
 
+  // ── Company integration ──────────────────────────────────────────────────
+  // When a contract is signed, sync the person into the Roster, generate their
+  // onboarding checklist (Canadian tax/payroll forms included), and draft
+  // housing / per diem entries if the contract references them.
+  function syncSignedContract(contract: Contract) {
+    if (contract.status !== 'signed') return
+    const production = productions.find((p) => p.id === contract.productionId)
+    const map = CONTRACT_ROLE_MAP[contract.contractType]
+    const credit = {
+      productionId: contract.productionId,
+      productionName: production?.name ?? '',
+      role: typeLabel[contract.contractType],
+      contractId: contract.id,
+      startDate: contract.startDate || production?.openingDate || '',
+      endDate: production?.closingDate,
+      fee: contract.fee,
+    }
+
+    // 1. Upsert person by name
+    const existing = people.find((p) => p.name.trim().toLowerCase() === contract.partyName.trim().toLowerCase())
+    let person: Person
+    const ts = new Date().toISOString()
+    if (existing) {
+      person = existing
+      if (!existing.productionHistory.some((c) => c.contractId === contract.id)) {
+        person = { ...existing, productionHistory: [...existing.productionHistory, credit], updatedAt: ts }
+        updatePerson(person)
+      }
+    } else {
+      person = {
+        id: `person-${Date.now()}`,
+        name: contract.partyName,
+        roleType: map.roleType,
+        email: '',
+        unionAffiliation: map.union,
+        measurements: { lastUpdated: ts.slice(0, 10) },
+        productionHistory: [credit],
+        documents: [],
+        createdAt: ts,
+        updatedAt: ts,
+      }
+      addPerson(person)
+    }
+
+    // 2. Onboarding checklist (once per contract)
+    if (!onboardingChecklists.some((c) => c.contractId === contract.id)) {
+      addOnboardingChecklist(generateOnboardingChecklist(person, contract.productionId, contract.id, ts))
+    }
+
+    // 3. Housing / per diem drafts when the contract references them
+    const text = `${contract.keyObligations} ${contract.notes}`.toLowerCase()
+    const hasHousing = /housing|accommodation|lodging/.test(text)
+    const hasPerDiem = /per ?diem/.test(text)
+    if (hasHousing && !housingAssignments.some((h) => h.personId === person.id && h.productionId === contract.productionId)) {
+      addHousingAssignment({
+        id: `house-${Date.now()}`,
+        personId: person.id,
+        productionId: contract.productionId,
+        status: 'Searching',
+        leaseStart: contract.startDate || production?.openingDate,
+        leaseEnd: production?.closingDate,
+        notes: 'Draft created from signed contract — confirm details',
+      })
+    }
+    if (hasPerDiem && !perDiemEntries.some((e) => e.personId === person.id && e.productionId === contract.productionId)) {
+      addPerDiemEntry({
+        id: `perdiem-${Date.now()}`,
+        personId: person.id,
+        productionId: contract.productionId,
+        dailyRate: 0,
+        periodStart: contract.startDate || production?.openingDate || '',
+        periodEnd: production?.closingDate || '',
+        totalOwed: 0,
+        totalPaid: 0,
+        payments: [],
+      })
+    }
+  }
+
   function handleSave() {
     const contractId = editing ? editing.id : `c-${Date.now()}`
+    const saved: Contract = { ...form, id: contractId }
     if (editing) {
-      updateContract({ ...form, id: contractId })
+      updateContract(saved)
+      syncSignedContract(saved)
     } else {
       addContract({ ...form, id: contractId })
+      syncSignedContract(saved)
       if (selectedUnionId && form.startDate) {
         const template = UNION_AGREEMENT_TEMPLATES.find(t => t.id === selectedUnionId)
         const production = productions.find(p => p.id === form.productionId)

@@ -1,8 +1,16 @@
 'use client'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate, Grant, ProductionTask, ActorProfile, ActorEngagement, WorkflowTemplate, WorkflowRun } from './types'
+import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate, Grant, ProductionTask, ActorProfile, ActorEngagement, WorkflowTemplate, WorkflowRun, Person, HousingAssignment, TravelLeg, PerDiemEntry, CAEAWeeklyReport, OnboardingChecklist } from './types'
 import { BUILTIN_WORKFLOWS } from './workflowTemplates'
+import {
+  PEOPLE,
+  HOUSING_ASSIGNMENTS,
+  TRAVEL_LEGS,
+  PER_DIEM_ENTRIES,
+  CAEA_WEEKLY_REPORTS,
+  ONBOARDING_CHECKLISTS,
+} from './companyData'
 import {
   PRODUCTIONS,
   BUDGET_LINES,
@@ -102,6 +110,37 @@ interface StageOpsState {
   workflowRuns: WorkflowRun[]
   addWorkflowRun: (run: WorkflowRun) => void
 
+  // ── Company Management ──
+  people: Person[]
+  addPerson: (person: Person) => void
+  updatePerson: (person: Person) => void
+  deletePerson: (id: string) => void
+
+  housingAssignments: HousingAssignment[]
+  addHousingAssignment: (h: HousingAssignment) => void
+  updateHousingAssignment: (h: HousingAssignment) => void
+  deleteHousingAssignment: (id: string) => void
+
+  travelLegs: TravelLeg[]
+  addTravelLeg: (t: TravelLeg) => void
+  updateTravelLeg: (t: TravelLeg) => void
+  deleteTravelLeg: (id: string) => void
+
+  perDiemEntries: PerDiemEntry[]
+  addPerDiemEntry: (p: PerDiemEntry) => void
+  updatePerDiemEntry: (p: PerDiemEntry) => void
+  deletePerDiemEntry: (id: string) => void
+
+  caeaReports: CAEAWeeklyReport[]
+  addCAEAReport: (r: CAEAWeeklyReport) => void
+  updateCAEAReport: (r: CAEAWeeklyReport) => void
+  deleteCAEAReport: (id: string) => void
+
+  onboardingChecklists: OnboardingChecklist[]
+  addOnboardingChecklist: (c: OnboardingChecklist) => void
+  updateOnboardingChecklist: (c: OnboardingChecklist) => void
+  deleteOnboardingChecklist: (id: string) => void
+
   spektrixBaseUrl: string
   setSpektrixBaseUrl: (url: string) => void
 
@@ -199,6 +238,37 @@ export const useStore = create<StageOpsState>()(
       workflowRuns: [],
       addWorkflowRun: (run) => set((s) => ({ workflowRuns: [...s.workflowRuns, run] })),
 
+      // ── Company Management ──
+      people: PEOPLE,
+      addPerson: (person) => set((s) => ({ people: [...s.people, person] })),
+      updatePerson: (person) => set((s) => ({ people: s.people.map((p) => (p.id === person.id ? person : p)) })),
+      deletePerson: (id) => set((s) => ({ people: s.people.filter((p) => p.id !== id) })),
+
+      housingAssignments: HOUSING_ASSIGNMENTS,
+      addHousingAssignment: (h) => set((s) => ({ housingAssignments: [...s.housingAssignments, h] })),
+      updateHousingAssignment: (h) => set((s) => ({ housingAssignments: s.housingAssignments.map((x) => (x.id === h.id ? h : x)) })),
+      deleteHousingAssignment: (id) => set((s) => ({ housingAssignments: s.housingAssignments.filter((x) => x.id !== id) })),
+
+      travelLegs: TRAVEL_LEGS,
+      addTravelLeg: (t) => set((s) => ({ travelLegs: [...s.travelLegs, t] })),
+      updateTravelLeg: (t) => set((s) => ({ travelLegs: s.travelLegs.map((x) => (x.id === t.id ? t : x)) })),
+      deleteTravelLeg: (id) => set((s) => ({ travelLegs: s.travelLegs.filter((x) => x.id !== id) })),
+
+      perDiemEntries: PER_DIEM_ENTRIES,
+      addPerDiemEntry: (p) => set((s) => ({ perDiemEntries: [...s.perDiemEntries, p] })),
+      updatePerDiemEntry: (p) => set((s) => ({ perDiemEntries: s.perDiemEntries.map((x) => (x.id === p.id ? p : x)) })),
+      deletePerDiemEntry: (id) => set((s) => ({ perDiemEntries: s.perDiemEntries.filter((x) => x.id !== id) })),
+
+      caeaReports: CAEA_WEEKLY_REPORTS,
+      addCAEAReport: (r) => set((s) => ({ caeaReports: [...s.caeaReports, r] })),
+      updateCAEAReport: (r) => set((s) => ({ caeaReports: s.caeaReports.map((x) => (x.id === r.id ? r : x)) })),
+      deleteCAEAReport: (id) => set((s) => ({ caeaReports: s.caeaReports.filter((x) => x.id !== id) })),
+
+      onboardingChecklists: ONBOARDING_CHECKLISTS,
+      addOnboardingChecklist: (c) => set((s) => ({ onboardingChecklists: [...s.onboardingChecklists, c] })),
+      updateOnboardingChecklist: (c) => set((s) => ({ onboardingChecklists: s.onboardingChecklists.map((x) => (x.id === c.id ? c : x)) })),
+      deleteOnboardingChecklist: (id) => set((s) => ({ onboardingChecklists: s.onboardingChecklists.filter((x) => x.id !== id) })),
+
       setSpektrixBaseUrl: (url) => set(() => ({ spektrixBaseUrl: url })),
 
       loadScenario: (data) => set(() => ({
@@ -233,8 +303,32 @@ export const useStore = create<StageOpsState>()(
         performanceDates: PERFORMANCE_DATES,
         grants: GRANTS,
         tasks: TASKS,
+        people: PEOPLE,
+        housingAssignments: HOUSING_ASSIGNMENTS,
+        travelLegs: TRAVEL_LEGS,
+        perDiemEntries: PER_DIEM_ENTRIES,
+        caeaReports: CAEA_WEEKLY_REPORTS,
+        onboardingChecklists: ONBOARDING_CHECKLISTS,
       })),
     }),
-    { name: 'stageops-store' }
+    {
+      name: 'stageops-store',
+      version: 2,
+      // Ensure returning users pick up the new Company Management seed data
+      // even if their persisted state predates these arrays.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<StageOpsState>
+        return {
+          ...current,
+          ...p,
+          people: p.people ?? current.people,
+          housingAssignments: p.housingAssignments ?? current.housingAssignments,
+          travelLegs: p.travelLegs ?? current.travelLegs,
+          perDiemEntries: p.perDiemEntries ?? current.perDiemEntries,
+          caeaReports: p.caeaReports ?? current.caeaReports,
+          onboardingChecklists: p.onboardingChecklists ?? current.onboardingChecklists,
+        }
+      },
+    }
   )
 )

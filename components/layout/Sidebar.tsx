@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Film, DollarSign, TrendingUp, FileText,
   ArrowRightLeft, CalendarDays, FileBarChart, FolderOpen, Settings, ChevronRight, Megaphone, Wand2, FlaskConical, Plug2, Upload, Landmark, CheckSquare, UserPlus, Workflow,
+  Users, Home, Wallet, ClipboardCheck, ScrollText,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useStore } from '@/lib/store'
@@ -28,6 +29,16 @@ const navGroups: NavGroup[] = [
       { label: 'Contracts', href: '/contracts', icon: FileText, exact: false },
       { label: 'Onboarding', href: '/onboarding/actor', icon: UserPlus, exact: false },
       { label: 'Workflows', href: '/workflows', icon: Workflow, exact: false },
+    ],
+  },
+  {
+    heading: 'Company',
+    items: [
+      { label: 'Roster', href: '/company/roster', icon: Users, exact: false },
+      { label: 'Housing & Travel', href: '/company/housing', icon: Home, exact: false },
+      { label: 'Per Diems', href: '/company/perdiems', icon: Wallet, exact: false },
+      { label: 'CAEA Reports', href: '/company/caea', icon: ScrollText, exact: false },
+      { label: 'Onboarding', href: '/company/onboarding', icon: ClipboardCheck, exact: false },
     ],
   },
   {

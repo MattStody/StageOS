@@ -371,3 +371,203 @@ export interface ProductionTask {
   dueDate: string
   notes: string
 }
+
+// ── Company Management ──────────────────────────────────────────────────────────
+
+export type UnionAffiliation = 'CAEA' | 'ACTRA' | 'AFM' | 'IATSE' | 'CUPE' | 'Non-union' | 'Other'
+export type PersonRoleType = 'Principal' | 'Ensemble' | 'Creative' | 'Production Staff' | 'Vendor' | 'Crew'
+
+export interface PersonMeasurements {
+  height?: string
+  weight?: string
+  chest?: string
+  waist?: string
+  hips?: string
+  inseam?: string
+  dressSuitSize?: string
+  shoeSize?: string
+  hatSize?: string
+  notes?: string
+  lastUpdated: string
+}
+
+export interface EmergencyContact {
+  name: string
+  phone: string
+  relationship: string
+}
+
+export interface ProductionCredit {
+  productionId: string
+  productionName: string
+  role: string
+  contractId?: string
+  startDate: string
+  endDate?: string
+  fee?: number // CAD
+}
+
+export interface PersonDocument {
+  id: string
+  name: string
+  category: 'headshot' | 'resume' | 'sin' | 'td1' | 'other'
+  uploadedAt: string
+  size: string
+  type: string
+}
+
+export interface Person {
+  id: string
+  name: string
+  pronouns?: string
+  headshotUrl?: string
+  roleType: PersonRoleType
+  email: string
+  phone?: string
+  emergencyContact?: EmergencyContact
+  unionAffiliation: UnionAffiliation
+  unionMemberNumber?: string
+  agentName?: string
+  agentEmail?: string
+  agentPhone?: string
+  measurements?: PersonMeasurements
+  dietaryRestrictions?: string
+  accessibilityNeeds?: string
+  city?: string
+  province?: string // for TD1 provincial form tracking
+  productionHistory: ProductionCredit[]
+  documents: PersonDocument[]
+  createdAt: string
+  updatedAt: string
+}
+
+// ── Housing & Travel ────────────────────────────────────────────────────────────
+
+export type HousingStatus = 'Searching' | 'Confirmed' | 'Checked In' | 'Checked Out'
+
+export interface HousingAssignment {
+  id: string
+  personId: string
+  productionId: string
+  address?: string
+  unit?: string
+  landlordContact?: string
+  leaseStart?: string
+  leaseEnd?: string
+  monthlyCost?: number // CAD
+  status: HousingStatus
+  notes?: string
+}
+
+export type TravelDirection = 'Inbound' | 'Outbound'
+export type TravelStatus = 'Not Booked' | 'Booked' | 'Confirmed' | 'Completed'
+
+export interface TravelLeg {
+  id: string
+  personId: string
+  productionId: string
+  direction: TravelDirection
+  date: string
+  carrier?: string // Air Canada, WestJet, VIA Rail, etc.
+  flightTrainNumber?: string
+  departureCity: string
+  arrivalCity: string
+  bookedBy: 'Company' | 'Self'
+  status: TravelStatus
+  cost?: number // CAD
+  reimbursementAmount?: number // CAD
+  reimbursementDate?: string
+}
+
+// ── Per Diem ────────────────────────────────────────────────────────────────────
+
+export interface PerDiemPayment {
+  id: string
+  date: string
+  amount: number // CAD
+  method: string
+  notes?: string
+}
+
+export interface PerDiemEntry {
+  id: string
+  personId: string
+  productionId: string
+  dailyRate: number // CAD
+  periodStart: string
+  periodEnd: string
+  totalOwed: number // CAD
+  totalPaid: number // CAD
+  payments: PerDiemPayment[]
+}
+
+// ── CAEA Weekly Reports ─────────────────────────────────────────────────────────
+
+export type PACTContractType = 'PACT-A' | 'PACT-B' | 'PACT-C' | 'PACT-D' | 'LOA'
+export type CAEAPenaltyType = 'MissedBreak' | 'RestInvasion' | 'MealPenalty' | 'Other'
+
+export interface CAEAPenalty {
+  type: CAEAPenaltyType
+  count: number
+  ratePerOccurrence: number // CAD
+  total: number // CAD
+  notes?: string
+}
+
+export interface CAEAWeeklyEntry {
+  personId: string
+  weeklyContractRate: number // CAD
+  scheduledHours: number
+  actualHours: number
+  isPartialWeek: boolean
+  partialWeekDays?: number
+  partialWeekType?: 'rehearsal' | 'performance'
+  isTechWeek: boolean
+  penalties: CAEAPenalty[]
+  sickDays: number
+  personalDays: number
+  overtimeHours: number
+  overtimePay: number // CAD
+  penaltyTotal: number // CAD
+  addedTimePay: number // CAD
+  vacationPay: number // CAD — 4% of gross per Canadian employment standards
+  grossPay: number // CAD
+  pensionContribution: number // CAD
+  duesCheckoff: number // CAD
+  netToPayroll: number // CAD
+}
+
+export interface CAEAWeeklyReport {
+  id: string
+  productionId: string
+  weekEnding: string
+  contractType: PACTContractType
+  entries: CAEAWeeklyEntry[]
+  submittedAt?: string
+  exportedAt?: string
+}
+
+// ── Onboarding ──────────────────────────────────────────────────────────────────
+
+export type OnboardingCategory = 'Legal' | 'Finance' | 'Housing' | 'Travel' | 'Production' | 'Communication'
+
+export interface OnboardingItem {
+  id: string
+  label: string
+  assignedTo?: string
+  dueDate?: string
+  completedAt?: string
+  completedBy?: string
+  required: boolean
+  category: OnboardingCategory
+}
+
+export interface OnboardingChecklist {
+  id: string
+  personId: string
+  productionId: string
+  contractId: string
+  items: OnboardingItem[]
+  completedAt?: string
+  createdAt: string
+}
