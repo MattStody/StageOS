@@ -414,6 +414,7 @@ export interface PersonDocument {
   uploadedAt: string
   size: string
   type: string
+  url?: string
 }
 
 export interface Person {

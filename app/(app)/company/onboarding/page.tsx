@@ -11,11 +11,12 @@ import { personName, avatarColor, initials, onboardingOverdueItems } from '@/lib
 import { STAGE_USERS } from '@/lib/team'
 import {
   AlertTriangle, CheckCircle2, Circle, Clock, Users as UsersIcon,
-  Sparkles, ShieldCheck, ChevronRight, Calendar, UserCircle2,
+  Sparkles, ShieldCheck, ChevronRight, Calendar, UserCircle2, Plus,
 } from 'lucide-react'
 import type {
   OnboardingChecklist, OnboardingItem, OnboardingCategory, Person, Production,
 } from '@/lib/types'
+import { generateOnboardingChecklist } from '@/lib/onboarding'
 
 const CATEGORY_ORDER: OnboardingCategory[] = ['Legal', 'Finance', 'Housing', 'Travel', 'Production', 'Communication']
 
@@ -60,7 +61,7 @@ function recompute(c: OnboardingChecklist, items: OnboardingItem[]): OnboardingC
 }
 
 export default function CompanyOnboardingPage() {
-  const { people, productions, onboardingChecklists, updateOnboardingChecklist } = useStore()
+  const { people, productions, onboardingChecklists, updateOnboardingChecklist, addOnboardingChecklist } = useStore()
   const { canEdit } = useAccess()
 
   const [prodFilter, setProdFilter] = useState('all')
@@ -86,35 +87,37 @@ export default function CompanyOnboardingPage() {
     return { total: onboardingChecklists.length, complete, inProgress, notStarted, overdueItems, overduePeople }
   }, [onboardingChecklists])
 
-  // ── Filtered + grouped by production ──
+  // ── Grouped by production — all roster people, checklists or not ──
   const groups = useMemo(() => {
-    const filtered = onboardingChecklists.filter((c) => {
-      if (prodFilter !== 'all' && c.productionId !== prodFilter) return false
-      if (statusFilter !== 'all' && checklistStatus(c) !== statusFilter) return false
-      return true
-    })
-    const byProd = new Map<string, OnboardingChecklist[]>()
-    for (const c of filtered) {
-      const arr = byProd.get(c.productionId) ?? []
-      arr.push(c)
-      byProd.set(c.productionId, arr)
-    }
-    // preserve production order
     return productions
-      .filter((p) => byProd.has(p.id))
-      .map((p) => ({
-        production: p,
-        checklists: (byProd.get(p.id) ?? []).sort((a, b) => {
-          // incomplete first, then by overdue desc
-          const sa = checklistStatus(a) === 'complete' ? 1 : 0
-          const sb = checklistStatus(b) === 'complete' ? 1 : 0
-          if (sa !== sb) return sa - sb
-          return onboardingOverdueItems(b) - onboardingOverdueItems(a)
-        }),
-      }))
-  }, [onboardingChecklists, productions, prodFilter, statusFilter])
+      .filter((prod) => prodFilter === 'all' || prod.id === prodFilter)
+      .map((prod) => {
+        const prodPeople = people.filter((p) =>
+          p.productionHistory.some((h) => h.productionId === prod.id)
+        )
+        const rows = prodPeople.map((person) => ({
+          person,
+          checklist: onboardingChecklists.find((c) => c.personId === person.id && c.productionId === prod.id) ?? null,
+        }))
+        const filtered = rows.filter(({ checklist }) => {
+          if (statusFilter === 'all') return true
+          if (statusFilter === 'not_started') return !checklist
+          if (!checklist) return false
+          return checklistStatus(checklist) === statusFilter
+        })
+        return { production: prod, rows: filtered }
+      })
+      .filter((g) => g.rows.length > 0)
+  }, [people, productions, onboardingChecklists, prodFilter, statusFilter])
 
   const openChecklist = onboardingChecklists.find((c) => c.id === openId) ?? null
+
+  // ── Start onboarding for a person with no checklist ──
+  function startOnboarding(person: Person, production: Production) {
+    const contractId = `manual-${person.id}-${production.id}-${Date.now()}`
+    const checklist = generateOnboardingChecklist(person, production.id, contractId, new Date().toISOString())
+    addOnboardingChecklist(checklist)
+  }
 
   // ── Item mutations ──
   function toggleItem(checklist: OnboardingChecklist, item: OnboardingItem) {
@@ -194,30 +197,38 @@ export default function CompanyOnboardingPage() {
       {/* Grouped list */}
       {groups.length === 0 ? (
         <div className="text-center py-16 text-stone-400 text-sm bg-white border border-stone-200 rounded-lg">
-          No onboarding checklists match your filters.
+          No people match your filters.
         </div>
       ) : (
         <div className="space-y-7">
-          {groups.map(({ production, checklists }) => (
+          {groups.map(({ production, rows }) => (
             <div key={production.id}>
-              {/* Group header */}
               <div className="flex items-center gap-2.5 mb-3 pl-0.5">
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: production.color }} />
                 <h2 className="text-sm font-semibold text-stone-800">{production.name}</h2>
                 <span className="text-[11px] font-medium text-stone-400 px-1.5 py-0.5 rounded-full bg-stone-100">
-                  {checklists.length}
+                  {rows.length}
                 </span>
               </div>
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                {checklists.map((c) => (
-                  <PersonCard
-                    key={c.id}
-                    checklist={c}
-                    person={peopleById.get(c.personId)}
-                    fallbackName={personName(people, c.personId)}
-                    onOpen={() => setOpenId(c.id)}
-                  />
-                ))}
+                {rows.map(({ person, checklist }) =>
+                  checklist ? (
+                    <PersonCard
+                      key={person.id}
+                      checklist={checklist}
+                      person={person}
+                      fallbackName={person.name}
+                      onOpen={() => setOpenId(checklist.id)}
+                    />
+                  ) : (
+                    <NotStartedCard
+                      key={person.id}
+                      person={person}
+                      onStart={() => startOnboarding(person, production)}
+                      canEdit={canEdit}
+                    />
+                  )
+                )}
               </div>
             </div>
           ))}
@@ -366,6 +377,33 @@ function PersonCard({ checklist, person, fallbackName, onOpen }: {
         </p>
       )}
     </button>
+  )
+}
+
+// ── Not-started card ───────────────────────────────────────────────────────────
+
+function NotStartedCard({ person, onStart, canEdit }: { person: Person; onStart: () => void; canEdit: boolean }) {
+  return (
+    <div className="rounded-lg border border-stone-200 bg-white px-4 py-3.5">
+      <div className="flex items-start gap-3">
+        <Avatar id={person.id} name={person.name} size={38} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-stone-800 truncate">{person.name}</p>
+          <p className="text-[11px] text-stone-400 truncate">{person.roleType} · {person.unionAffiliation}</p>
+        </div>
+      </div>
+      <div className="mt-3 flex items-center justify-between">
+        <span className="text-[11px] text-stone-400">Not started</span>
+        {canEdit && (
+          <button
+            onClick={onStart}
+            className="flex items-center gap-1 text-[11px] font-medium text-stone-600 hover:text-stone-900 border border-stone-200 hover:border-stone-400 rounded px-2 py-1 transition-colors"
+          >
+            <Plus size={11} /> Begin Onboarding
+          </button>
+        )}
+      </div>
+    </div>
   )
 }
 
