@@ -4,66 +4,85 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Film, DollarSign, TrendingUp, FileText,
-  ArrowRightLeft, CalendarDays, FileBarChart, FolderOpen, Settings, ChevronRight, Megaphone, FlaskConical, Landmark, CheckSquare, Workflow,
+  ArrowRightLeft, CalendarDays, FileBarChart, FolderOpen, Settings,
+  Megaphone, FlaskConical, Landmark, CheckSquare, Workflow,
   Users, Home, Wallet, ClipboardCheck, ScrollText,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import { useStore } from '@/lib/store'
 import { useDemo } from '@/contexts/DemoContext'
 
-type NavItem = { label: string; href: string; icon: React.ElementType; exact: boolean }
-type NavGroup = { heading?: string; items: NavItem[] }
+type NavItem = { label: string; href: string; icon: React.ElementType }
+type NavSection = {
+  id: string
+  icon: React.ElementType
+  label: string
+  href?: string
+  items?: NavItem[]
+}
 
-const navGroups: NavGroup[] = [
+const sections: NavSection[] = [
   {
+    id: 'dashboard',
+    icon: LayoutDashboard,
+    label: 'Dashboard',
+    href: '/dashboard',
+  },
+  {
+    id: 'production',
+    icon: Film,
+    label: 'Production',
     items: [
-      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, exact: false },
+      { label: 'Productions', href: '/productions', icon: Film },
+      { label: 'Tasks', href: '/tasks', icon: CheckSquare },
+      { label: 'Calendar', href: '/calendar', icon: CalendarDays },
+      { label: 'Contracts', href: '/contracts', icon: FileText },
+      { label: 'Workflows', href: '/workflows', icon: Workflow },
     ],
   },
   {
-    heading: 'Production',
+    id: 'company',
+    icon: Users,
+    label: 'Company',
     items: [
-      { label: 'Productions', href: '/productions', icon: Film, exact: false },
-      { label: 'Tasks', href: '/tasks', icon: CheckSquare, exact: false },
-      { label: 'Calendar', href: '/calendar', icon: CalendarDays, exact: false },
-      { label: 'Contracts', href: '/contracts', icon: FileText, exact: false },
-      { label: 'Workflows', href: '/workflows', icon: Workflow, exact: false },
+      { label: 'Roster', href: '/company/roster', icon: Users },
+      { label: 'Housing & Travel', href: '/company/housing', icon: Home },
+      { label: 'Per Diems', href: '/company/perdiems', icon: Wallet },
+      { label: 'CAEA Reports', href: '/company/caea', icon: ScrollText },
+      { label: 'Onboarding', href: '/company/onboarding', icon: ClipboardCheck },
     ],
   },
   {
-    heading: 'Company',
+    id: 'finance',
+    icon: DollarSign,
+    label: 'Finance',
     items: [
-      { label: 'Roster', href: '/company/roster', icon: Users, exact: false },
-      { label: 'Housing & Travel', href: '/company/housing', icon: Home, exact: false },
-      { label: 'Per Diems', href: '/company/perdiems', icon: Wallet, exact: false },
-      { label: 'CAEA Reports', href: '/company/caea', icon: ScrollText, exact: false },
-      { label: 'Onboarding', href: '/company/onboarding', icon: ClipboardCheck, exact: false },
+      { label: 'Budget', href: '/budget', icon: DollarSign },
+      { label: 'Revenue', href: '/revenue', icon: TrendingUp },
+      { label: 'Cash Flow', href: '/cashflow', icon: ArrowRightLeft },
+      { label: 'Grants', href: '/grants', icon: Landmark },
+      { label: 'Marketing', href: '/marketing', icon: Megaphone },
+      { label: 'What If', href: '/whatif', icon: FlaskConical },
     ],
   },
   {
-    heading: 'Finance',
+    id: 'workspace',
+    icon: FolderOpen,
+    label: 'Workspace',
     items: [
-      { label: 'Budget', href: '/budget', icon: DollarSign, exact: false },
-      { label: 'Revenue', href: '/revenue', icon: TrendingUp, exact: false },
-      { label: 'Cash Flow', href: '/cashflow', icon: ArrowRightLeft, exact: false },
-      { label: 'Grants', href: '/grants', icon: Landmark, exact: false },
-      { label: 'Marketing', href: '/marketing', icon: Megaphone, exact: false },
-      { label: 'What If', href: '/whatif', icon: FlaskConical, exact: false },
-    ],
-  },
-  {
-    heading: 'Workspace',
-    items: [
-      { label: 'Reports', href: '/reports', icon: FileBarChart, exact: false },
-      { label: 'Documents', href: '/documents', icon: FolderOpen, exact: false },
-      { label: 'Settings', href: '/settings', icon: Settings, exact: true },
+      { label: 'Reports', href: '/reports', icon: FileBarChart },
+      { label: 'Documents', href: '/documents', icon: FolderOpen },
+      { label: 'Settings', href: '/settings', icon: Settings },
     ],
   },
 ]
 
+function isSectionActive(section: NavSection, pathname: string): boolean {
+  if (section.href) return pathname === section.href || pathname.startsWith(section.href + '/')
+  return section.items?.some(i => pathname === i.href || pathname.startsWith(i.href + '/')) ?? false
+}
+
 export function Sidebar() {
   const pathname = usePathname()
-  const { productions } = useStore()
   const { isDemo, config } = useDemo()
 
   const orgName = isDemo && config?.org ? config.org : 'Adam Blanshay Prods.'
@@ -73,116 +92,118 @@ export function Sidebar() {
   const navColor = isDemo && config?.navColor ? config.navColor : null
   const logoUrl = isDemo && config?.logoUrl ? config.logoUrl : null
 
-  const initials = userName
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
+  const userInitials = userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
+  const orgInitials = orgName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
 
   return (
     <aside
-      className="w-56 shrink-0 bg-stone-950 min-h-screen flex flex-col"
+      className="w-14 shrink-0 bg-stone-950 min-h-screen flex flex-col items-center z-40 relative"
       style={navColor ? { backgroundColor: navColor } : undefined}
     >
-      {/* Logo */}
-      <div className="px-5 py-6 border-b border-white/10">
+      {/* Logo mark */}
+      <div className="w-full flex items-center justify-center py-4 border-b border-white/10">
         {logoUrl ? (
           <img
             src={logoUrl}
             alt={orgName}
-            className="h-8 max-w-[140px] object-contain object-left"
+            className="h-6 w-6 object-contain"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           />
         ) : (
-          <p className="text-white font-semibold text-sm tracking-tight truncate">{userName}</p>
-        )}
-        <p className="text-stone-400 text-xs mt-0.5 truncate">{orgName}</p>
-        {isDemo && (
-          <span
-            className="inline-flex items-center gap-1 mt-1.5 px-1.5 py-0.5 rounded text-xs font-medium"
-            style={{
-              backgroundColor: accentColor ? `${accentColor}22` : '#6366f122',
-              color: accentColor ?? '#6366f1',
-            }}
+          <div
+            className="w-7 h-7 rounded flex items-center justify-center text-[11px] font-bold text-white"
+            style={{ backgroundColor: accentColor ?? '#44403c' }}
+            title={orgName}
           >
-            <span className="w-1 h-1 rounded-full" style={{ backgroundColor: accentColor ?? '#6366f1' }} />
-            Demo
-          </span>
+            {orgInitials}
+          </div>
         )}
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-4 overflow-y-auto">
-        {navGroups.map((group, gi) => {
-          const items = group.items.filter(({ href }) => !(isDemo && href === '/settings/demos'))
-          if (!items.length) return null
-          return (
-            <div key={gi}>
-              {group.heading && (
-                <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/30">
-                  {group.heading}
-                </p>
+      {/* Nav rail */}
+      <nav className="flex-1 flex flex-col items-center py-3 gap-0.5 w-full">
+        {sections.map((section) => {
+          const active = isSectionActive(section, pathname)
+          const Icon = section.icon
+
+          const iconBtn = (
+            <div
+              className={cn(
+                'w-9 h-9 flex items-center justify-center rounded transition-colors',
+                active ? 'text-white' : 'text-white/40 hover:text-white hover:bg-white/10',
               )}
-              <div className="space-y-0.5">
-                {items.map(({ label, href, icon: Icon, exact }) => {
-                  const active = pathname === href || (!exact && pathname.startsWith(href + '/'))
-                  return (
-                    <Link
-                      key={href}
-                      href={href}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors',
-                        active
-                          ? 'text-white'
-                          : 'text-white/70 hover:text-white hover:bg-white/10',
-                      )}
-                      style={active ? { backgroundColor: accentColor ?? '#292524' } : undefined}
-                    >
-                      <Icon size={15} />
-                      {label}
-                    </Link>
-                  )
-                })}
+              style={active ? { backgroundColor: accentColor ?? '#292524' } : undefined}
+            >
+              <Icon size={18} />
+            </div>
+          )
+
+          if (section.href) {
+            return (
+              <div key={section.id} className="relative group w-full flex justify-center">
+                <Link href={section.href}>{iconBtn}</Link>
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 hidden group-hover:block z-50 pointer-events-none">
+                  <div className="bg-stone-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                    {section.label}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
+          return (
+            <div key={section.id} className="relative group w-full flex justify-center">
+              <div className="cursor-default">{iconBtn}</div>
+              {/* Flyout */}
+              <div className="absolute left-full top-0 hidden group-hover:block z-50" style={{ paddingLeft: 6 }}>
+                <div className="bg-stone-900 border border-white/10 rounded-lg shadow-2xl py-2 min-w-[168px]">
+                  <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/30">
+                    {section.label}
+                  </p>
+                  {section.items?.map((item) => {
+                    const itemActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                    const ItemIcon = item.icon
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          'flex items-center gap-2.5 px-3 py-1.5 text-sm transition-colors',
+                          itemActive ? 'text-white' : 'text-white/70 hover:text-white hover:bg-white/10',
+                        )}
+                        style={itemActive ? { backgroundColor: accentColor ? `${accentColor}33` : '#292524' } : undefined}
+                      >
+                        <ItemIcon size={13} />
+                        {item.label}
+                      </Link>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           )
         })}
       </nav>
 
-      {/* Productions quick list */}
-      <div className="px-3 pb-4 border-t border-white/10 pt-4">
-        <p className="px-3 text-xs text-stone-400 uppercase tracking-wider mb-2">Productions</p>
-        {productions.map((p) => (
-          <Link
-            key={p.id}
-            href={`/productions/${p.id}`}
-            className="flex items-center gap-2 px-3 py-1.5 rounded text-xs text-stone-400 hover:text-white hover:bg-stone-900 transition-colors group"
-          >
-            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
-            <span className="truncate flex-1">{p.name}</span>
-            <ChevronRight size={11} className="opacity-0 group-hover:opacity-100 shrink-0" />
-          </Link>
-        ))}
-      </div>
-
-      {/* User */}
-      <div className="px-5 py-4 border-t border-white/10">
-        <div className="flex items-center gap-3">
+      {/* User avatar */}
+      <div className="pb-4 flex flex-col items-center gap-2">
+        {isDemo && (
           <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium"
-            style={
-              accentColor
-                ? { backgroundColor: `${accentColor}33`, color: accentColor }
-                : { backgroundColor: '#44403c', color: '#d6d3d1' }
-            }
-          >
-            {initials}
-          </div>
-          <div>
-            <p className="text-xs text-stone-300 font-medium truncate">{userName}</p>
-            <p className="text-xs text-stone-400 truncate">{userTitle}</p>
-          </div>
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: accentColor ?? '#6366f1' }}
+            title="Demo mode"
+          />
+        )}
+        <div
+          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium cursor-default"
+          title={`${userName} — ${userTitle}`}
+          style={
+            accentColor
+              ? { backgroundColor: `${accentColor}33`, color: accentColor }
+              : { backgroundColor: '#44403c', color: '#d6d3d1' }
+          }
+        >
+          {userInitials}
         </div>
       </div>
     </aside>
