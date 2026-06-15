@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Film, DollarSign, TrendingUp, FileText,
-  ArrowRightLeft, CalendarDays, FileBarChart, FolderOpen, Settings, ChevronRight, Megaphone, Wand2, FlaskConical, Plug2, Upload, Landmark, CheckSquare, UserPlus, Workflow,
+  ArrowRightLeft, CalendarDays, FileBarChart, FolderOpen, Settings, ChevronRight, Megaphone, FlaskConical, Landmark, CheckSquare, Workflow,
   Users, Home, Wallet, ClipboardCheck, ScrollText,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -27,7 +27,6 @@ const navGroups: NavGroup[] = [
       { label: 'Tasks', href: '/tasks', icon: CheckSquare, exact: false },
       { label: 'Calendar', href: '/calendar', icon: CalendarDays, exact: false },
       { label: 'Contracts', href: '/contracts', icon: FileText, exact: false },
-      { label: 'Onboarding', href: '/onboarding/actor', icon: UserPlus, exact: false },
       { label: 'Workflows', href: '/workflows', icon: Workflow, exact: false },
     ],
   },
@@ -48,11 +47,6 @@ const navGroups: NavGroup[] = [
       { label: 'Revenue', href: '/revenue', icon: TrendingUp, exact: false },
       { label: 'Cash Flow', href: '/cashflow', icon: ArrowRightLeft, exact: false },
       { label: 'Grants', href: '/grants', icon: Landmark, exact: false },
-    ],
-  },
-  {
-    heading: 'Strategy',
-    items: [
       { label: 'Marketing', href: '/marketing', icon: Megaphone, exact: false },
       { label: 'What If', href: '/whatif', icon: FlaskConical, exact: false },
     ],
@@ -63,7 +57,6 @@ const navGroups: NavGroup[] = [
       { label: 'Reports', href: '/reports', icon: FileBarChart, exact: false },
       { label: 'Documents', href: '/documents', icon: FolderOpen, exact: false },
       { label: 'Settings', href: '/settings', icon: Settings, exact: true },
-      { label: 'Demo Creator', href: '/settings/demos', icon: Wand2, exact: false },
     ],
   },
 ]
