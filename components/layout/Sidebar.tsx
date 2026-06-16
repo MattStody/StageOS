@@ -10,10 +10,12 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useDemo } from '@/contexts/DemoContext'
+import { useAuth } from '@/contexts/AuthContext'
+import type { SectionId } from '@/lib/auth'
 
 type NavItem = { label: string; href: string; icon: React.ElementType }
 type NavSection = {
-  id: string
+  id: SectionId
   icon: React.ElementType
   label: string
   href?: string
@@ -84,13 +86,16 @@ function isSectionActive(section: NavSection, pathname: string): boolean {
 export function Sidebar() {
   const pathname = usePathname()
   const { isDemo, config } = useDemo()
+  const { currentUser } = useAuth()
 
   const orgName = isDemo && config?.org ? config.org : 'Adam Blanshay Prods.'
-  const userName = isDemo && config?.user ? config.user : 'Leon Kay'
-  const userTitle = isDemo && config?.title ? config.title : 'General Manager'
+  const userName = isDemo && config?.user ? config.user : (currentUser?.name ?? 'Leon Kay')
+  const userTitle = isDemo && config?.title ? config.title : (currentUser?.title ?? 'General Manager')
   const accentColor = isDemo && config?.color ? config.color : null
   const navColor = isDemo && config?.navColor ? config.navColor : null
   const logoUrl = isDemo && config?.logoUrl ? config.logoUrl : null
+
+  const allowedSections = currentUser?.sections ?? sections.map((s) => s.id)
 
   const userInitials = userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
   const orgInitials = orgName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
@@ -122,7 +127,7 @@ export function Sidebar() {
 
       {/* Nav rail */}
       <nav className="flex-1 flex flex-col items-center py-3 gap-0.5 w-full">
-        {sections.map((section) => {
+        {sections.filter((s) => isDemo || allowedSections.includes(s.id)).map((section) => {
           const active = isSectionActive(section, pathname)
           const Icon = section.icon
 

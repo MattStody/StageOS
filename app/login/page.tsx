@@ -2,10 +2,18 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { ROLE_USERS } from '@/lib/auth'
+import { cn } from '@/lib/cn'
+
+const SECTION_COLORS: Record<string, string> = {
+  company: '#0ea5e9',
+  production: '#8b5cf6',
+  finance: '#10b981',
+}
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login } = useAuth()
+  const { login, loginAsRole } = useAuth()
   const [email, setEmail] = useState('matt@boldlymedia.com')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -17,8 +25,14 @@ export default function LoginPage() {
     if (ok) {
       router.push('/dashboard')
     } else {
-      setError('Invalid credentials. Demo users should use their personalized demo link.')
+      setError('Invalid credentials.')
     }
+  }
+
+  function handleRoleLogin(userId: string) {
+    loginAsRole(userId)
+    const user = ROLE_USERS.find((u) => u.id === userId)
+    router.push(user?.defaultHref ?? '/dashboard')
   }
 
   return (
@@ -52,13 +66,14 @@ export default function LoginPage() {
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-stone-50">
-        <div className="w-full max-w-sm">
+      <div className="flex-1 flex items-center justify-center p-8 bg-stone-50 overflow-y-auto">
+        <div className="w-full max-w-sm py-8">
           <div className="mb-8">
-            <h1 className="text-2xl font-light text-stone-900 tracking-tight">Admin sign in</h1>
+            <h1 className="text-2xl font-light text-stone-900 tracking-tight">Sign in</h1>
             <p className="text-stone-500 text-sm mt-1">Access your StageOps workspace</p>
           </div>
 
+          {/* Admin form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1.5">Email</label>
@@ -79,13 +94,9 @@ export default function LoginPage() {
                 className="w-full px-3 py-2.5 text-sm border border-stone-300 rounded bg-white focus:outline-none focus:border-stone-500 text-stone-900"
               />
             </div>
-
             {error && (
-              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
-                {error}
-              </p>
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>
             )}
-
             <button
               type="submit"
               className="w-full bg-stone-900 text-white py-2.5 rounded text-sm font-medium hover:bg-stone-800 transition-colors mt-2"
@@ -94,10 +105,52 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-8 p-4 bg-stone-100 rounded border border-stone-200">
-            <p className="text-xs text-stone-500 font-medium mb-1">Demo access</p>
-            <p className="text-xs text-stone-500">Prospects access StageOps through a personalized demo link — not this page.</p>
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-stone-200" />
+            <span className="text-xs text-stone-400">or sign in as</span>
+            <div className="flex-1 h-px bg-stone-200" />
           </div>
+
+          {/* Role user cards */}
+          <div className="space-y-2">
+            {ROLE_USERS.map((user) => {
+              const color = SECTION_COLORS[user.id] ?? '#6b7280'
+              return (
+                <button
+                  key={user.id}
+                  onClick={() => handleRoleLogin(user.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-white border border-stone-200 rounded-lg hover:border-stone-400 hover:shadow-sm transition-all text-left group"
+                >
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0"
+                    style={{ backgroundColor: color }}
+                  >
+                    {user.name.split(' ').map((w) => w[0]).join('').slice(0, 2)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-stone-800">{user.name}</p>
+                    <p className="text-xs text-stone-500">{user.title}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {user.sections.filter((s) => s !== 'dashboard').map((s) => (
+                      <span
+                        key={s}
+                        className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded-full capitalize')}
+                        style={{ backgroundColor: `${color}18`, color }}
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          <p className="text-[11px] text-stone-400 mt-4 text-center">
+            Role accounts have view access to their assigned section only.
+          </p>
         </div>
       </div>
     </div>
