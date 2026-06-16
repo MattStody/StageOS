@@ -417,6 +417,13 @@ export interface PersonDocument {
   url?: string
 }
 
+export interface BankingInfo {
+  bankName?: string
+  transitNumber?: string
+  institutionNumber?: string
+  accountNumber?: string
+}
+
 export interface Person {
   id: string
   name: string
@@ -431,11 +438,13 @@ export interface Person {
   agentName?: string
   agentEmail?: string
   agentPhone?: string
+  sinNumber?: string
+  bankingInfo?: BankingInfo
   measurements?: PersonMeasurements
   dietaryRestrictions?: string
   accessibilityNeeds?: string
   city?: string
-  province?: string // for TD1 provincial form tracking
+  province?: string
   productionHistory: ProductionCredit[]
   documents: PersonDocument[]
   createdAt: string

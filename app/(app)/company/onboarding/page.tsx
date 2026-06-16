@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useStore } from '@/lib/store'
 import { useAccess } from '@/lib/useAccess'
 import { cn } from '@/lib/cn'
@@ -14,7 +14,7 @@ import {
   Sparkles, ShieldCheck, ChevronRight, Calendar, UserCircle2, Plus,
 } from 'lucide-react'
 import type {
-  OnboardingChecklist, OnboardingItem, OnboardingCategory, Person, Production,
+  OnboardingChecklist, OnboardingItem, OnboardingCategory, Person, Production, BankingInfo,
 } from '@/lib/types'
 import { generateOnboardingChecklist } from '@/lib/onboarding'
 
@@ -418,6 +418,24 @@ function NotStartedCard({ person, onStart, canEdit }: { person: Person; onStart:
   )
 }
 
+// ── Item form type detection ───────────────────────────────────────────────────
+
+type ItemFormType = 'sin' | 'td1' | 'banking' | 'emergency' | 'union' | 'agent' | 'measurements' | 'dietary' | 'wsib' | 'confirm'
+
+function itemFormType(item: OnboardingItem): ItemFormType {
+  const l = item.label.toLowerCase()
+  if (l.includes('sin') || l.includes('social insurance')) return 'sin'
+  if (l.includes('td1')) return 'td1'
+  if (l.includes('direct deposit') || l.includes('eft') || l.includes('banking')) return 'banking'
+  if (l.includes('emergency contact')) return 'emergency'
+  if (l.includes('union') || l.includes('member number')) return 'union'
+  if (l.includes('agent') || l.includes('representative')) return 'agent'
+  if (l.includes('wsib') || l.includes('wcb')) return 'wsib'
+  if (l.includes('measurement') || l.includes('wardrobe')) return 'measurements'
+  if (l.includes('dietary') || l.includes('accessibility')) return 'dietary'
+  return 'confirm'
+}
+
 // ── Detail modal ───────────────────────────────────────────────────────────────
 
 function ChecklistModal({
@@ -433,13 +451,28 @@ function ChecklistModal({
   onAssignee: (c: OnboardingChecklist, i: OnboardingItem, v: string) => void
   onDueDate: (c: OnboardingChecklist, i: OnboardingItem, v: string) => void
 }) {
+  const { updatePerson } = useStore()
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null)
   const name = person?.name ?? fallbackName
+
+  const handleItemClick = useCallback((item: OnboardingItem) => {
+    if (!canEdit) return
+    if (item.completedAt) { onToggle(checklist!, item); return }
+    setExpandedItemId((id) => id === item.id ? null : item.id)
+  }, [canEdit, checklist, onToggle])
+
+  const handleSaveAndComplete = useCallback((item: OnboardingItem, patch: Partial<Person>) => {
+    if (person && Object.keys(patch).length > 0) {
+      updatePerson({ ...person, ...patch, updatedAt: new Date().toISOString() })
+    }
+    onToggle(checklist!, item)
+    setExpandedItemId(null)
+  }, [person, checklist, onToggle, updatePerson])
 
   if (!checklist) return null
   const { done, total, pct } = checklistProgress(checklist)
   const isComplete = checklistStatus(checklist) === 'complete'
 
-  // group items by category, preserving CATEGORY_ORDER
   const byCategory = CATEGORY_ORDER
     .map((cat) => ({ cat, items: checklist.items.filter((i) => i.category === cat) }))
     .filter((g) => g.items.length > 0)
@@ -447,7 +480,6 @@ function ChecklistModal({
   return (
     <Modal open onClose={onClose} title="Onboarding Checklist" className="max-w-2xl">
       <div className="space-y-5">
-        {/* Header */}
         <div className="flex items-center gap-3">
           <Avatar id={checklist.personId} name={name} headshotUrl={person?.headshotUrl} size={46} />
           <div className="min-w-0 flex-1">
@@ -470,20 +502,18 @@ function ChecklistModal({
 
         <ProgressBar pct={pct} complete={isComplete} />
 
-        {/* Celebration banner */}
         {isComplete && (
           <div className="flex items-center gap-2.5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-lg">
             <ShieldCheck size={18} className="text-emerald-500 shrink-0" />
             <div>
               <p className="text-sm font-semibold text-emerald-800">All complete — ready to work</p>
               <p className="text-[11px] text-emerald-600/90">
-                Every onboarding item is done{checklist.completedAt ? ` · completed ${formatDate(checklist.completedAt)}` : ''}. This checklist is archived.
+                Every onboarding item is done{checklist.completedAt ? ` · completed ${formatDate(checklist.completedAt)}` : ''}.
               </p>
             </div>
           </div>
         )}
 
-        {/* Categories */}
         <div className="space-y-4">
           {byCategory.map(({ cat, items }) => (
             <div key={cat}>
@@ -491,9 +521,7 @@ function ChecklistModal({
                 <span className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-full border uppercase tracking-wider', ONBOARDING_CATEGORY_COLORS[cat])}>
                   {cat}
                 </span>
-                <span className="text-[10px] text-stone-400">
-                  {items.filter((i) => i.completedAt).length}/{items.length}
-                </span>
+                <span className="text-[10px] text-stone-400">{items.filter((i) => i.completedAt).length}/{items.length}</span>
               </div>
               <div className="space-y-1.5">
                 {items.map((item) => (
@@ -501,8 +529,12 @@ function ChecklistModal({
                     key={item.id}
                     item={item}
                     checklist={checklist}
+                    person={person}
                     canEdit={canEdit}
-                    onToggle={onToggle}
+                    expanded={expandedItemId === item.id}
+                    onExpand={() => handleItemClick(item)}
+                    onCollapse={() => setExpandedItemId(null)}
+                    onSaveAndComplete={(patch) => handleSaveAndComplete(item, patch)}
                     onAssignee={onAssignee}
                     onDueDate={onDueDate}
                   />
@@ -518,108 +550,256 @@ function ChecklistModal({
 
 // ── Item row ───────────────────────────────────────────────────────────────────
 
-function ItemRow({ item, checklist, canEdit, onToggle, onAssignee, onDueDate }: {
+function ItemRow({ item, checklist, person, canEdit, expanded, onExpand, onCollapse, onSaveAndComplete, onAssignee, onDueDate }: {
   item: OnboardingItem
   checklist: OnboardingChecklist
+  person?: Person
   canEdit: boolean
-  onToggle: (c: OnboardingChecklist, i: OnboardingItem) => void
+  expanded: boolean
+  onExpand: () => void
+  onCollapse: () => void
+  onSaveAndComplete: (patch: Partial<Person>) => void
   onAssignee: (c: OnboardingChecklist, i: OnboardingItem, v: string) => void
   onDueDate: (c: OnboardingChecklist, i: OnboardingItem, v: string) => void
 }) {
   const done = !!item.completedAt
   const overdue = isItemOverdue(item)
   const payroll = isPayrollItem(item)
-
-  // assignee select may include a value not in the standard list (free text)
   const assigneeOptions = item.assignedTo && !ASSIGNEE_OPTIONS.includes(item.assignedTo)
-    ? [item.assignedTo, ...ASSIGNEE_OPTIONS]
-    : ASSIGNEE_OPTIONS
+    ? [item.assignedTo, ...ASSIGNEE_OPTIONS] : ASSIGNEE_OPTIONS
 
   return (
     <div
-      onClick={canEdit ? () => onToggle(checklist, item) : undefined}
       className={cn(
-        'flex items-start gap-2.5 px-3 py-2.5 rounded-lg border transition-colors',
-        canEdit && 'cursor-pointer',
-        done
-          ? 'bg-emerald-50/40 border-emerald-100 hover:border-emerald-200'
-          : overdue
-            ? 'bg-red-50/50 border-red-200 hover:border-red-300'
-            : payroll
-              ? 'bg-white border-emerald-200 ring-1 ring-emerald-100 hover:border-emerald-300'
-              : 'bg-white border-stone-200 hover:border-stone-300 hover:bg-stone-50/50',
+        'rounded-lg border transition-colors',
+        expanded
+          ? 'border-indigo-300 bg-indigo-50/40 ring-1 ring-indigo-100'
+          : done
+            ? 'bg-emerald-50/40 border-emerald-100'
+            : overdue
+              ? 'bg-red-50/50 border-red-200'
+              : payroll
+                ? 'bg-white border-emerald-200 ring-1 ring-emerald-100'
+                : 'bg-white border-stone-200',
       )}
     >
-      {/* toggle indicator */}
-      <div className="mt-0.5 shrink-0 pointer-events-none">
-        {done
-          ? <CheckCircle2 size={17} className="text-emerald-500" />
-          : <Circle size={17} className={overdue ? 'text-red-400' : 'text-stone-300'} />}
+      {/* Clickable header row */}
+      <div
+        onClick={canEdit ? onExpand : undefined}
+        className={cn(
+          'flex items-start gap-2.5 px-3 py-2.5',
+          canEdit && !done && 'cursor-pointer hover:bg-black/[0.02]',
+          done && canEdit && 'cursor-pointer',
+        )}
+      >
+        <div className="mt-0.5 shrink-0">
+          {done
+            ? <CheckCircle2 size={17} className="text-emerald-500" />
+            : expanded
+              ? <Circle size={17} className="text-indigo-400" />
+              : <Circle size={17} className={overdue ? 'text-red-400' : 'text-stone-300'} />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start gap-1.5 flex-wrap">
+            <span className={cn('text-[13px] leading-snug', done ? 'text-stone-400 line-through' : overdue ? 'text-red-700 font-medium' : 'text-stone-700')}>
+              {item.label}
+            </span>
+            {payroll && !done && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase tracking-wide shrink-0">CA Payroll</span>}
+            {item.required && <span className={cn('text-[9px] font-semibold px-1 py-0.5 rounded uppercase tracking-wide shrink-0', done ? 'text-stone-300' : 'text-amber-600')}>Required</span>}
+          </div>
+          {!expanded && (
+            <div className="flex items-center gap-2 mt-1 flex-wrap" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-1 text-[11px] text-stone-500">
+                <UserCircle2 size={12} className="text-stone-400 shrink-0" />
+                {canEdit
+                  ? <select value={item.assignedTo ?? ''} onChange={(e) => onAssignee(checklist, item, e.target.value)} className="bg-transparent text-[11px] text-stone-600 border border-stone-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-stone-400 cursor-pointer">
+                      <option value="">Unassigned</option>
+                      {assigneeOptions.map((a) => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                  : <span>{item.assignedTo ?? 'Unassigned'}</span>}
+              </div>
+              <div className="flex items-center gap-1 text-[11px]">
+                <Calendar size={12} className={cn('shrink-0', overdue ? 'text-red-400' : 'text-stone-400')} />
+                {canEdit
+                  ? <input type="date" value={item.dueDate ?? ''} onChange={(e) => onDueDate(checklist, item, e.target.value)} className={cn('bg-transparent text-[11px] border rounded px-1.5 py-0.5 focus:outline-none focus:border-stone-400 cursor-pointer', overdue ? 'text-red-600 border-red-200' : 'text-stone-600 border-stone-200')} />
+                  : item.dueDate
+                    ? <span className={overdue ? 'text-red-600 font-medium' : 'text-stone-500'}>{formatDate(item.dueDate)}</span>
+                    : <span className="text-stone-400">No due date</span>}
+              </div>
+              {overdue && <span className="text-[10px] font-semibold text-red-600">{Math.abs(daysUntil(item.dueDate!))}d overdue</span>}
+              {done && item.completedBy && <span className="text-[10px] text-emerald-600/80">✓ by {item.completedBy}</span>}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start gap-1.5 flex-wrap">
-          <span className={cn('text-[13px] leading-snug', done ? 'text-stone-400 line-through' : overdue ? 'text-red-700 font-medium' : 'text-stone-700')}>
-            {item.label}
-          </span>
-          {payroll && !done && (
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase tracking-wide shrink-0">
-              CA Payroll
-            </span>
-          )}
-          {item.required && (
-            <span className={cn('text-[9px] font-semibold px-1 py-0.5 rounded uppercase tracking-wide shrink-0', done ? 'text-stone-300' : 'text-amber-600')}>
-              Required
-            </span>
-          )}
+      {/* Inline form */}
+      {expanded && canEdit && !done && (
+        <div className="px-3 pb-3 border-t border-indigo-100 mt-0 pt-3">
+          <ItemForm
+            type={itemFormType(item)}
+            person={person}
+            onSave={onSaveAndComplete}
+            onCancel={onCollapse}
+          />
         </div>
+      )}
+    </div>
+  )
+}
 
-        {/* meta row: assignee + due date */}
-        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-          <div className="flex items-center gap-1 text-[11px] text-stone-500">
-            <UserCircle2 size={12} className="text-stone-400 shrink-0" />
-            {canEdit ? (
-              <select
-                value={item.assignedTo ?? ''}
-                onChange={(e) => onAssignee(checklist, item, e.target.value)}
-                className="bg-transparent text-[11px] text-stone-600 border border-stone-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-stone-400 cursor-pointer"
-              >
-                <option value="">Unassigned</option>
-                {assigneeOptions.map((a) => <option key={a} value={a}>{a}</option>)}
-              </select>
-            ) : (
-              <span>{item.assignedTo ?? 'Unassigned'}</span>
-            )}
+// ── Item form ──────────────────────────────────────────────────────────────────
+
+const fCls = 'w-full px-2.5 py-1.5 text-sm border border-stone-300 rounded focus:outline-none focus:border-indigo-400 bg-white'
+const fLabel = 'block text-[10px] font-semibold text-stone-500 uppercase tracking-wider mb-1'
+
+function ItemForm({ type, person, onSave, onCancel }: {
+  type: ItemFormType
+  person?: Person
+  onSave: (patch: Partial<Person>) => void
+  onCancel: () => void
+}) {
+  const [fields, setFields] = useState<Record<string, string>>(() => {
+    const m = person?.measurements as Record<string, string | undefined> | undefined
+    return {
+      sin: person?.sinNumber ?? '',
+      bankName: person?.bankingInfo?.bankName ?? '',
+      transit: person?.bankingInfo?.transitNumber ?? '',
+      institution: person?.bankingInfo?.institutionNumber ?? '',
+      account: person?.bankingInfo?.accountNumber ?? '',
+      ecName: person?.emergencyContact?.name ?? '',
+      ecPhone: person?.emergencyContact?.phone ?? '',
+      ecRel: person?.emergencyContact?.relationship ?? '',
+      memberNum: person?.unionMemberNumber ?? '',
+      agentName: person?.agentName ?? '',
+      agentEmail: person?.agentEmail ?? '',
+      agentPhone: person?.agentPhone ?? '',
+      height: m?.height ?? '', weight: m?.weight ?? '', chest: m?.chest ?? '',
+      waist: m?.waist ?? '', hips: m?.hips ?? '', inseam: m?.inseam ?? '',
+      dress: m?.dressSuitSize ?? '', shoe: m?.shoeSize ?? '', hat: m?.hatSize ?? '',
+      dietary: person?.dietaryRestrictions ?? '',
+      accessibility: person?.accessibilityNeeds ?? '',
+      td1Notes: '',
+      wsibNum: '',
+      notes: '',
+    }
+  })
+  const f = (k: string) => fields[k] ?? ''
+  const set = (k: string, v: string) => setFields((prev) => ({ ...prev, [k]: v }))
+
+  function buildPatch(): Partial<Person> {
+    switch (type) {
+      case 'sin': return { sinNumber: f('sin') }
+      case 'banking': return { bankingInfo: { bankName: f('bankName'), transitNumber: f('transit'), institutionNumber: f('institution'), accountNumber: f('account') } }
+      case 'emergency': return { emergencyContact: { name: f('ecName'), phone: f('ecPhone'), relationship: f('ecRel') } }
+      case 'union': return { unionMemberNumber: f('memberNum') }
+      case 'agent': return { agentName: f('agentName'), agentEmail: f('agentEmail'), agentPhone: f('agentPhone') }
+      case 'measurements': return { measurements: { lastUpdated: new Date().toISOString().slice(0, 10), height: f('height'), weight: f('weight'), chest: f('chest'), waist: f('waist'), hips: f('hips'), inseam: f('inseam'), dressSuitSize: f('dress'), shoeSize: f('shoe'), hatSize: f('hat') } }
+      case 'dietary': return { dietaryRestrictions: f('dietary'), accessibilityNeeds: f('accessibility') }
+      default: return {}
+    }
+  }
+
+  const rows: React.ReactNode = (() => {
+    switch (type) {
+      case 'sin':
+        return (
+          <div>
+            <label className={fLabel}>SIN Number</label>
+            <input className={fCls} value={f('sin')} onChange={(e) => set('sin', e.target.value)} placeholder="000-000-000" maxLength={11} />
+            <p className="text-[10px] text-stone-400 mt-1">Stored securely on profile — not displayed externally.</p>
           </div>
-
-          <div className="flex items-center gap-1 text-[11px]">
-            <Calendar size={12} className={cn('shrink-0', overdue ? 'text-red-400' : 'text-stone-400')} />
-            {canEdit ? (
-              <input
-                type="date"
-                value={item.dueDate ?? ''}
-                onChange={(e) => onDueDate(checklist, item, e.target.value)}
-                className={cn(
-                  'bg-transparent text-[11px] border rounded px-1.5 py-0.5 focus:outline-none focus:border-stone-400 cursor-pointer',
-                  overdue ? 'text-red-600 border-red-200' : 'text-stone-600 border-stone-200',
-                )}
-              />
-            ) : (
-              item.dueDate
-                ? <span className={overdue ? 'text-red-600 font-medium' : 'text-stone-500'}>{formatDate(item.dueDate)}</span>
-                : <span className="text-stone-400">No due date</span>
-            )}
+        )
+      case 'td1':
+        return (
+          <div className="space-y-2">
+            <div>
+              <label className={fLabel}>Date submitted</label>
+              <input type="date" className={fCls} value={f('td1Notes')} onChange={(e) => set('td1Notes', e.target.value)} />
+            </div>
+            <div>
+              <label className={fLabel}>Notes</label>
+              <input className={fCls} value={f('notes')} onChange={(e) => set('notes', e.target.value)} placeholder="e.g. paper form mailed, e-filed via ADP…" />
+            </div>
           </div>
+        )
+      case 'banking':
+        return (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2"><label className={fLabel}>Bank name</label><input className={fCls} value={f('bankName')} onChange={(e) => set('bankName', e.target.value)} placeholder="TD Bank" /></div>
+            <div><label className={fLabel}>Transit # (5 digits)</label><input className={fCls} value={f('transit')} onChange={(e) => set('transit', e.target.value)} placeholder="12345" maxLength={5} /></div>
+            <div><label className={fLabel}>Institution # (3 digits)</label><input className={fCls} value={f('institution')} onChange={(e) => set('institution', e.target.value)} placeholder="004" maxLength={3} /></div>
+            <div className="col-span-2"><label className={fLabel}>Account number</label><input className={fCls} value={f('account')} onChange={(e) => set('account', e.target.value)} placeholder="1234567" /></div>
+          </div>
+        )
+      case 'emergency':
+        return (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2"><label className={fLabel}>Full name</label><input className={fCls} value={f('ecName')} onChange={(e) => set('ecName', e.target.value)} /></div>
+            <div><label className={fLabel}>Phone</label><input className={fCls} value={f('ecPhone')} onChange={(e) => set('ecPhone', e.target.value)} /></div>
+            <div><label className={fLabel}>Relationship</label><input className={fCls} value={f('ecRel')} onChange={(e) => set('ecRel', e.target.value)} placeholder="Spouse, Parent…" /></div>
+          </div>
+        )
+      case 'union':
+        return (
+          <div>
+            <label className={fLabel}>Union Member #</label>
+            <input className={fCls} value={f('memberNum')} onChange={(e) => set('memberNum', e.target.value)} placeholder="CAEA-00000" />
+          </div>
+        )
+      case 'agent':
+        return (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2"><label className={fLabel}>Agency / Agent name</label><input className={fCls} value={f('agentName')} onChange={(e) => set('agentName', e.target.value)} /></div>
+            <div><label className={fLabel}>Email</label><input type="email" className={fCls} value={f('agentEmail')} onChange={(e) => set('agentEmail', e.target.value)} /></div>
+            <div><label className={fLabel}>Phone</label><input className={fCls} value={f('agentPhone')} onChange={(e) => set('agentPhone', e.target.value)} /></div>
+          </div>
+        )
+      case 'wsib':
+        return (
+          <div className="grid grid-cols-2 gap-2">
+            <div><label className={fLabel}>Coverage / Account #</label><input className={fCls} value={f('wsibNum')} onChange={(e) => set('wsibNum', e.target.value)} /></div>
+            <div><label className={fLabel}>Province</label><input className={fCls} value={f('notes')} onChange={(e) => set('notes', e.target.value)} placeholder="ON / BC / QC…" /></div>
+          </div>
+        )
+      case 'measurements':
+        return (
+          <div className="grid grid-cols-3 gap-2">
+            {([['Height', 'height'], ['Weight', 'weight'], ['Chest', 'chest'], ['Waist', 'waist'], ['Hips', 'hips'], ['Inseam', 'inseam'], ['Dress/Suit', 'dress'], ['Shoe', 'shoe'], ['Hat', 'hat']] as [string, string][]).map(([label, key]) => (
+              <div key={key}>
+                <label className={fLabel}>{label}</label>
+                <input className={fCls} value={f(key)} onChange={(e) => set(key, e.target.value)} />
+              </div>
+            ))}
+          </div>
+        )
+      case 'dietary':
+        return (
+          <div className="space-y-2">
+            <div><label className={fLabel}>Dietary restrictions / allergies</label><input className={fCls} value={f('dietary')} onChange={(e) => set('dietary', e.target.value)} /></div>
+            <div><label className={fLabel}>Accessibility needs</label><input className={fCls} value={f('accessibility')} onChange={(e) => set('accessibility', e.target.value)} /></div>
+          </div>
+        )
+      default:
+        return (
+          <div>
+            <label className={fLabel}>Confirmation notes (optional)</label>
+            <input className={fCls} value={f('notes')} onChange={(e) => set('notes', e.target.value)} placeholder="Add any notes…" />
+          </div>
+        )
+    }
+  })()
 
-          {overdue && (
-            <span className="text-[10px] font-semibold text-red-600">
-              {Math.abs(daysUntil(item.dueDate!))}d overdue
-            </span>
-          )}
-          {done && item.completedBy && (
-            <span className="text-[10px] text-emerald-600/80">✓ by {item.completedBy}</span>
-          )}
-        </div>
+  return (
+    <div className="space-y-3">
+      {rows}
+      <div className="flex items-center gap-2 pt-1">
+        <button onClick={() => onSave(buildPatch())} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium py-1.5 rounded transition-colors">
+          Save &amp; Complete
+        </button>
+        <button onClick={onCancel} className="px-3 py-1.5 text-xs text-stone-500 hover:text-stone-700 border border-stone-200 rounded transition-colors">
+          Cancel
+        </button>
       </div>
     </div>
   )
