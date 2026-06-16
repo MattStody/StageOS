@@ -96,10 +96,97 @@ export function Sidebar() {
   const logoUrl = isDemo && config?.logoUrl ? config.logoUrl : null
 
   const allowedSections = currentUser?.sections ?? sections.map((s) => s.id)
+  const visibleSections = sections.filter((s) => isDemo || allowedSections.includes(s.id))
 
   const userInitials = userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
   const orgInitials = orgName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
 
+  // Role users (not admin, not demo) get the expanded labeled sidebar
+  const useExpandedNav = !currentUser?.isAdmin && !isDemo
+
+  if (useExpandedNav) {
+    return (
+      <aside
+        className="w-52 shrink-0 bg-stone-950 min-h-screen flex flex-col z-40"
+        style={navColor ? { backgroundColor: navColor } : undefined}
+      >
+        {/* Logo */}
+        <div className="px-5 py-5 border-b border-white/10">
+          <p className="text-white font-semibold text-sm tracking-tight truncate">{orgName}</p>
+          <p className="text-stone-400 text-xs mt-0.5 truncate">{userTitle}</p>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
+          {visibleSections.map((section) => {
+            if (section.href) {
+              const active = isSectionActive(section, pathname)
+              const Icon = section.icon
+              return (
+                <Link
+                  key={section.id}
+                  href={section.href}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors',
+                    active ? 'text-white' : 'text-white/60 hover:text-white hover:bg-white/10',
+                  )}
+                  style={active ? { backgroundColor: accentColor ?? '#292524' } : undefined}
+                >
+                  <Icon size={15} />
+                  {section.label}
+                </Link>
+              )
+            }
+            return (
+              <div key={section.id}>
+                <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-white/30">
+                  {section.label}
+                </p>
+                <div className="space-y-0.5">
+                  {section.items?.map((item) => {
+                    const active = pathname === item.href || pathname.startsWith(item.href + '/')
+                    const Icon = item.icon
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          'flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors',
+                          active ? 'text-white' : 'text-white/60 hover:text-white hover:bg-white/10',
+                        )}
+                        style={active ? { backgroundColor: accentColor ?? '#292524' } : undefined}
+                      >
+                        <Icon size={15} />
+                        {item.label}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </nav>
+
+        {/* User */}
+        <div className="px-5 py-4 border-t border-white/10">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium shrink-0"
+              style={{ backgroundColor: '#44403c', color: '#d6d3d1' }}
+            >
+              {userInitials}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-stone-300 font-medium truncate">{userName}</p>
+              <p className="text-xs text-stone-500 truncate">{userTitle}</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    )
+  }
+
+  // Admin / demo: icon rail with hover flyouts
   return (
     <aside
       className="w-14 shrink-0 bg-stone-950 min-h-screen flex flex-col items-center z-40 relative"
@@ -127,7 +214,7 @@ export function Sidebar() {
 
       {/* Nav rail */}
       <nav className="flex-1 flex flex-col items-center py-3 gap-0.5 w-full">
-        {sections.filter((s) => isDemo || allowedSections.includes(s.id)).map((section) => {
+        {visibleSections.map((section) => {
           const active = isSectionActive(section, pathname)
           const Icon = section.icon
 
@@ -159,7 +246,6 @@ export function Sidebar() {
           return (
             <div key={section.id} className="relative group w-full flex justify-center">
               <div className="cursor-default">{iconBtn}</div>
-              {/* Flyout */}
               <div className="absolute left-full top-0 hidden group-hover:block z-50" style={{ paddingLeft: 6 }}>
                 <div className="bg-stone-900 border border-white/10 rounded-lg shadow-2xl py-2 min-w-[168px]">
                   <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/30">
