@@ -30,6 +30,17 @@ function blankPerson(): Omit<Person, 'id'> {
 }
 
 function Avatar({ person, size = 36 }: { person: Person; size?: number }) {
+  if (person.headshotUrl) {
+    return (
+      <img
+        src={person.headshotUrl}
+        alt={person.name}
+        className="rounded-full object-cover shrink-0"
+        style={{ width: size, height: size }}
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+      />
+    )
+  }
   return (
     <span
       className="rounded-full flex items-center justify-center font-semibold text-white shrink-0"

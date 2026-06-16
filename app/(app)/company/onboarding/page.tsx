@@ -297,7 +297,18 @@ function FilterPill({ active, onClick, children, subtle }: {
 
 // ── Avatar ─────────────────────────────────────────────────────────────────────
 
-function Avatar({ id, name, size = 36 }: { id: string; name: string; size?: number }) {
+function Avatar({ id, name, headshotUrl, size = 36 }: { id: string; name: string; headshotUrl?: string; size?: number }) {
+  if (headshotUrl) {
+    return (
+      <img
+        src={headshotUrl}
+        alt={name}
+        className="rounded-full object-cover shrink-0"
+        style={{ width: size, height: size }}
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+      />
+    )
+  }
   return (
     <span
       className="rounded-full flex items-center justify-center font-semibold text-white shrink-0"
@@ -343,7 +354,7 @@ function PersonCard({ checklist, person, fallbackName, onOpen }: {
       )}
     >
       <div className="flex items-start gap-3">
-        <Avatar id={checklist.personId} name={name} size={38} />
+        <Avatar id={checklist.personId} name={name} headshotUrl={person?.headshotUrl} size={38} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <p className="text-sm font-medium text-stone-800 truncate">{name}</p>
@@ -386,7 +397,7 @@ function NotStartedCard({ person, onStart, canEdit }: { person: Person; onStart:
   return (
     <div className="rounded-lg border border-stone-200 bg-white px-4 py-3.5">
       <div className="flex items-start gap-3">
-        <Avatar id={person.id} name={person.name} size={38} />
+        <Avatar id={person.id} name={person.name} headshotUrl={person.headshotUrl} size={38} />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-stone-800 truncate">{person.name}</p>
           <p className="text-[11px] text-stone-400 truncate">{person.roleType} · {person.unionAffiliation}</p>
@@ -438,7 +449,7 @@ function ChecklistModal({
       <div className="space-y-5">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Avatar id={checklist.personId} name={name} size={46} />
+          <Avatar id={checklist.personId} name={name} headshotUrl={person?.headshotUrl} size={46} />
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-semibold text-stone-900 leading-tight truncate">{name}</h3>
             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap text-[11px] text-stone-500">

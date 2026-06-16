@@ -16,6 +16,7 @@ const now = '2026-06-14T09:00:00Z'
 export const PEOPLE: Person[] = [
   {
     id: 'person-1',
+    headshotUrl: 'https://randomuser.me/api/portraits/women/44.jpg',
     name: 'Eleanor Vance',
     pronouns: 'she/her',
     roleType: 'Principal',
@@ -46,6 +47,7 @@ export const PEOPLE: Person[] = [
   },
   {
     id: 'person-2',
+    headshotUrl: 'https://randomuser.me/api/portraits/men/34.jpg',
     name: 'Marcus Chen',
     pronouns: 'he/him',
     roleType: 'Principal',
@@ -72,6 +74,7 @@ export const PEOPLE: Person[] = [
   },
   {
     id: 'person-3',
+    headshotUrl: 'https://randomuser.me/api/portraits/women/48.jpg',
     name: 'Priya Sharma',
     pronouns: 'she/her',
     roleType: 'Ensemble',
@@ -98,6 +101,7 @@ export const PEOPLE: Person[] = [
   },
   {
     id: 'person-4',
+    headshotUrl: 'https://randomuser.me/api/portraits/men/62.jpg',
     name: "James O'Brien",
     pronouns: 'he/him',
     roleType: 'Production Staff',
@@ -121,6 +125,7 @@ export const PEOPLE: Person[] = [
   },
   {
     id: 'person-5',
+    headshotUrl: 'https://randomuser.me/api/portraits/women/29.jpg',
     name: 'Sophie Tremblay',
     pronouns: 'she/her',
     roleType: 'Creative',
@@ -146,6 +151,7 @@ export const PEOPLE: Person[] = [
   },
   {
     id: 'person-6',
+    headshotUrl: 'https://randomuser.me/api/portraits/men/51.jpg',
     name: 'David Kowalski',
     pronouns: 'he/him',
     roleType: 'Crew',
@@ -169,6 +175,7 @@ export const PEOPLE: Person[] = [
   },
   {
     id: 'person-7',
+    headshotUrl: 'https://randomuser.me/api/portraits/women/37.jpg',
     name: 'Rachel Goldberg',
     pronouns: 'she/her',
     roleType: 'Principal',
@@ -194,6 +201,7 @@ export const PEOPLE: Person[] = [
   },
   {
     id: 'person-8',
+    headshotUrl: 'https://randomuser.me/api/portraits/men/74.jpg',
     name: 'Liam Murphy',
     pronouns: 'he/him',
     roleType: 'Principal',
@@ -218,6 +226,7 @@ export const PEOPLE: Person[] = [
   },
   {
     id: 'person-9',
+    headshotUrl: 'https://randomuser.me/api/portraits/women/56.jpg',
     name: 'Anna Petrov',
     pronouns: 'they/them',
     roleType: 'Production Staff',
@@ -239,6 +248,7 @@ export const PEOPLE: Person[] = [
   },
   {
     id: 'person-10',
+    headshotUrl: 'https://randomuser.me/api/portraits/men/85.jpg',
     name: 'Tom Fitzgerald',
     pronouns: 'he/him',
     roleType: 'Vendor',
