@@ -537,30 +537,27 @@ function ItemRow({ item, checklist, canEdit, onToggle, onAssignee, onDueDate }: 
 
   return (
     <div
+      onClick={canEdit ? () => onToggle(checklist, item) : undefined}
       className={cn(
         'flex items-start gap-2.5 px-3 py-2.5 rounded-lg border transition-colors',
+        canEdit && 'cursor-pointer',
         done
-          ? 'bg-emerald-50/40 border-emerald-100'
+          ? 'bg-emerald-50/40 border-emerald-100 hover:border-emerald-200'
           : overdue
-            ? 'bg-red-50/50 border-red-200'
+            ? 'bg-red-50/50 border-red-200 hover:border-red-300'
             : payroll
-              ? 'bg-white border-emerald-200 ring-1 ring-emerald-100'
-              : 'bg-white border-stone-200',
+              ? 'bg-white border-emerald-200 ring-1 ring-emerald-100 hover:border-emerald-300'
+              : 'bg-white border-stone-200 hover:border-stone-300 hover:bg-stone-50/50',
       )}
     >
-      {/* toggle */}
-      <button
-        onClick={() => onToggle(checklist, item)}
-        disabled={!canEdit}
-        className={cn('mt-0.5 shrink-0', canEdit ? 'cursor-pointer' : 'cursor-default')}
-        aria-label={done ? 'Mark incomplete' : 'Mark complete'}
-      >
+      {/* toggle indicator */}
+      <div className="mt-0.5 shrink-0 pointer-events-none">
         {done
           ? <CheckCircle2 size={17} className="text-emerald-500" />
-          : <Circle size={17} className={overdue ? 'text-red-400' : 'text-stone-300 hover:text-stone-400'} />}
-      </button>
+          : <Circle size={17} className={overdue ? 'text-red-400' : 'text-stone-300'} />}
+      </div>
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start gap-1.5 flex-wrap">
           <span className={cn('text-[13px] leading-snug', done ? 'text-stone-400 line-through' : overdue ? 'text-red-700 font-medium' : 'text-stone-700')}>
             {item.label}
