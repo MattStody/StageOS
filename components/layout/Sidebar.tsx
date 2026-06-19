@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Film, DollarSign, TrendingUp, FileText,
   ArrowRightLeft, CalendarDays, FileBarChart, FolderOpen, Settings,
   Megaphone, FlaskConical, Landmark, CheckSquare, Workflow,
-  Users, Home, Wallet, ClipboardCheck, ScrollText,
+  Users, Home, Wallet, ClipboardCheck, ScrollText, Shirt,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useDemo } from '@/contexts/DemoContext'
@@ -51,6 +51,7 @@ const sections: NavSection[] = [
       { label: 'Per Diems', href: '/company/perdiems', icon: Wallet },
       { label: 'CAEA Reports', href: '/company/caea', icon: ScrollText },
       { label: 'Onboarding', href: '/company/onboarding', icon: ClipboardCheck },
+      { label: 'Wardrobe', href: '/company/wardrobe', icon: Shirt },
     ],
   },
   {
