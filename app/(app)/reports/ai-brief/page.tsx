@@ -3,6 +3,7 @@ import { useState, useRef, Suspense } from 'react'
 import { useStore } from '@/lib/store'
 import { useSearchParams } from 'next/navigation'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { FinanceOnly } from '@/components/layout/FinanceOnly'
 import { Card, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -546,8 +547,10 @@ function AIBriefInner() {
 
 export default function AIBriefPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-[60vh] text-sm text-stone-400">Loading…</div>}>
-      <AIBriefInner />
-    </Suspense>
+    <FinanceOnly>
+      <Suspense fallback={<div className="flex items-center justify-center min-h-[60vh] text-sm text-stone-400">Loading…</div>}>
+        <AIBriefInner />
+      </Suspense>
+    </FinanceOnly>
   )
 }

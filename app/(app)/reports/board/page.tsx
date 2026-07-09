@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useStore } from '@/lib/store'
 import { useDemo } from '@/contexts/DemoContext'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { FinanceOnly } from '@/components/layout/FinanceOnly'
 import { Card, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -232,6 +233,14 @@ function GrantPipelineSection({ grants, productions }: { grants: Grant[]; produc
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function BoardReportPage() {
+  return (
+    <FinanceOnly>
+      <BoardReportInner />
+    </FinanceOnly>
+  )
+}
+
+function BoardReportInner() {
   const { productions, budgetLines, revenueWeeks, contracts, cashFlowRows, deadlines, obligations, grants } = useStore()
   const { isDemo, config } = useDemo()
 

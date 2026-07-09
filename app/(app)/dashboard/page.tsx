@@ -7,6 +7,7 @@ import { StatCard } from '@/components/ui/StatCard'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel } from '@/lib/utils'
+import { SHOW_MONEY } from '@/lib/edition'
 import Link from 'next/link'
 import { ArrowRight, Shield, ChevronRight, CheckCircle2, Copy, Check, Users } from 'lucide-react'
 import type { Production } from '@/lib/types'
@@ -291,9 +292,11 @@ export default function DashboardPage() {
     })
   }
 
-  allItems.sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
+  // Production edition: financial attention categories don't exist
+  const editionItems = SHOW_MONEY ? allItems : allItems.filter((i) => i.category !== 'budget' && i.category !== 'cashflow')
+  editionItems.sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority])
 
-  const undismissed = allItems.filter(i => !dismissed.has(i.id))
+  const undismissed = editionItems.filter(i => !dismissed.has(i.id))
 
   // Filtered + paginated items
   const filteredItems = attentionFilter === 'all' ? undismissed : undismissed.filter((i) => i.category === attentionFilter)
@@ -311,23 +314,33 @@ export default function DashboardPage() {
     const strengths: string[] = []
     const watches: string[] = []
 
-    for (const { prod: p, pacing, breakEvenCap, isProfitable, profitPct } of salesPulse) {
-      if (isProfitable) {
-        strengths.push(`${p.name} is ${profitPct}% above breakeven — looking strong`)
-      } else if (pacing === 'ahead') {
-        strengths.push(`${p.name} advance sales are running ahead of pace`)
+    if (SHOW_MONEY) {
+      for (const { prod: p, pacing, breakEvenCap, isProfitable, profitPct } of salesPulse) {
+        if (isProfitable) {
+          strengths.push(`${p.name} is ${profitPct}% above breakeven — looking strong`)
+        } else if (pacing === 'ahead') {
+          strengths.push(`${p.name} advance sales are running ahead of pace`)
+        }
+        if (!isProfitable && breakEvenCap !== null && breakEvenCap > 50) {
+          watches.push(`${p.name} needs ${Math.ceil(breakEvenCap)}% avg capacity to recoup — worth a close look`)
+        } else if (!isProfitable && pacing === 'behind') {
+          watches.push(`${p.name} is pacing behind — may need a push`)
+        }
       }
-      if (!isProfitable && breakEvenCap !== null && breakEvenCap > 50) {
-        watches.push(`${p.name} needs ${Math.ceil(breakEvenCap)}% avg capacity to recoup — worth a close look`)
-      } else if (!isProfitable && pacing === 'behind') {
-        watches.push(`${p.name} is pacing behind — may need a push`)
-      }
-    }
 
-    if (portfolioBudgetVariance < -100000) {
-      watches.push(`You're ${fmt(Math.abs(portfolioBudgetVariance))} over budget across the portfolio`)
-    } else if (portfolioBudgetVariance > 300000) {
-      strengths.push(`You're ${fmt(portfolioBudgetVariance)} under budget — nice cushion`)
+      if (portfolioBudgetVariance < -100000) {
+        watches.push(`You're ${fmt(Math.abs(portfolioBudgetVariance))} over budget across the portfolio`)
+      } else if (portfolioBudgetVariance > 300000) {
+        strengths.push(`You're ${fmt(portfolioBudgetVariance)} under budget — nice cushion`)
+      }
+    } else {
+      // Production edition: operational signals only
+      const overdueDeadlineCount = deadlines.filter((d) => d.status === 'overdue').length
+      if (overdueDeadlineCount > 0) watches.push(`${overdueDeadlineCount} deadline${overdueDeadlineCount > 1 ? 's are' : ' is'} overdue`)
+      if (company.incompleteOnboarding > 0) watches.push(`${company.incompleteOnboarding} ${company.incompleteOnboarding === 1 ? 'person has' : 'people have'} incomplete onboarding`)
+      if (company.unconfirmedHousing > 0) watches.push(`${company.unconfirmedHousing} ${company.unconfirmedHousing === 1 ? 'person still needs' : 'people still need'} confirmed housing`)
+      if (company.incompleteOnboarding === 0 && onboardingChecklists.length > 0) strengths.push('Everyone is fully onboarded')
+      if (company.unconfirmedHousing === 0 && housingAssignments.length > 0) strengths.push('All housing is confirmed')
     }
 
     const unsignedTotal = contracts.filter(c => c.status !== 'signed' && c.status !== 'expired').length
@@ -335,16 +348,22 @@ export default function DashboardPage() {
 
     if (criticalCount > 0) watches.push(`${criticalCount} critical item${criticalCount > 1 ? 's' : ''} need${criticalCount === 1 ? 's' : ''} your attention now`)
 
-    const profitableCount = salesPulse.filter(s => s.isProfitable).length
     let headline = ''
-    if (profitableCount === activeProds.length && activeProds.length > 0) {
-      headline = `All ${activeProds.length} of your shows are tracking profitably. Your portfolio is in great shape right now.`
-    } else if (profitableCount > 0) {
-      const names = salesPulse.filter(s => s.isProfitable).map(s => s.prod.name)
-      const notYet = salesPulse.filter(s => !s.isProfitable).map(s => s.prod.name)
-      headline = `${names.join(' and ')} ${names.length === 1 ? "is" : "are"} above breakeven — that's great news.${notYet.length > 0 ? ` ${notYet.join(' and ')} ${notYet.length === 1 ? "is" : "are"} still working toward recoupment.` : ''}`
+    if (SHOW_MONEY) {
+      const profitableCount = salesPulse.filter(s => s.isProfitable).length
+      if (profitableCount === activeProds.length && activeProds.length > 0) {
+        headline = `All ${activeProds.length} of your shows are tracking profitably. Your portfolio is in great shape right now.`
+      } else if (profitableCount > 0) {
+        const names = salesPulse.filter(s => s.isProfitable).map(s => s.prod.name)
+        const notYet = salesPulse.filter(s => !s.isProfitable).map(s => s.prod.name)
+        headline = `${names.join(' and ')} ${names.length === 1 ? "is" : "are"} above breakeven — that's great news.${notYet.length > 0 ? ` ${notYet.join(' and ')} ${notYet.length === 1 ? "is" : "are"} still working toward recoupment.` : ''}`
+      } else {
+        headline = `None of your shows have hit breakeven yet — let's keep the focus on advance sales and pacing.`
+      }
     } else {
-      headline = `None of your shows have hit breakeven yet — let's keep the focus on advance sales and pacing.`
+      headline = activeProds.length > 0
+        ? `You have ${activeProds.length} active show${activeProds.length !== 1 ? 's' : ''}${watches.length > 0 ? ` and ${watches.length} operational item${watches.length !== 1 ? 's' : ''} to keep an eye on.` : ' and operations are running smoothly.'}`
+        : 'No active productions right now.'
     }
 
     return { headline, strengths: strengths.slice(0, 3), watches: watches.slice(0, 3) }
@@ -450,13 +469,15 @@ export default function DashboardPage() {
         title={`Good to see you, ${firstName}`}
         subtitle={`You've got ${activeCount} active show${activeCount !== 1 ? 's' : ''}${undismissed.length > 0 ? ` · ${undismissed.length} thing${undismissed.length !== 1 ? 's' : ''} need${undismissed.length === 1 ? 's' : ''} your attention` : ' · all clear today'}`}
         actions={
-          <button
-            onClick={() => setSnapOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-stone-200 text-xs font-medium text-stone-600 bg-white hover:bg-stone-50 hover:border-stone-300 transition-colors"
-          >
-            <Copy size={12} />
-            Weekly Snapshot
-          </button>
+          SHOW_MONEY && (
+            <button
+              onClick={() => setSnapOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-stone-200 text-xs font-medium text-stone-600 bg-white hover:bg-stone-50 hover:border-stone-300 transition-colors"
+            >
+              <Copy size={12} />
+              Weekly Snapshot
+            </button>
+          )
         }
       />
 
@@ -553,7 +574,41 @@ export default function DashboardPage() {
 
             {/* Stats */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 border-t border-stone-100 pt-4">
-              {spotlightIsPlaying ? (
+              {!SHOW_MONEY ? (
+                <>
+                  <div>
+                    <p className="text-xs text-stone-500 mb-0.5">Tickets Sold</p>
+                    <p className="text-sm font-semibold text-stone-900">
+                      {spotlightEntry.totalTickets > 0
+                        ? spotlightEntry.totalTickets.toLocaleString()
+                        : <span className="text-stone-300">—</span>}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-stone-500 mb-0.5">Last Week Capacity</p>
+                    <p className="text-sm font-semibold text-stone-900">
+                      {spotlightLastPerfWeek
+                        ? `${spotlightLastPerfWeek.capacityPct.toFixed(0)}%`
+                        : <span className="text-stone-300">—</span>}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-stone-500 mb-0.5">{spotlightIsPlaying ? 'Closes' : 'Opening Night'}</p>
+                    <p className="text-sm font-semibold text-stone-900">
+                      {formatDate(spotlightIsPlaying ? spotlightProd.closingDate : spotlightProd.openingDate)}
+                    </p>
+                    <p className="text-xs text-stone-400 mt-0.5">
+                      {spotlightIsPlaying
+                        ? (spotlightDaysToClose > 0 ? `in ${spotlightDaysToClose} days` : 'closed')
+                        : (spotlightDaysToOpen > 0 ? `in ${spotlightDaysToOpen} days` : spotlightDaysToOpen === 0 ? 'Tonight!' : 'Opened')}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-stone-500 mb-0.5">Venue</p>
+                    <p className="text-sm font-semibold text-stone-900 truncate">{spotlightProd.venue}</p>
+                  </div>
+                </>
+              ) : spotlightIsPlaying ? (
                 <>
                   <div>
                     <p className="text-xs text-stone-500 mb-0.5">Gross to Date</p>
@@ -640,31 +695,62 @@ export default function DashboardPage() {
 
       {/* ── KPI cards ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          label="Total Gross"
-          value={fmt(totalGross)}
-          sub={`across ${productions.length} production${productions.length !== 1 ? 's' : ''}`}
-          trend="up"
-        />
-        <StatCard
-          label="Budget Variance"
-          value={portfolioBudgetVariance >= 0 ? `+${fmt(portfolioBudgetVariance)}` : `-${fmt(Math.abs(portfolioBudgetVariance))}`}
-          sub={portfolioBudgetVariance < 0 ? 'over budget — review required' : budgetVariantPct < 10 ? 'approaching budget — watch spend' : 'under budget — on track'}
-          trend={portfolioBudgetVariance >= 0 ? 'up' : 'down'}
-          variant={budgetVariant as 'success' | 'warn' | 'danger'}
-        />
-        <StatCard
-          label="Tickets Sold"
-          value={totalTicketsSold.toLocaleString()}
-          sub="across all productions"
-          trend="up"
-        />
-        <StatCard
-          label="Cash on Hand"
-          value={fmt(totalCash)}
-          sub="combined available"
-          trend="neutral"
-        />
+        {SHOW_MONEY ? (
+          <>
+            <StatCard
+              label="Total Gross"
+              value={fmt(totalGross)}
+              sub={`across ${productions.length} production${productions.length !== 1 ? 's' : ''}`}
+              trend="up"
+            />
+            <StatCard
+              label="Budget Variance"
+              value={portfolioBudgetVariance >= 0 ? `+${fmt(portfolioBudgetVariance)}` : `-${fmt(Math.abs(portfolioBudgetVariance))}`}
+              sub={portfolioBudgetVariance < 0 ? 'over budget — review required' : budgetVariantPct < 10 ? 'approaching budget — watch spend' : 'under budget — on track'}
+              trend={portfolioBudgetVariance >= 0 ? 'up' : 'down'}
+              variant={budgetVariant as 'success' | 'warn' | 'danger'}
+            />
+            <StatCard
+              label="Tickets Sold"
+              value={totalTicketsSold.toLocaleString()}
+              sub="across all productions"
+              trend="up"
+            />
+            <StatCard
+              label="Cash on Hand"
+              value={fmt(totalCash)}
+              sub="combined available"
+              trend="neutral"
+            />
+          </>
+        ) : (
+          <>
+            <StatCard
+              label="Active Productions"
+              value={String(activeCount)}
+              sub={`${productions.length} total tracked`}
+              trend="neutral"
+            />
+            <StatCard
+              label="Tickets Sold"
+              value={totalTicketsSold.toLocaleString()}
+              sub="across all productions"
+              trend="up"
+            />
+            <StatCard
+              label="Unsigned Contracts"
+              value={String(contracts.filter((c) => c.status !== 'signed' && c.status !== 'expired').length)}
+              sub="awaiting signature"
+              trend="neutral"
+            />
+            <StatCard
+              label="Overdue Deadlines"
+              value={String(deadlines.filter((d) => d.status === 'overdue').length)}
+              sub="need rescheduling or action"
+              trend="neutral"
+            />
+          </>
+        )}
       </div>
 
       {/* ── Company Status ───────────────────────────────────────────────── */}
@@ -701,7 +787,7 @@ export default function DashboardPage() {
                 dot: company.overduePerDiems > 0 ? 'bg-red-500' : 'bg-emerald-500',
                 value: company.overduePerDiems,
                 label: company.overduePerDiems === 1 ? 'per diem overdue' : 'per diems overdue',
-                sub: company.perDiemOutstandingTotal > 0 ? `${fmt(company.perDiemOutstandingTotal)} outstanding` : undefined,
+                sub: SHOW_MONEY && company.perDiemOutstandingTotal > 0 ? `${fmt(company.perDiemOutstandingTotal)} outstanding` : undefined,
               },
             ] as { href: string; dot: string; value: number; label: string; sub?: string }[]).map((c) => (
               <Link key={c.href} href={c.href} className="block p-3 rounded-lg border border-stone-200 hover:border-stone-300 hover:bg-stone-50/50 transition-colors">
@@ -728,7 +814,7 @@ export default function DashboardPage() {
       </Card>
 
       {/* ── Sales Pulse ──────────────────────────────────────────────────── */}
-      {activeProds.length > 0 && (
+      {SHOW_MONEY && activeProds.length > 0 && (
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Sales Pulse</CardTitle>
@@ -790,7 +876,7 @@ export default function DashboardPage() {
       )}
 
       {/* ── Needs Attention Today ─────────────────────────────────────────── */}
-      {allItems.length > 0 && (
+      {editionItems.length > 0 && (
         <Card className="mb-6">
           {/* Card header with title + summary strip */}
           <CardHeader className="border-b border-stone-100 pb-3">
@@ -827,7 +913,8 @@ export default function DashboardPage() {
             {/* Filter chips */}
             <div className="flex gap-1.5 mt-3 flex-wrap">
               {(Object.keys(FILTER_LABELS) as AttentionFilter[]).map((f) => {
-                const count = f === 'all' ? allItems.length : allItems.filter((i) => i.category === f).length
+                if (!SHOW_MONEY && (f === 'budget' || f === 'cashflow')) return null
+                const count = f === 'all' ? editionItems.length : editionItems.filter((i) => i.category === f).length
                 if (f !== 'all' && count === 0) return null
                 return (
                   <button
@@ -969,33 +1056,50 @@ export default function DashboardPage() {
                 <h3 className="font-semibold text-stone-900 mb-0.5 leading-snug">{p.name}</h3>
                 <p className="text-xs text-stone-500 mb-4">{p.venue}</p>
 
-                {/* Budget bar */}
-                <div className="mb-4">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-stone-500">Budget used</span>
-                    <span className={`font-medium ${budgetPct > 90 ? 'text-red-600' : budgetPct > 80 ? 'text-amber-600' : 'text-stone-700'}`}>
-                      {fmtPct(budgetPct)}
-                    </span>
-                  </div>
-                  <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${Math.min(budgetPct, 100)}%`, backgroundColor: budgetPct > 90 ? '#ef4444' : budgetPct > 80 ? '#f59e0b' : p.color }}
-                    />
-                  </div>
-                </div>
+                {SHOW_MONEY && (
+                  <>
+                    {/* Budget bar */}
+                    <div className="mb-4">
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-stone-500">Budget used</span>
+                        <span className={`font-medium ${budgetPct > 90 ? 'text-red-600' : budgetPct > 80 ? 'text-amber-600' : 'text-stone-700'}`}>
+                          {fmtPct(budgetPct)}
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full"
+                          style={{ width: `${Math.min(budgetPct, 100)}%`, backgroundColor: budgetPct > 90 ? '#ef4444' : budgetPct > 80 ? '#f59e0b' : p.color }}
+                        />
+                      </div>
+                    </div>
 
-                {/* Revenue & cash */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div>
-                    <p className="text-xs text-stone-500">Gross Revenue</p>
-                    <p className="text-sm font-semibold text-stone-800">{fmt(p.currentGross)}</p>
+                    {/* Revenue & cash */}
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div>
+                        <p className="text-xs text-stone-500">Gross Revenue</p>
+                        <p className="text-sm font-semibold text-stone-800">{fmt(p.currentGross)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-stone-500">Cash on Hand</p>
+                        <p className="text-sm font-semibold text-stone-800">{fmt(p.cashOnHand)}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {!SHOW_MONEY && (
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                      <p className="text-xs text-stone-500">Opens</p>
+                      <p className="text-sm font-semibold text-stone-800">{formatDate(p.openingDate)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-stone-500">Closes</p>
+                      <p className="text-sm font-semibold text-stone-800">{formatDate(p.closingDate)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-stone-500">Cash on Hand</p>
-                    <p className="text-sm font-semibold text-stone-800">{fmt(p.cashOnHand)}</p>
-                  </div>
-                </div>
+                )}
 
                 {/* Actionable risk chips */}
                 {(unsigned.length > 0 || prodOverdue.length > 0 || variantLines.length > 0) && (
@@ -1010,7 +1114,7 @@ export default function DashboardPage() {
                         {prodOverdue.length} overdue — View deadlines
                       </Link>
                     )}
-                    {variantLines.length > 0 && (
+                    {SHOW_MONEY && variantLines.length > 0 && (
                       <Link href="/budget" className="text-xs px-2 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded hover:bg-orange-100 transition-colors">
                         {variantLines.length} over budget — Review budget
                       </Link>
@@ -1035,7 +1139,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Weekly Snapshot modal ────────────────────────────────────────── */}
-      {snapOpen && (
+      {SHOW_MONEY && snapOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
           onClick={(e) => { if (e.target === e.currentTarget) setSnapOpen(false) }}

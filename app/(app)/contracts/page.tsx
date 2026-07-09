@@ -15,6 +15,7 @@ import { useAccess } from '@/lib/useAccess'
 import type { Contract, ContractType, ContractStatus, ContractObligation, ObligationType, ObligationRisk, Person, PersonRoleType, UnionAffiliation } from '@/lib/types'
 import { UNION_AGREEMENT_TEMPLATES, getTemplatesForType, resolveObligationDate } from '@/lib/unionTemplates'
 import { generateOnboardingChecklist } from '@/lib/onboarding'
+import { SHOW_MONEY } from '@/lib/edition'
 
 // Map a contract type to a roster role + default union affiliation
 const CONTRACT_ROLE_MAP: Record<ContractType, { roleType: PersonRoleType; union: UnionAffiliation }> = {
@@ -745,10 +746,12 @@ export default function ContractsPage() {
               <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Signature Due Date</label>
               <input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Fee / Amount</label>
-              <input type="number" value={form.fee} onChange={(e) => setForm({ ...form, fee: Number(e.target.value) })} className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
-            </div>
+            {SHOW_MONEY && (
+              <div>
+                <label className="block text-xs font-medium text-stone-600 uppercase tracking-wider mb-1">Fee / Amount</label>
+                <input type="number" value={form.fee} onChange={(e) => setForm({ ...form, fee: Number(e.target.value) })} className="w-full px-3 py-2 text-sm border border-stone-300 rounded focus:outline-none focus:border-stone-500" />
+              </div>
+            )}
           </div>
 
           <div>

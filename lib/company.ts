@@ -5,6 +5,7 @@ import type {
   CAEAWeeklyReport, OnboardingChecklist, UnionAffiliation,
 } from './types'
 import { checklistProgress } from './onboarding'
+import { SHOW_MONEY, MASKED_MONEY } from './edition'
 
 export const UNION_LABELS: Record<UnionAffiliation, string> = {
   CAEA: 'CAEA',
@@ -146,6 +147,12 @@ export function companySummary(
     perDiemOutstandingTotal: perDiems.reduce((sum, e) => sum + perDiemOutstanding(e), 0),
     caeaStatus: caeaCurrentWeekStatus(caea, today),
   }
+}
+
+// Dollar amounts in CSV exports respect the edition's money policy.
+export function csvMoney(n: number | string | undefined | null): string | number {
+  if (n === undefined || n === null || n === '') return ''
+  return SHOW_MONEY ? n : MASKED_MONEY
 }
 
 // Convert a value array to a CSV string and trigger a browser download.

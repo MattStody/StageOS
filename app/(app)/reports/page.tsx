@@ -8,8 +8,17 @@ import { Badge } from '@/components/ui/Badge'
 import { fmt, fmtPct, formatDate, daysUntil, statusLabel, budgetUsedPct, variancePct } from '@/lib/utils'
 import { FileBarChart, Download, AlertTriangle, CheckCircle, Sparkles, Users } from 'lucide-react'
 import Link from 'next/link'
+import { FinanceOnly } from '@/components/layout/FinanceOnly'
 
 export default function ReportsPage() {
+  return (
+    <FinanceOnly>
+      <ReportsInner />
+    </FinanceOnly>
+  )
+}
+
+function ReportsInner() {
   const { productions, budgetLines, revenueWeeks, contracts, cashFlowRows, deadlines } = useStore()
   const [selectedProd, setSelectedProd] = useState(productions[0]?.id || '')
   const [generated, setGenerated] = useState(false)

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { fmt, fmtPct, formatDate, formatDateShort, daysUntil, statusLabel, budgetUsedPct } from '@/lib/utils'
+import { SHOW_MONEY } from '@/lib/edition'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { TrendingUp, FileText, DollarSign, CalendarDays, ArrowRight, ImageIcon, Sparkles, Theater, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Ticket, ExternalLink, AlertCircle, Info, CheckSquare } from 'lucide-react'
@@ -339,37 +340,58 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
         <div className="flex flex-wrap gap-2 mt-1">
-          {[
-            { label: 'Budget', href: `/budget?prod=${id}` },
-            { label: 'Revenue', href: `/revenue?prod=${id}` },
-            { label: 'Forecasting', href: `/productions/${id}/forecasting` },
-            { label: 'Contracts', href: `/contracts?prod=${id}` },
-            { label: 'Cash Flow', href: `/cashflow?prod=${id}` },
-          ].map(({ label, href }) => (
+          {(SHOW_MONEY
+            ? [
+                { label: 'Budget', href: `/budget?prod=${id}` },
+                { label: 'Revenue', href: `/revenue?prod=${id}` },
+                { label: 'Forecasting', href: `/productions/${id}/forecasting` },
+                { label: 'Contracts', href: `/contracts?prod=${id}` },
+                { label: 'Cash Flow', href: `/cashflow?prod=${id}` },
+              ]
+            : [
+                { label: 'Contracts', href: `/contracts?prod=${id}` },
+                { label: 'Tasks', href: `/tasks?prod=${id}` },
+                { label: 'Calendar', href: `/calendar?prod=${id}` },
+              ]
+          ).map(({ label, href }) => (
             <Link key={href} href={href} className="px-3 py-1.5 text-xs border border-stone-300 rounded text-stone-600 hover:bg-stone-50 transition-colors">
               {label}
             </Link>
           ))}
-          <Link
-            href={`/reports/ai-brief?prod=${id}`}
-            className="px-3 py-1.5 text-xs border border-stone-900 rounded text-white bg-stone-900 hover:bg-stone-800 transition-colors flex items-center gap-1.5"
-          >
-            <Sparkles size={11} />
-            Weekly Brief
-          </Link>
+          {SHOW_MONEY && (
+            <Link
+              href={`/reports/ai-brief?prod=${id}`}
+              className="px-3 py-1.5 text-xs border border-stone-900 rounded text-white bg-stone-900 hover:bg-stone-800 transition-colors flex items-center gap-1.5"
+            >
+              <Sparkles size={11} />
+              Weekly Brief
+            </Link>
+          )}
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <StatCard label="Gross Revenue" value={fmt(cumGross || prod.currentGross)} sub={`of ${fmt(prod.projectedGross)} projected`} trend="up" />
-        <StatCard label="Budget Used" value={fmtPct(budgetPct)} sub={`${fmt(totalActual)} of ${fmt(totalBudgeted)}`} alert={budgetPct > 90} />
-        <StatCard label="Cash on Hand" value={fmt(lastCash)} sub={runway ? `${runway} wk runway` : 'current balance'} />
-        <StatCard label="Break-even" value={breakEvenLabel} sub={weeksRemaining > 0 ? `${weeksRemaining} wks remaining` : 'run complete'} alert={breakEvenCap !== null && breakEvenCap > 90} />
+        {SHOW_MONEY ? (
+          <>
+            <StatCard label="Gross Revenue" value={fmt(cumGross || prod.currentGross)} sub={`of ${fmt(prod.projectedGross)} projected`} trend="up" />
+            <StatCard label="Budget Used" value={fmtPct(budgetPct)} sub={`${fmt(totalActual)} of ${fmt(totalBudgeted)}`} alert={budgetPct > 90} />
+            <StatCard label="Cash on Hand" value={fmt(lastCash)} sub={runway ? `${runway} wk runway` : 'current balance'} />
+            <StatCard label="Break-even" value={breakEvenLabel} sub={weeksRemaining > 0 ? `${weeksRemaining} wks remaining` : 'run complete'} alert={breakEvenCap !== null && breakEvenCap > 90} />
+          </>
+        ) : (
+          <>
+            <StatCard label="Status" value={statusLabel(prod.status)} sub={prod.venue} />
+            <StatCard label="Tickets Sold" value={weeks.reduce((s, w) => s + w.ticketsSold, 0).toLocaleString()} sub="to date" trend="up" />
+            <StatCard label="Opens" value={formatDate(prod.openingDate)} sub={weeksRemaining > 0 ? `${weeksRemaining} wks remaining` : 'run complete'} />
+            <StatCard label="Closes" value={formatDate(prod.closingDate)} sub="scheduled" />
+          </>
+        )}
         <StatCard label="Contracts" value={`${prodContracts.filter(c=>c.status==='signed').length}/${prodContracts.length}`} sub={unsigned > 0 ? `${unsigned} unsigned` : 'All signed'} alert={unsigned > 0} />
       </div>
 
       {/* Revenue chart — full width */}
+      {SHOW_MONEY && (
       <Card className="mb-6">
         <CardHeader className="flex items-center gap-2">
           <TrendingUp size={14} className="text-stone-400" />
@@ -467,8 +489,10 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
           )}
         </CardBody>
       </Card>
+      )}
 
       {/* ── Inline Forecaster ─────────────────────────────────────────────── */}
+      {SHOW_MONEY && (
       <Card className="mb-6">
         <CardHeader className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -659,6 +683,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
           </div>
         </CardBody>
       </Card>
+      )}
 
       {/* Ticket map modal */}
       <Modal
@@ -1237,8 +1262,9 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
       </Card>
 
       {/* Budget by Category + Contracts + Deadlines */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className={`grid grid-cols-1 ${SHOW_MONEY ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-5`}>
         {/* Budget by category */}
+        {SHOW_MONEY && (
         <Card>
           <CardHeader className="flex items-center gap-2">
             <DollarSign size={14} className="text-stone-400" />
@@ -1277,6 +1303,7 @@ export default function ProductionDetailPage({ params }: { params: Promise<{ id:
             )}
           </CardBody>
         </Card>
+        )}
 
         <Card>
           <CardHeader className="flex items-center justify-between">

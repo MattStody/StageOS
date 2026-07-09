@@ -8,12 +8,13 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { fmt, formatDate } from '@/lib/utils'
 import {
-  personName, perDiemOutstanding, perDiemOverdue, avatarColor, initials, downloadCSV,
+  personName, perDiemOutstanding, perDiemOverdue, avatarColor, initials, downloadCSV, csvMoney,
 } from '@/lib/company'
 import {
   Plus, Download, AlertTriangle, Banknote, CheckCircle2, Trash2, Users,
 } from 'lucide-react'
 import type { PerDiemEntry, PerDiemPayment } from '@/lib/types'
+import { SHOW_MONEY } from '@/lib/edition'
 
 type GroupDim = 'production' | 'person'
 
@@ -133,11 +134,11 @@ export default function PerDiemLedgerPage() {
       rows.push([
         personName(people, e.personId),
         productions.find((p) => p.id === e.productionId)?.name ?? 'Unknown',
-        e.dailyRate,
+        csvMoney(e.dailyRate),
         `${formatDate(e.periodStart)} – ${formatDate(e.periodEnd)}`,
-        e.totalOwed,
-        e.totalPaid,
-        perDiemOutstanding(e),
+        csvMoney(e.totalOwed),
+        csvMoney(e.totalPaid),
+        csvMoney(perDiemOutstanding(e)),
       ])
     }
     downloadCSV('per-diems.csv', rows)
@@ -699,15 +700,17 @@ function AddEntryModal({
               ))}
             </select>
           </Field>
-          <Field label="Daily rate (CAD)">
-            <input
-              type="number"
-              min={0}
-              value={dailyRate}
-              onChange={(e) => setDailyRate(Number(e.target.value))}
-              className={inputCls}
-            />
-          </Field>
+          {SHOW_MONEY && (
+            <Field label="Daily rate (CAD)">
+              <input
+                type="number"
+                min={0}
+                value={dailyRate}
+                onChange={(e) => setDailyRate(Number(e.target.value))}
+                className={inputCls}
+              />
+            </Field>
+          )}
           <Field label="Days">
             <div className="px-2.5 py-1.5 text-sm text-stone-500">{daysBetween(periodStart, periodEnd)} days</div>
           </Field>

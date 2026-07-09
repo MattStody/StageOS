@@ -1,4 +1,8 @@
+import { SHOW_MONEY, MASKED_MONEY } from './edition'
+
 export function fmt(n: number, decimals = 0): string {
+  // Production edition never renders dollar amounts.
+  if (!SHOW_MONEY) return MASKED_MONEY
   return new Intl.NumberFormat('en-CA', {
     style: 'currency',
     currency: 'CAD',

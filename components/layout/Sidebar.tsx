@@ -11,6 +11,7 @@ import {
 import { cn } from '@/lib/cn'
 import { useDemo } from '@/contexts/DemoContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { EDITION, EDITION_LABEL, editionAllows, SHOW_MONEY } from '@/lib/edition'
 import type { SectionId } from '@/lib/auth'
 
 type NavItem = { label: string; href: string; icon: React.ElementType }
@@ -97,7 +98,14 @@ export function Sidebar() {
   const logoUrl = isDemo && config?.logoUrl ? config.logoUrl : null
 
   const allowedSections = currentUser?.sections ?? sections.map((s) => s.id)
-  const visibleSections = sections.filter((s) => isDemo || allowedSections.includes(s.id))
+  const visibleSections = sections
+    .filter((s) => editionAllows(s.id) && (isDemo || allowedSections.includes(s.id)))
+    .map((s) => ({
+      ...s,
+      // Reports are financial documents — hidden when money is hidden
+      items: s.items?.filter((i) => SHOW_MONEY || i.href !== '/reports'),
+    }))
+  const editionBadge = EDITION_LABEL[EDITION]
 
   const userInitials = userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
   const orgInitials = orgName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
@@ -115,6 +123,11 @@ export function Sidebar() {
         <div className="px-5 py-5 border-b border-white/10">
           <p className="text-white font-semibold text-sm tracking-tight truncate">{orgName}</p>
           <p className="text-stone-400 text-xs mt-0.5 truncate">{userTitle}</p>
+          {editionBadge && (
+            <span className="inline-block mt-2 text-[9px] font-bold uppercase tracking-widest text-white/50 border border-white/15 rounded px-1.5 py-0.5">
+              {editionBadge} Edition
+            </span>
+          )}
         </div>
 
         {/* Nav */}
@@ -279,6 +292,14 @@ export function Sidebar() {
 
       {/* User avatar */}
       <div className="pb-4 flex flex-col items-center gap-2">
+        {editionBadge && (
+          <span
+            className="text-[9px] font-bold text-white/40 [writing-mode:vertical-rl] tracking-widest uppercase"
+            title={`${editionBadge} Edition`}
+          >
+            {editionBadge}
+          </span>
+        )}
         {isDemo && (
           <div
             className="w-1.5 h-1.5 rounded-full"

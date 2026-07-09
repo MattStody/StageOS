@@ -2,7 +2,14 @@
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLE_USERS } from '@/lib/auth'
+import { editionAllows } from '@/lib/edition'
 import { cn } from '@/lib/cn'
+
+// Role users only appear if this edition includes at least one of their
+// working sections (dashboard alone doesn't count).
+const VISIBLE_ROLE_USERS = ROLE_USERS.filter((u) =>
+  u.sections.some((s) => s !== 'dashboard' && editionAllows(s)),
+)
 
 const SECTION_COLORS: Record<string, string> = {
   company: '#0ea5e9',
@@ -115,7 +122,7 @@ export default function LoginPage() {
 
           {/* Role user cards */}
           <div className="space-y-2">
-            {ROLE_USERS.map((user) => {
+            {VISIBLE_ROLE_USERS.map((user) => {
               const color = SECTION_COLORS[user.id] ?? '#6b7280'
               return (
                 <button

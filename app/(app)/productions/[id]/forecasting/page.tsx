@@ -20,6 +20,7 @@ import {
   ResponsiveContainer, ReferenceLine,
 } from 'recharts'
 import { ArrowLeft, TrendingUp, AlertCircle, Info } from 'lucide-react'
+import { FinanceOnly } from '@/components/layout/FinanceOnly'
 
 // ── Risk styling ────────────────────────────────────────────────────────────
 const riskColor: Record<RiskLevel, string> = {
@@ -78,7 +79,15 @@ const SCENARIOS: { type: ScenarioType; label: string }[] = [
 ]
 
 // ── Page ─────────────────────────────────────────────────────────────────────
-export default function ForecastingPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ForecastingPage(props: { params: Promise<{ id: string }> }) {
+  return (
+    <FinanceOnly>
+      <ForecastingInner {...props} />
+    </FinanceOnly>
+  )
+}
+
+function ForecastingInner({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { productions, revenueWeeks, cashFlowRows, budgetLines } = useStore()
 

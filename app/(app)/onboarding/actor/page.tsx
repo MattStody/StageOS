@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import type { ActorProfile, ActorEngagement, ActorMeasurements, PaymentScheduleItem, ProductionTask } from '@/lib/types'
 import { STAGE_USERS, defaultAssigneeFor, type StageUser } from '@/lib/team'
+import { SHOW_MONEY } from '@/lib/edition'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -471,18 +472,20 @@ export default function ActorOnboardingPage() {
         <div>
           <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">Compensation</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Weekly rate">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">$</span>
-                <input
-                  type="number"
-                  className={`${inputCls} pl-7`}
-                  value={contract.weeklyRate}
-                  onChange={(e) => patchContract('weeklyRate', e.target.value)}
-                  placeholder="0.00"
-                />
-              </div>
-            </Field>
+            {SHOW_MONEY && (
+              <Field label="Weekly rate">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm">$</span>
+                  <input
+                    type="number"
+                    className={`${inputCls} pl-7`}
+                    value={contract.weeklyRate}
+                    onChange={(e) => patchContract('weeklyRate', e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+              </Field>
+            )}
             <Field label="Payment schedule">
               <div className="flex flex-col gap-1.5 pt-1">
                 {PAYMENT_OPTIONS.map(({ value, label }) => (

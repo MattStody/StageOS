@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/Modal'
 import { fmt, formatDate } from '@/lib/utils'
 import {
   HOUSING_BADGE, TRAVEL_BADGE, personName,
-  housingNeedsAttention, travelNeedsAttention, downloadCSV,
+  housingNeedsAttention, travelNeedsAttention, downloadCSV, csvMoney,
 } from '@/lib/company'
 import {
   Plus, AlertTriangle, CheckCircle2, Download, Pencil, Trash2,
@@ -19,6 +19,7 @@ import type {
   Production, HousingAssignment, HousingStatus,
   TravelLeg, TravelStatus, TravelDirection,
 } from '@/lib/types'
+import { SHOW_MONEY } from '@/lib/edition'
 
 const HOUSING_STATUSES: HousingStatus[] = ['Searching', 'Confirmed', 'Checked In', 'Checked Out']
 const TRAVEL_STATUSES: TravelStatus[] = ['Not Booked', 'Booked', 'Confirmed', 'Completed']
@@ -123,14 +124,14 @@ export default function HousingTravelPage() {
       const lease = [h.leaseStart, h.leaseEnd].filter(Boolean).join(' → ')
       rows.push([
         'Housing', personName(people, h.personId), prodById.get(h.productionId)?.name ?? '',
-        addr, lease, h.status, h.monthlyCost ?? '', '',
+        addr, lease, h.status, csvMoney(h.monthlyCost), '',
       ])
     }
     for (const t of filteredTravel) {
       const detail = `${t.direction}: ${t.departureCity} → ${t.arrivalCity}${t.carrier ? ` (${t.carrier} ${t.flightTrainNumber ?? ''})` : ''}`.trim()
       rows.push([
         'Travel', personName(people, t.personId), prodById.get(t.productionId)?.name ?? '',
-        detail, t.date, t.status, t.cost ?? '', reimbursementOwed(t) || '',
+        detail, t.date, t.status, csvMoney(t.cost), csvMoney(reimbursementOwed(t) || ''),
       ])
     }
     downloadCSV('housing-travel.csv', rows)
@@ -500,9 +501,11 @@ export default function HousingTravelPage() {
               <Field label="Lease End">
                 <input type="date" className={inputClass} value={housingForm.leaseEnd ?? ''} onChange={(e) => setHousingForm({ ...housingForm, leaseEnd: e.target.value })} />
               </Field>
-              <Field label="Monthly (CAD)">
-                <input type="number" className={inputClass} value={housingForm.monthlyCost ?? ''} onChange={(e) => setHousingForm({ ...housingForm, monthlyCost: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="0" />
-              </Field>
+              {SHOW_MONEY && (
+                <Field label="Monthly (CAD)">
+                  <input type="number" className={inputClass} value={housingForm.monthlyCost ?? ''} onChange={(e) => setHousingForm({ ...housingForm, monthlyCost: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="0" />
+                </Field>
+              )}
             </div>
             <Field label="Status">
               <select className={inputClass} value={housingForm.status} onChange={(e) => setHousingForm({ ...housingForm, status: e.target.value as HousingStatus })}>
@@ -581,18 +584,22 @@ export default function HousingTravelPage() {
                   {TRAVEL_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </Field>
-              <Field label="Cost (CAD)">
-                <input type="number" className={inputClass} value={travelForm.cost ?? ''} onChange={(e) => setTravelForm({ ...travelForm, cost: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="0" />
-              </Field>
+              {SHOW_MONEY && (
+                <Field label="Cost (CAD)">
+                  <input type="number" className={inputClass} value={travelForm.cost ?? ''} onChange={(e) => setTravelForm({ ...travelForm, cost: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="0" />
+                </Field>
+              )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Reimbursement (CAD)">
-                <input type="number" className={inputClass} value={travelForm.reimbursementAmount ?? ''} onChange={(e) => setTravelForm({ ...travelForm, reimbursementAmount: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="0" />
-              </Field>
-              <Field label="Reimbursement Date">
-                <input type="date" className={inputClass} value={travelForm.reimbursementDate ?? ''} onChange={(e) => setTravelForm({ ...travelForm, reimbursementDate: e.target.value })} />
-              </Field>
-            </div>
+            {SHOW_MONEY && (
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Reimbursement (CAD)">
+                  <input type="number" className={inputClass} value={travelForm.reimbursementAmount ?? ''} onChange={(e) => setTravelForm({ ...travelForm, reimbursementAmount: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="0" />
+                </Field>
+                <Field label="Reimbursement Date">
+                  <input type="date" className={inputClass} value={travelForm.reimbursementDate ?? ''} onChange={(e) => setTravelForm({ ...travelForm, reimbursementDate: e.target.value })} />
+                </Field>
+              </div>
+            )}
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="ghost" size="sm" onClick={() => setTravelForm(null)}>Cancel</Button>
               <Button size="sm" onClick={saveTravel} disabled={!travelForm.personId || !travelForm.productionId || !travelForm.departureCity || !travelForm.arrivalCity}>

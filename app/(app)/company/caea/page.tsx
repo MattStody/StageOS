@@ -7,7 +7,8 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { fmt, formatDate } from '@/lib/utils'
-import { personName, avatarColor, initials, downloadCSV } from '@/lib/company'
+import { personName, avatarColor, initials, downloadCSV, csvMoney } from '@/lib/company'
+import { SHOW_MONEY } from '@/lib/edition'
 import {
   CAEA_DISCLAIMER,
   PACT_TIERS,
@@ -288,22 +289,22 @@ export default function CAEAWeeklyReportsPage() {
     for (const e of report.entries) {
       rows.push([
         personName(people, e.personId),
-        e.weeklyContractRate,
+        csvMoney(e.weeklyContractRate),
         e.scheduledHours,
         e.actualHours,
         e.isPartialWeek ? `${e.partialWeekDays ?? 0}d ${e.partialWeekType ?? ''}`.trim() : 'No',
         e.isTechWeek ? 'Yes' : 'No',
         e.overtimeHours,
-        e.overtimePay,
-        e.penaltyTotal,
-        e.addedTimePay,
-        e.vacationPay,
-        e.grossPay,
-        e.pensionContribution,
-        e.duesCheckoff,
+        csvMoney(e.overtimePay),
+        csvMoney(e.penaltyTotal),
+        csvMoney(e.addedTimePay),
+        csvMoney(e.vacationPay),
+        csvMoney(e.grossPay),
+        csvMoney(e.pensionContribution),
+        csvMoney(e.duesCheckoff),
         e.sickDays,
         e.personalDays,
-        e.netToPayroll,
+        csvMoney(e.netToPayroll),
       ])
     }
     rows.push([
@@ -317,13 +318,13 @@ export default function CAEAWeeklyReportsPage() {
       '',
       '',
       '',
-      totals.vacation,
-      totals.gross,
-      totals.pension,
-      totals.dues,
+      csvMoney(totals.vacation),
+      csvMoney(totals.gross),
+      csvMoney(totals.pension),
+      csvMoney(totals.dues),
       '',
       '',
-      totals.net,
+      csvMoney(totals.net),
     ])
     const prodSlug = (production?.name ?? 'production').toLowerCase().replace(/[^a-z0-9]+/g, '-')
     downloadCSV(`caea-${prodSlug}-${report.weekEnding}.csv`, rows)
@@ -599,7 +600,7 @@ export default function CAEAWeeklyReportsPage() {
 
                             {/* Weekly rate */}
                             <td className="px-3 py-2 text-right">
-                              {canEdit ? (
+                              {canEdit && SHOW_MONEY ? (
                                 <input
                                   type="number"
                                   min={0}
