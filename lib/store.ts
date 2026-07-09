@@ -146,6 +146,7 @@ interface StageOpsState {
 
   loadScenario: (data: ScenarioData) => void
   resetToDefaults: () => void
+  clearAllData: () => void
 }
 
 export const useStore = create<StageOpsState>()(
@@ -309,6 +310,35 @@ export const useStore = create<StageOpsState>()(
         perDiemEntries: PER_DIEM_ENTRIES,
         caeaReports: CAEA_WEEKLY_REPORTS,
         onboardingChecklists: ONBOARDING_CHECKLISTS,
+      })),
+
+      // Blank slate — wipes all seed/demo data. Built-in workflow templates
+      // are product features, not data, so they stay.
+      clearAllData: () => set(() => ({
+        productions: [],
+        budgetLines: [],
+        revenueWeeks: [],
+        contracts: [],
+        cashFlowRows: [],
+        deadlines: [],
+        documents: [],
+        marketingBudgetLines: [],
+        marketingCampaigns: [],
+        customEvents: [],
+        obligations: [],
+        performanceDates: [],
+        grants: [],
+        tasks: [],
+        actorProfiles: [],
+        actorEngagements: [],
+        workflowTemplates: BUILTIN_WORKFLOWS,
+        workflowRuns: [],
+        people: [],
+        housingAssignments: [],
+        travelLegs: [],
+        perDiemEntries: [],
+        caeaReports: [],
+        onboardingChecklists: [],
       })),
     }),
     {

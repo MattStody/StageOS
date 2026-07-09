@@ -1,9 +1,62 @@
 'use client'
+import { useState } from 'react'
 import Link from 'next/link'
+import { useStore } from '@/lib/store'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { ArrowRight, CheckCircle2, Upload, BookOpen } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Upload, BookOpen, Trash2, RotateCcw, AlertTriangle } from 'lucide-react'
+
+function DemoDataCard() {
+  const { clearAllData, resetToDefaults, productions, people } = useStore()
+  const [confirming, setConfirming] = useState(false)
+  const isEmpty = productions.length === 0 && people.length === 0
+
+  return (
+    <Card>
+      <CardHeader><CardTitle>Demo Data</CardTitle></CardHeader>
+      <CardBody className="space-y-3">
+        <p className="text-xs text-stone-500">
+          StageOS ships with sample productions, people, and financials so you can explore.
+          Start fresh to clear everything and enter your own data.
+        </p>
+
+        {confirming ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-2.5">
+            <div className="flex items-start gap-2 text-xs text-red-800">
+              <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+              <span>
+                This removes all productions, budgets, contracts, company members, and every
+                other record. Workflow templates stay. You can restore the demo data any time.
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={() => { clearAllData(); setConfirming(false) }}
+              >
+                Yes, clear everything
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>Cancel</Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" className="text-red-600 hover:bg-red-50" onClick={() => setConfirming(true)} disabled={isEmpty}>
+              <Trash2 size={13} className="mr-1.5" />
+              {isEmpty ? 'Workspace is empty' : 'Start fresh'}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => resetToDefaults()}>
+              <RotateCcw size={13} className="mr-1.5" />
+              Restore demo data
+            </Button>
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  )
+}
 
 export default function SettingsPage() {
   return (
@@ -139,6 +192,8 @@ export default function SettingsPage() {
             ))}
           </CardBody>
         </Card>
+
+        <DemoDataCard />
       </div>
     </div>
   )
