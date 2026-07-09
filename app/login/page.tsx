@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLE_USERS } from '@/lib/auth'
 import { cn } from '@/lib/cn'
@@ -9,21 +8,23 @@ const SECTION_COLORS: Record<string, string> = {
   company: '#0ea5e9',
   production: '#8b5cf6',
   finance: '#10b981',
+  danielle: '#f59e0b',
 }
 
 export default function LoginPage() {
-  const router = useRouter()
   const { login, loginAsRole } = useAuth()
   const [email, setEmail] = useState('matt@boldlymedia.com')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
+  // Full page loads (not router.push) so the data store rehydrates from the
+  // signed-in user's storage partition.
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     const ok = login(email, password)
     if (ok) {
-      router.push('/dashboard')
+      window.location.assign('/dashboard')
     } else {
       setError('Invalid credentials.')
     }
@@ -32,7 +33,7 @@ export default function LoginPage() {
   function handleRoleLogin(userId: string) {
     loginAsRole(userId)
     const user = ROLE_USERS.find((u) => u.id === userId)
-    router.push(user?.defaultHref ?? '/dashboard')
+    window.location.assign(user?.defaultHref ?? '/dashboard')
   }
 
   return (
@@ -133,15 +134,24 @@ export default function LoginPage() {
                     <p className="text-xs text-stone-500">{user.title}</p>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {user.sections.filter((s) => s !== 'dashboard').map((s) => (
+                    {user.freshWorkspace ? (
                       <span
-                        key={s}
-                        className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded-full capitalize')}
+                        className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
                         style={{ backgroundColor: `${color}18`, color }}
                       >
-                        {s}
+                        blank workspace
                       </span>
-                    ))}
+                    ) : (
+                      user.sections.filter((s) => s !== 'dashboard').map((s) => (
+                        <span
+                          key={s}
+                          className={cn('text-[10px] font-medium px-1.5 py-0.5 rounded-full capitalize')}
+                          style={{ backgroundColor: `${color}18`, color }}
+                        >
+                          {s}
+                        </span>
+                      ))
+                    )}
                   </div>
                 </button>
               )

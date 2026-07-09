@@ -1,6 +1,7 @@
 'use client'
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import { findRoleUser, USER_SESSION_KEY } from './auth'
 import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate, Grant, ProductionTask, ActorProfile, ActorEngagement, WorkflowTemplate, WorkflowRun, Person, HousingAssignment, TravelLeg, PerDiemEntry, CAEAWeeklyReport, OnboardingChecklist } from './types'
 import { BUILTIN_WORKFLOWS } from './workflowTemplates'
 import {
@@ -28,6 +29,49 @@ import {
   TASKS,
 } from './mockData'
 import type { ScenarioData } from './demoScenarios'
+
+const STORE_KEY = 'stageops-store'
+const STORE_VERSION = 2
+
+// Users flagged freshWorkspace get their own localStorage partition so their
+// data never mixes with the shared demo workspace. Everyone else shares the
+// default key.
+function activeStorageKey(): string {
+  try {
+    const uid = sessionStorage.getItem(USER_SESSION_KEY)
+    if (uid && findRoleUser(uid)?.freshWorkspace) return `${STORE_KEY}-${uid}`
+  } catch {}
+  return STORE_KEY
+}
+
+// First hydration of a fresh-workspace partition starts blank instead of
+// seeded. workflowTemplates is omitted so built-in templates still load.
+const EMPTY_WORKSPACE = {
+  productions: [], budgetLines: [], revenueWeeks: [], contracts: [],
+  cashFlowRows: [], deadlines: [], documents: [], marketingBudgetLines: [],
+  marketingCampaigns: [], customEvents: [], obligations: [],
+  performanceDates: [], grants: [], tasks: [], actorProfiles: [],
+  actorEngagements: [], workflowRuns: [], people: [], housingAssignments: [],
+  travelLegs: [], perDiemEntries: [], caeaReports: [], onboardingChecklists: [],
+}
+
+const partitionedStorage = {
+  getItem: (_name: string): string | null => {
+    const key = activeStorageKey()
+    const raw = localStorage.getItem(key)
+    if (raw != null) return raw
+    if (key !== STORE_KEY) {
+      return JSON.stringify({ state: EMPTY_WORKSPACE, version: STORE_VERSION })
+    }
+    return null
+  },
+  setItem: (_name: string, value: string): void => {
+    localStorage.setItem(activeStorageKey(), value)
+  },
+  removeItem: (_name: string): void => {
+    localStorage.removeItem(activeStorageKey())
+  },
+}
 
 interface StageOpsState {
   productions: Production[]
@@ -342,8 +386,9 @@ export const useStore = create<StageOpsState>()(
       })),
     }),
     {
-      name: 'stageops-store',
-      version: 2,
+      name: STORE_KEY,
+      version: STORE_VERSION,
+      storage: createJSONStorage(() => partitionedStorage),
       // Ensure returning users pick up the new Company Management seed data
       // even if their persisted state predates these arrays.
       merge: (persisted, current) => {

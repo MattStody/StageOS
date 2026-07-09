@@ -13,6 +13,8 @@ export interface AppUser {
   sections: SectionId[]
   defaultHref: string
   isAdmin?: boolean
+  /** User gets their own data partition that starts with no seed data */
+  freshWorkspace?: boolean
 }
 
 export const ROLE_USERS: AppUser[] = [
@@ -39,6 +41,15 @@ export const ROLE_USERS: AppUser[] = [
     email: 'nina@adamblanshay.com',
     sections: ['dashboard', 'finance'],
     defaultHref: '/budget',
+  },
+  {
+    id: 'danielle',
+    name: 'Danielle',
+    title: 'Empty Workspace',
+    email: 'danielle@stageos-test.com',
+    sections: ['dashboard', 'production', 'company', 'finance', 'workspace'],
+    defaultHref: '/dashboard',
+    freshWorkspace: true,
   },
 ]
 
