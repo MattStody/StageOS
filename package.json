@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:finance": "NEXT_PUBLIC_STAGEOS_EDITION=finance next dev",
-    "dev:production": "NEXT_PUBLIC_STAGEOS_EDITION=production next dev",
+    "dev:finance": "NEXT_PUBLIC_STAGEOS_EDITION=finance next dev -p 3001",
+    "dev:production": "NEXT_PUBLIC_STAGEOS_EDITION=production next dev -p 3002",
     "build": "next build",
     "build:finance": "NEXT_PUBLIC_STAGEOS_EDITION=finance next build",
     "build:production": "NEXT_PUBLIC_STAGEOS_EDITION=production next build",
