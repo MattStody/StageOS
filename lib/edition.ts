@@ -1,18 +1,47 @@
-// Edition system — one codebase, three deploy targets.
+// Edition system — one codebase, three versions.
 //
 //   full        everything (default; the admin/all-in-one version)
 //   finance     financial modules only
 //   production  operational modules only — NO financial information anywhere
 //
-// Set at build/dev time via NEXT_PUBLIC_STAGEOS_EDITION (see package.json
-// scripts: dev:finance, dev:production, build:finance, build:production).
+// Two ways the edition is decided:
+//   1. NEXT_PUBLIC_STAGEOS_EDITION env var — hard lock, baked into the build
+//      (dev:finance / dev:production / build:finance / build:production).
+//      Use this for real deployments; the login picker is hidden.
+//   2. Otherwise, chosen on the login screen and stored per browser tab
+//      (sessionStorage), applied on the full page load that follows login.
 
 import type { SectionId } from './auth'
 
 export type Edition = 'full' | 'finance' | 'production'
 
+export const EDITION_STORAGE_KEY = 'stageops-edition'
+
 const raw = process.env.NEXT_PUBLIC_STAGEOS_EDITION
-export const EDITION: Edition = raw === 'finance' || raw === 'production' ? raw : 'full'
+
+/** True when the edition is pinned by the build and can't be switched. */
+export const EDITION_LOCKED = raw === 'finance' || raw === 'production'
+
+function detectEdition(): Edition {
+  if (raw === 'finance' || raw === 'production') return raw
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = sessionStorage.getItem(EDITION_STORAGE_KEY)
+      if (stored === 'finance' || stored === 'production') return stored
+    } catch {}
+  }
+  return 'full'
+}
+
+export const EDITION: Edition = detectEdition()
+
+/** Persist the tab's edition choice. Takes effect on the next full page load. */
+export function setStoredEdition(edition: Edition): void {
+  try {
+    if (edition === 'full') sessionStorage.removeItem(EDITION_STORAGE_KEY)
+    else sessionStorage.setItem(EDITION_STORAGE_KEY, edition)
+  } catch {}
+}
 
 export const IS_FINANCE_EDITION = EDITION === 'finance'
 export const IS_PRODUCTION_EDITION = EDITION === 'production'

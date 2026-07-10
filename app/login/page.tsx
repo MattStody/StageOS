@@ -2,14 +2,11 @@
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ROLE_USERS } from '@/lib/auth'
-import { editionAllows } from '@/lib/edition'
+import {
+  EDITION, EDITION_LOCKED, EDITION_SECTIONS, setStoredEdition, type Edition,
+} from '@/lib/edition'
 import { cn } from '@/lib/cn'
-
-// Role users only appear if this edition includes at least one of their
-// working sections (dashboard alone doesn't count).
-const VISIBLE_ROLE_USERS = ROLE_USERS.filter((u) =>
-  u.sections.some((s) => s !== 'dashboard' && editionAllows(s)),
-)
+import { LayoutGrid, DollarSign, Clapperboard } from 'lucide-react'
 
 const SECTION_COLORS: Record<string, string> = {
   company: '#0ea5e9',
@@ -18,19 +15,33 @@ const SECTION_COLORS: Record<string, string> = {
   danielle: '#f59e0b',
 }
 
+const EDITION_OPTIONS: { id: Edition; label: string; desc: string; icon: React.ElementType }[] = [
+  { id: 'full', label: 'Full', desc: 'Everything', icon: LayoutGrid },
+  { id: 'finance', label: 'Finance', desc: 'Money only', icon: DollarSign },
+  { id: 'production', label: 'Production', desc: 'Ops, no financials', icon: Clapperboard },
+]
+
 export default function LoginPage() {
   const { login, loginAsRole } = useAuth()
   const [email, setEmail] = useState('matt@boldlymedia.com')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [edition, setEdition] = useState<Edition>(EDITION)
+
+  // Role users only appear if the chosen edition includes at least one of
+  // their working sections (dashboard alone doesn't count).
+  const visibleRoleUsers = ROLE_USERS.filter((u) =>
+    u.sections.some((s) => s !== 'dashboard' && EDITION_SECTIONS[edition].includes(s)),
+  )
 
   // Full page loads (not router.push) so the data store rehydrates from the
-  // signed-in user's storage partition.
+  // signed-in user's storage partition and the chosen edition takes effect.
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     const ok = login(email, password)
     if (ok) {
+      setStoredEdition(edition)
       window.location.assign('/dashboard')
     } else {
       setError('Invalid credentials.')
@@ -39,6 +50,7 @@ export default function LoginPage() {
 
   function handleRoleLogin(userId: string) {
     loginAsRole(userId)
+    setStoredEdition(edition)
     const user = ROLE_USERS.find((u) => u.id === userId)
     window.location.assign(user?.defaultHref ?? '/dashboard')
   }
@@ -81,6 +93,42 @@ export default function LoginPage() {
             <p className="text-stone-500 text-sm mt-1">Access your StageOps workspace</p>
           </div>
 
+          {/* Edition picker */}
+          {!EDITION_LOCKED && (
+            <div className="mb-6">
+              <p className="text-xs font-medium text-stone-600 uppercase tracking-wider mb-2">Version</p>
+              <div className="grid grid-cols-3 gap-2">
+                {EDITION_OPTIONS.map(({ id, label, desc, icon: Icon }) => {
+                  const active = edition === id
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setEdition(id)}
+                      className={cn(
+                        'flex flex-col items-center gap-1 px-2 py-3 rounded-lg border text-center transition-all',
+                        active
+                          ? 'border-stone-900 bg-stone-900 text-white shadow-sm'
+                          : 'border-stone-200 bg-white text-stone-600 hover:border-stone-400',
+                      )}
+                    >
+                      <Icon size={16} className={active ? 'text-white' : 'text-stone-400'} />
+                      <span className="text-xs font-semibold">{label}</span>
+                      <span className={cn('text-[10px] leading-tight', active ? 'text-stone-300' : 'text-stone-400')}>
+                        {desc}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+              {edition === 'production' && (
+                <p className="text-[11px] text-stone-400 mt-2">
+                  No dollar amounts are shown anywhere in the Production version.
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Admin form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -122,7 +170,7 @@ export default function LoginPage() {
 
           {/* Role user cards */}
           <div className="space-y-2">
-            {VISIBLE_ROLE_USERS.map((user) => {
+            {visibleRoleUsers.map((user) => {
               const color = SECTION_COLORS[user.id] ?? '#6b7280'
               return (
                 <button

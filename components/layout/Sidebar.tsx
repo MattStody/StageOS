@@ -183,7 +183,11 @@ export function Sidebar() {
 
         {/* User */}
         <div className="px-5 py-4 border-t border-white/10">
-          <div className="flex items-center gap-3">
+          <a
+            href="/login"
+            className="flex items-center gap-3 -mx-2 px-2 py-1.5 rounded hover:bg-white/5 transition-colors"
+            title="Switch user or version"
+          >
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium shrink-0"
               style={{ backgroundColor: '#44403c', color: '#d6d3d1' }}
@@ -194,7 +198,7 @@ export function Sidebar() {
               <p className="text-xs text-stone-300 font-medium truncate">{userName}</p>
               <p className="text-xs text-stone-500 truncate">{userTitle}</p>
             </div>
-          </div>
+          </a>
         </div>
       </aside>
     )
@@ -307,9 +311,10 @@ export function Sidebar() {
             title="Demo mode"
           />
         )}
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium cursor-default"
-          title={`${userName} — ${userTitle}`}
+        <a
+          href="/login"
+          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium hover:ring-2 hover:ring-white/20 transition-shadow"
+          title={`${userName} — ${userTitle} · Switch user or version`}
           style={
             accentColor
               ? { backgroundColor: `${accentColor}33`, color: accentColor }
@@ -317,7 +322,7 @@ export function Sidebar() {
           }
         >
           {userInitials}
-        </div>
+        </a>
       </div>
     </aside>
   )
