@@ -15,6 +15,10 @@ const SECTION_COLORS: Record<string, string> = {
   danielle: '#f59e0b',
 }
 
+// Sample role logins (Diane / Jordan / Nina / Danielle) are hidden for now —
+// flip to true to bring the quick-access cards back.
+const SHOW_ROLE_LOGINS = false
+
 const EDITION_OPTIONS: { id: Edition; label: string; desc: string; icon: React.ElementType }[] = [
   { id: 'full', label: 'Full', desc: 'Everything', icon: LayoutGrid },
   { id: 'finance', label: 'Finance', desc: 'Money only', icon: DollarSign },
@@ -161,6 +165,8 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {SHOW_ROLE_LOGINS && (
+          <>
           {/* Divider */}
           <div className="flex items-center gap-3 my-6">
             <div className="flex-1 h-px bg-stone-200" />
@@ -216,6 +222,8 @@ export default function LoginPage() {
           <p className="text-[11px] text-stone-400 mt-4 text-center">
             Role accounts have view access to their assigned section only.
           </p>
+          </>
+          )}
         </div>
       </div>
     </div>

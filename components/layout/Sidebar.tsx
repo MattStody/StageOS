@@ -110,8 +110,9 @@ export function Sidebar() {
   const userInitials = userName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
   const orgInitials = orgName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
 
-  // Role users (not admin, not demo) get the expanded labeled sidebar
-  const useExpandedNav = !currentUser?.isAdmin && !isDemo
+  // Finance/Production editions always show the expanded labeled sidebar.
+  // In the full edition, role users get it too; admin/demo keep the icon rail.
+  const useExpandedNav = EDITION !== 'full' || (!currentUser?.isAdmin && !isDemo)
 
   if (useExpandedNav) {
     return (
