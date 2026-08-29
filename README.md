@@ -133,6 +133,43 @@ The encoded Canadian theatre knowledge is the differentiated part of this produc
 
 ---
 
+## Deployment
+
+Vercel needs no config for this app — import the repo at
+[vercel.com/new](https://vercel.com/new) and it detects Next.js automatically. Two
+decisions to make:
+
+**1. How many deployments?** One Vercel project per edition you want to hand someone a
+link to. They all point at the same repo and branch; only the environment variable differs:
+
+| Project | `NEXT_PUBLIC_STAGEOS_EDITION` | Who it's for |
+|---|---|---|
+| `stageos` | *(unset)* | Internal — full app, login-screen version picker |
+| `stageos-finance` | `finance` | Finance staff / demos |
+| `stageos-production` | `production` | Production staff — locked, no financial data |
+
+Setting the variable also **hides the version picker**, so nobody on a Production
+deployment can switch themselves into the financial view. Leave it unset only where
+switching is intended.
+
+**2. Environment variables.** Set these per project under *Settings → Environment
+Variables* (see `.env.example`):
+
+- `ANTHROPIC_API_KEY` — optional; AI features fall back to demo responses without it.
+  Mark it **Sensitive** so it can't be read back from the dashboard.
+- `NEXT_PUBLIC_STAGEOS_EDITION` — per the table above. Anything prefixed `NEXT_PUBLIC_` is
+  compiled into the browser bundle and is *not* secret; that's correct here, since the
+  edition isn't confidential — but never use that prefix for a real secret.
+
+Once connected, every push to `main` deploys, and every branch gets its own preview URL —
+so either of you can share a working link for a change before it's merged.
+
+> Remember that data lives in each visitor's browser. A deployed link gives someone their
+> own independent copy of the seed data, not a shared workspace. Real multi-user
+> collaboration needs the backend described under [Current state](#current-state).
+
+---
+
 ## Current state
 
 **Working:** productions, tasks, calendar, contracts + obligations, workflows, company
