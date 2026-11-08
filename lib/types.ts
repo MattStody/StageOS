@@ -581,3 +581,144 @@ export interface OnboardingChecklist {
   completedAt?: string
   createdAt: string
 }
+
+// ── Wardrobe: Run of Show ───────────────────────────────────────────────────────
+// Models a wardrobe backstage running list — the document a Head of Wardrobe and
+// dressers actually run a performance from. Structure mirrors industry practice:
+// scene bands, musical numbers and transitions interleaved with wardrobe cues.
+
+/** Where backstage a cue happens. */
+export type StageLocation = 'SR' | 'SL' | 'X-OVER' | 'DRS RM' | 'ONSTAGE' | 'OTHER'
+
+export const STAGE_LOCATION_LABELS: Record<StageLocation, string> = {
+  SR: 'SR — Stage Right',
+  SL: 'SL — Stage Left',
+  'X-OVER': 'X-OVER — Crossover',
+  'DRS RM': 'DRS RM — Dressing Room',
+  ONSTAGE: 'Onstage',
+  OTHER: 'Other',
+}
+
+/** Row kinds in a running list. */
+export type RunItemType = 'scene' | 'number' | 'scene_change' | 'cue'
+
+/** What the wardrobe crew physically does at a cue. */
+export type CueType =
+  | 'quick_change' // QC — garments OFF then ON against the clock
+  | 'preset'       // place an item somewhere before it is needed
+  | 'standby'      // crew ready and waiting
+  | 'clear'        // strike items out of a wing or crossover
+  | 'reset'        // return a look to storage for later reuse
+  | 'receive'      // take a garment from a performer coming offstage
+  | 'note'         // free-form instruction
+
+export const CUE_TYPE_LABELS: Record<CueType, string> = {
+  quick_change: 'Quick Change',
+  preset: 'Preset',
+  standby: 'Standby',
+  clear: 'Clear',
+  reset: 'Reset',
+  receive: 'Receive',
+  note: 'Note',
+}
+
+/**
+ * A performance track — one role as costumed. The trackNumber is the prefix of
+ * every look number for the track (track 14 → looks 1401, 1402 …), which is how
+ * wardrobe departments conventionally number a costume plot.
+ * Two performerIds means an alternating cast (commonly child roles).
+ */
+export interface CastTrack {
+  id: string
+  productionId: string
+  trackNumber: number
+  roleName: string
+  /** Person ids from the roster; more than one = alternating cast. */
+  performerIds: string[]
+  /** Free text when the performer is not yet in the roster. */
+  performerLabel?: string
+  isChildTrack?: boolean
+}
+
+/** One costume look belonging to a track. */
+export interface CostumeLook {
+  id: string
+  productionId: string
+  trackId: string
+  /** Wardrobe number, e.g. "101", "1403". */
+  number: string
+  /** Short description, e.g. "tux", "victorian caroller". */
+  name: string
+  pieces?: string[]
+  /** Where it lives when not worn, e.g. "dressing room 6B". */
+  storageLocation?: string
+  notes?: string
+}
+
+export interface RunOfShowItem {
+  id: string
+  act: number
+  sequence: number
+  type: RunItemType
+
+  // — scene rows —
+  sceneNumber?: number
+  pageStart?: number
+  pageEnd?: number
+
+  // — scene / number / scene-change rows —
+  /** Scene location ("Lodge Lobby") or number title ("What You've Missed"). */
+  title?: string
+  /** Musical number label, e.g. "#5", "#5a". */
+  numberLabel?: string
+
+  // — cue rows —
+  page?: number
+  timecode?: string
+  location?: StageLocation
+  /** Precise spot, e.g. "stair unit", "airport seats". */
+  locationDetail?: string
+  cueType?: CueType
+  trackId?: string
+  /** Performer override when a cue is not tied to a roster track. */
+  performerLabel?: string
+  offLookIds?: string[]
+  onLookIds?: string[]
+  /** Free text when a look has not been assigned a number yet. */
+  offText?: string
+  onText?: string
+  /** Body text for note / clear / receive / standby rows. */
+  body?: string
+  notes?: string
+  /** Page the performer is back onstage — defines the change window. */
+  reentryPage?: number
+  /** Flagged as a hard/fast change. */
+  isFast?: boolean
+  /** Still an open question in tech (the "?" items on a paper list). */
+  needsDecision?: boolean
+  /** Crew member responsible — matches a RunOfShow.crew name, or "(Self)". */
+  assignedTo?: string
+  /** Look is finished for the show and can be struck. */
+  isDead?: boolean
+}
+
+export type RunOfShowStatus = 'draft' | 'dress_run' | 'locked'
+
+export interface RunCrewMember {
+  name: string
+  role: string
+  /** Preshow responsibilities. */
+  preshow?: string
+}
+
+export interface RunOfShow {
+  id: string
+  productionId: string
+  department: 'wardrobe'
+  title: string
+  createdBy: string
+  updatedAt: string
+  status: RunOfShowStatus
+  crew: RunCrewMember[]
+  items: RunOfShowItem[]
+}

@@ -2,7 +2,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { findRoleUser, USER_SESSION_KEY } from './auth'
-import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate, Grant, ProductionTask, ActorProfile, ActorEngagement, WorkflowTemplate, WorkflowRun, Person, HousingAssignment, TravelLeg, PerDiemEntry, CAEAWeeklyReport, OnboardingChecklist } from './types'
+import type { Production, BudgetLine, RevenueWeek, Contract, CashFlowRow, Deadline, Document, MarketingBudgetLine, MarketingCampaign, CustomEvent, ContractObligation, PerformanceDate, Grant, ProductionTask, ActorProfile, ActorEngagement, WorkflowTemplate, WorkflowRun, Person, HousingAssignment, TravelLeg, PerDiemEntry, CAEAWeeklyReport, OnboardingChecklist, CastTrack, CostumeLook, RunOfShow } from './types'
 import { BUILTIN_WORKFLOWS } from './workflowTemplates'
 import {
   PEOPLE,
@@ -12,6 +12,7 @@ import {
   CAEA_WEEKLY_REPORTS,
   ONBOARDING_CHECKLISTS,
 } from './companyData'
+import { CAST_TRACKS, COSTUME_LOOKS, RUNS_OF_SHOW } from './runOfShowData'
 import {
   PRODUCTIONS,
   BUDGET_LINES,
@@ -53,6 +54,7 @@ const EMPTY_WORKSPACE = {
   performanceDates: [], grants: [], tasks: [], actorProfiles: [],
   actorEngagements: [], workflowRuns: [], people: [], housingAssignments: [],
   travelLegs: [], perDiemEntries: [], caeaReports: [], onboardingChecklists: [],
+  castTracks: [], costumeLooks: [], runsOfShow: [],
 }
 
 const partitionedStorage = {
@@ -179,6 +181,21 @@ interface StageOpsState {
   addCAEAReport: (r: CAEAWeeklyReport) => void
   updateCAEAReport: (r: CAEAWeeklyReport) => void
   deleteCAEAReport: (id: string) => void
+
+  castTracks: CastTrack[]
+  addCastTrack: (t: CastTrack) => void
+  updateCastTrack: (t: CastTrack) => void
+  deleteCastTrack: (id: string) => void
+
+  costumeLooks: CostumeLook[]
+  addCostumeLook: (l: CostumeLook) => void
+  updateCostumeLook: (l: CostumeLook) => void
+  deleteCostumeLook: (id: string) => void
+
+  runsOfShow: RunOfShow[]
+  addRunOfShow: (r: RunOfShow) => void
+  updateRunOfShow: (r: RunOfShow) => void
+  deleteRunOfShow: (id: string) => void
 
   onboardingChecklists: OnboardingChecklist[]
   addOnboardingChecklist: (c: OnboardingChecklist) => void
@@ -309,6 +326,21 @@ export const useStore = create<StageOpsState>()(
       updateCAEAReport: (r) => set((s) => ({ caeaReports: s.caeaReports.map((x) => (x.id === r.id ? r : x)) })),
       deleteCAEAReport: (id) => set((s) => ({ caeaReports: s.caeaReports.filter((x) => x.id !== id) })),
 
+      castTracks: CAST_TRACKS,
+      addCastTrack: (t) => set((s) => ({ castTracks: [...s.castTracks, t] })),
+      updateCastTrack: (t) => set((s) => ({ castTracks: s.castTracks.map((x) => (x.id === t.id ? t : x)) })),
+      deleteCastTrack: (id) => set((s) => ({ castTracks: s.castTracks.filter((x) => x.id !== id) })),
+
+      costumeLooks: COSTUME_LOOKS,
+      addCostumeLook: (l) => set((s) => ({ costumeLooks: [...s.costumeLooks, l] })),
+      updateCostumeLook: (l) => set((s) => ({ costumeLooks: s.costumeLooks.map((x) => (x.id === l.id ? l : x)) })),
+      deleteCostumeLook: (id) => set((s) => ({ costumeLooks: s.costumeLooks.filter((x) => x.id !== id) })),
+
+      runsOfShow: RUNS_OF_SHOW,
+      addRunOfShow: (r) => set((s) => ({ runsOfShow: [...s.runsOfShow, r] })),
+      updateRunOfShow: (r) => set((s) => ({ runsOfShow: s.runsOfShow.map((x) => (x.id === r.id ? r : x)) })),
+      deleteRunOfShow: (id) => set((s) => ({ runsOfShow: s.runsOfShow.filter((x) => x.id !== id) })),
+
       onboardingChecklists: ONBOARDING_CHECKLISTS,
       addOnboardingChecklist: (c) => set((s) => ({ onboardingChecklists: [...s.onboardingChecklists, c] })),
       updateOnboardingChecklist: (c) => set((s) => ({ onboardingChecklists: s.onboardingChecklists.map((x) => (x.id === c.id ? c : x)) })),
@@ -354,6 +386,9 @@ export const useStore = create<StageOpsState>()(
         perDiemEntries: PER_DIEM_ENTRIES,
         caeaReports: CAEA_WEEKLY_REPORTS,
         onboardingChecklists: ONBOARDING_CHECKLISTS,
+        castTracks: CAST_TRACKS,
+        costumeLooks: COSTUME_LOOKS,
+        runsOfShow: RUNS_OF_SHOW,
       })),
 
       // Blank slate — wipes all seed/demo data. Built-in workflow templates
@@ -383,6 +418,9 @@ export const useStore = create<StageOpsState>()(
         perDiemEntries: [],
         caeaReports: [],
         onboardingChecklists: [],
+        castTracks: [],
+        costumeLooks: [],
+        runsOfShow: [],
       })),
     }),
     {
@@ -402,6 +440,9 @@ export const useStore = create<StageOpsState>()(
           perDiemEntries: p.perDiemEntries ?? current.perDiemEntries,
           caeaReports: p.caeaReports ?? current.caeaReports,
           onboardingChecklists: p.onboardingChecklists ?? current.onboardingChecklists,
+          castTracks: p.castTracks ?? current.castTracks,
+          costumeLooks: p.costumeLooks ?? current.costumeLooks,
+          runsOfShow: p.runsOfShow ?? current.runsOfShow,
         }
       },
     }

@@ -7,8 +7,9 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { initials, avatarColor } from '@/lib/company'
+import Link from 'next/link'
 import {
-  Ruler, Shirt, Search, Check, ChevronRight, AlertCircle, X,
+  Ruler, Shirt, Search, Check, ChevronRight, AlertCircle, X, ClipboardList,
 } from 'lucide-react'
 import type { Person, PersonMeasurements, Production } from '@/lib/types'
 
@@ -233,12 +234,21 @@ export default function WardrobePage() {
         title="Wardrobe"
         subtitle={`${activePeople.length} company members · ${missingCount} incomplete`}
         actions={
-          canEdit && (
-            <Button size="sm" onClick={() => { setQuickPicked(null); setQuickOpen(true) }}>
-              <Ruler size={14} className="mr-1.5" />
-              Update measurements
-            </Button>
-          )
+          <div className="flex items-center gap-2">
+            <Link
+              href="/company/wardrobe/run-of-show"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-stone-300 bg-white text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors"
+            >
+              <ClipboardList size={13} />
+              Run of Show
+            </Link>
+            {canEdit && (
+              <Button size="sm" onClick={() => { setQuickPicked(null); setQuickOpen(true) }}>
+                <Ruler size={14} className="mr-1.5" />
+                Update measurements
+              </Button>
+            )}
+          </div>
         }
       />
 
